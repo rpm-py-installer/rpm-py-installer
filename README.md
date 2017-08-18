@@ -23,7 +23,7 @@ RPM version 4.13.0.1
 
 ```
 $ git clone REPO_URL
-$ ls rpm-python-installer/installer.sh
+$ ls rpm-python-installer/install
 ```
 
 Move to a project that you want to install the python binding module.
@@ -33,7 +33,7 @@ $ cd $PROJECT_DIR
 
 $ virtualenv --python=python3 ./venv
 
-(venv) $ /path/to/rpm-python-installer/installer.sh
+(venv) $ /path/to/rpm-python-installer/install
 
 (venv) $ pip list | grep rpm
 rpm-python        4.13.0.1
