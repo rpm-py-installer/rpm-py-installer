@@ -33,6 +33,8 @@ Move to a project that you want to install the python binding module.
 $ cd $PROJECT_DIR
 
 $ virtualenv --python=python3 ./venv
+
+$ source venv/bin/activate
 ```
 
 ```
