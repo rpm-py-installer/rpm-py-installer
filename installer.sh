@@ -32,4 +32,4 @@ python setup.py install
 
 pip list | grep rpm
 
-python -c 'import rpm; print(rpm.__version__)'
+# python -c 'import rpm; print(rpm.__version__)'
