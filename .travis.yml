@@ -1,0 +1,16 @@
+language: generic
+sudo: required
+services: docker
+env:
+  # - CONTAINER_IMAGE=fedora:25
+  # - CONTAINER_IMAGE=fedora:26
+  # - CONTAINER_IMAGE=fedora:rawhide
+  - CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26
+before_install:
+  - |
+    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" Dockerfile
+install: true
+script: ./test-docker.sh
+branches:
+  only:
+    - master
