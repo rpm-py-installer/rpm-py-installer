@@ -1,14 +1,13 @@
-# py-rpm-installer
+# rpm-py-installer
 
-This tool installs RPM Python binding module on any Python,
-considering installed system RPM's version.
+This tool installs RPM Python binding module (`rpm-python` or `rpm` (new version)) on any Python, considering installed system RPM's version.
 
 ## How to install
 
 ### Synopsis
 
 ```
-$ [PYTHON=path/to/python] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/py-rpm-installer/master/install)"
+$ [PYTHON=path/to/python] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)"
 ```
 
 ### Environment variables
@@ -53,7 +52,7 @@ $ source venv/bin/activate
 ```
 
 ```
-(venv) $ bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/py-rpm-installer/master/install)"
+(venv) $ bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)"
 ```
 
 ```
@@ -65,7 +64,7 @@ rpm-python        4.13.0.1
 
 ```
 $ sudo PYTHON=/usr/local/python-3.6.1/bin/python3 \
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/py-rpm-installer/master/install)"
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)"
 ```
 
 ```
