@@ -1,4 +1,4 @@
-# rpm-python-installer
+# py-rpm-installer
 
 This tool installs RPM Python binding module on any Python,
 considering installed system RPM's version.
