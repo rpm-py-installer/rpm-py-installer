@@ -2,6 +2,8 @@
 
 set -ex
 
+# Python's path that the module is installed on. Default: python3
+PYTHON="${PYTHON:=python3}"
 RPM_VERSION=$(rpm --version | cut -d' ' -f 3)
 
 WORK_DIR="$(pwd)/tmp/rpm-py-installer"
@@ -11,11 +13,11 @@ fi
 mkdir -p "${WORK_DIR}"
 cd "${WORK_DIR}"
 
-REPO_URL='https://github.com/rpm-software-management/rpm'
-FILE_NAME="rpm-${RPM_VERSION}-release"
-curl -L "${REPO_URL}/archive/${FILE_NAME}.tar.gz" | tar xz
+RPM_REPO_URL='https://github.com/rpm-software-management/rpm'
+RPM_NAME="rpm-${RPM_VERSION}-release"
+curl -L "${RPM_REPO_URL}/archive/${RPM_NAME}.tar.gz" | tar xz
 
-cd "rpm-${FILE_NAME}/python"
+cd "rpm-${RPM_NAME}/python"
 
 sed -e 's/@PACKAGE_NAME@/rpm/g' \
     -e "s/@VERSION@/${RPM_VERSION}/g" \
@@ -23,13 +25,18 @@ sed -e 's/@PACKAGE_NAME@/rpm/g' \
     setup.py.in \
     > setup.py
 
-# If can not build, check below files.
+# If you can not build, check below files.
 # $ rpm -ql rpm-libs
 # $ ls /usr/lib64/librpm*.so
+
+"${PYTHON}" setup.py build
+"${PYTHON}" setup.py install
+
+# Below command is fine for the build?
 # pip install -e .
-python setup.py build
-python setup.py install
 
-pip list | grep rpm
+"${PYTHON}" -m pip list | grep -E '^rpm(-python)? +'
 
-# python -c 'import rpm; print(rpm.__version__)'
+echo "PRM Python binding module is installed successfully."
+
+exit 0
