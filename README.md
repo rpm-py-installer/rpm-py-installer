@@ -1,6 +1,8 @@
 # rpm-py-installer
 
-This tool installs RPM Python binding module (`rpm-python` or `rpm` (new version)) on any Python, considering installed system RPM's version.
+This tool installs [RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on any Python or virtualenv environment, considering installed RPM's version.
+
+If you want to install the module on `/usr/bin/python{3,2,}`, install it from the RPM package(`python{3,2}-rpm`).
 
 ## How to install
 
@@ -74,6 +76,6 @@ $ /usr/local/python-3.6.1/bin/pip3 list | grep rpm
 rpm-python            4.13.0.1
 ```
 
-## Note
+## License
 
-- If you want to install the module on `/usr/bin/python{3,2,}`, install it from the RPM package(`python{3,2}-rpm`).
+MIT
