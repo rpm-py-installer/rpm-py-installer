@@ -4,7 +4,11 @@ set -ex
 
 # Python's path that the module is installed on. Default: python3
 PYTHON="${PYTHON:=python3}"
-RPM_VERSION=$(rpm --version | cut -d' ' -f 3)
+# Linked rpm's path. Default: rpm.
+RPM="${RPM:=rpm}"
+# Installed RPM Python module's version. Default: Same version with rpm.
+DEFAULT_RPM_VERSION=$("${RPM}" --version | cut -d' ' -f 3)
+RPM_VERSION="${RPM_VERSION:=${DEFAULT_RPM_VERSION}}"
 
 WORK_DIR="$(pwd)/tmp/rpm-py-installer"
 if [ -d "${WORK_DIR}" ]; then
