@@ -15,6 +15,8 @@ $ [PYTHON=path/to/python] bash -c "$(curl -fsSL https://raw.githubusercontent.co
 | NAME | Description | Default |
 | ---- | ----------- | ------- |
 | PYTHON | Path to python | python3 |
+| RPM | Path to rpm | rpm |
+| RPM_VERSION | Installed python module's version | Same version with rpm |
 
 
 ## Tutorial
