@@ -4,11 +4,21 @@ set -ex
 
 # Python's path that the module is installed on. Default: python3
 PYTHON="${PYTHON:=python3}"
+PYTHON="$(which "${PYTHON}")"
 # Linked rpm's path. Default: rpm.
 RPM="${RPM:=rpm}"
 # Installed RPM Python module's version. Default: Same version with rpm.
 DEFAULT_RPM_VERSION=$("${RPM}" --version | cut -d' ' -f 3)
 RPM_VERSION="${RPM_VERSION:=${DEFAULT_RPM_VERSION}}"
+
+# Check system Python
+if [[ "${PYTHON}" =~ ^/usr/bin/python.*$ ]]; then
+    cat <<EOF
+This tool does not install the Python module on system Python: ${PYTHON}.
+Install the module maually from the RPM package by dnf or yum command.
+EOF
+    exit 1
+fi
 
 WORK_DIR="$(pwd)/tmp/rpm-py-installer"
 if [ -d "${WORK_DIR}" ]; then
