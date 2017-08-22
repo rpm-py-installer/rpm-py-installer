@@ -1,4 +1,5 @@
 # rpm-py-installer
+[![Build Status](https://travis-ci.org/junaruga/rpm-py-installer.svg?branch=master)](https://travis-ci.org/junaruga/rpm-py-installer)
 
 This tool installs [RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on any Python or virtualenv environment, considering installed RPM's version.
 
