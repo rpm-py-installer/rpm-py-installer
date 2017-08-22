@@ -8,9 +8,10 @@ env:
   - CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26
 before_install:
   - |
-    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" Dockerfile
+    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" \
+        ./ci/rpm-py-installer/Dockerfile
 install: true
-script: ./test-docker.sh
+script: ./ci/rpm-py-installer/test-docker.sh
 branches:
   only:
     - master
