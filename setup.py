@@ -33,6 +33,8 @@ class InstallCommand(install):
     or
 
     $ pip install --no-cache-dir rpm-py-installer
+
+    See https://pip.pypa.io/en/stable/reference/pip_install/#caching .
     """
     def run(self):
         install.run(self)
