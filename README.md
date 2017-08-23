@@ -2,81 +2,52 @@
 [![PyPI](https://img.shields.io/pypi/v/rpm-py-installer.svg)](https://pypi.python.org/pypi/rpm-py-installer)
 [![Build Status](https://travis-ci.org/junaruga/rpm-py-installer.svg?branch=master)](https://travis-ci.org/junaruga/rpm-py-installer)
 
-This tool installs [RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on any Python or virtualenv environment, considering installed RPM's version.
+`rpm-py-installer` installs [a RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on non-system Python such as source compiled Python, and Python virtualenv, pyenv environment, considering installed RPM itself.
 
-If you want to install the module on `/usr/bin/python{3,2,}`, install it from the RPM package(`python{3,2}-rpm`).
+## Install a RPM Python binding module by rpm-py-installer
 
-## How to install
+`rpm-py-installer` provides several ways to install.
 
-### Synopsis
-
-```
-$ [PYTHON=path/to/python] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)"
-```
-
-### Environment variables
-
-| NAME | Description | Default |
-| ---- | ----------- | ------- |
-| PYTHON | Path to python | python3 |
-| RPM | Path to rpm | rpm |
-| RPM_VERSION | Installed python module's version | Same version with rpm |
-
-
-## Tutorial
-
-For example.
-In case of that you want to install the Python binding module for below RPM
-to below python3 environment.
+### Install by pip
 
 ```
-$ which rpm
-/usr/bin/rpm
-
 $ rpm --version
 RPM version 4.13.0.1
+
+$ pip list
+Package    Version
+---------- -------
+pip        9.0.1
+setuptools 28.8.0
+
+$ pip install --no-cache-dir rpm-py-installer
+
+(venv) $ pip list
+Package          Version-
+---------------- --------
+pip              9.0.1
+rpm-py-installer 0.1.0
+rpm-python       4.13.0.1
+setuptools       28.8.0
 ```
 
-```
-$ which python3
-/usr/local/python-3.6.1/bin/python3
+### Install as install dependency for your Python module.
 
-$ python3 --version
-Python 3.6.1
-```
+Add `rpm-py-installer` in `setup.py` `install_requires` to install the RPM Python binding module.
 
-### Case 1: Install the python module on virtualenv
+### Direct install
 
-Move to a project that you want to install the python binding module.
+If you want to install the Python binding module with `rpm-py-installer` package.
+
+You can set environment variables as options. See Users Guide for detail.
 
 ```
-$ cd $PROJECT_DIR
-
-$ virtualenv --python=python3 ./venv
-
-$ source venv/bin/activate
+$ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)"
 ```
 
-```
-(venv) $ bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)"
-```
+### Usage
 
-```
-(venv) $ pip3 list | grep rpm
-rpm-python        4.13.0.1
-```
-
-### Case 2: Install the module on source compiled Python.
-
-```
-$ sudo PYTHON=/usr/local/python-3.6.1/bin/python3 \
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)"
-```
-
-```
-$ /usr/local/python-3.6.1/bin/pip3 list | grep rpm
-rpm-python            4.13.0.1
-```
+See [Users Guide](docs/users_guide.md).
 
 ## License
 
