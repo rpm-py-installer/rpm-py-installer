@@ -19,18 +19,41 @@ def install_rpm_py():
 
 
 class InstallCommand(install):
+    """A class for "pip install".
+
+    Handled by "pip install rpm-py-installer",
+    when the package should be published as a source distribution (sdist).
+
+    If pip's cache for rpm-py-installer is available, it is not handled.
+    In the case, install as follows.
+
+    $ rm -rf ~/.cache/pip
+    $ pip install rpm-py-installer
+
+    or
+
+    $ pip install --no-cache-dir rpm-py-installer
+    """
     def run(self):
         install.run(self)
         install_rpm_py()
 
 
 class DevelopCommand(develop):
+    """A class for setuptools development mode.
+
+    Handled by "pip install -e".
+    """
     def run(self):
         develop.run(self)
         install_rpm_py()
 
 
 class EggInfoCommand(egg_info):
+    """A class for egg-info.
+
+    Handled by "pip install .".
+    """
     def run(self):
         egg_info.run(self)
         install_rpm_py()
