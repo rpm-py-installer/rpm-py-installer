@@ -14,6 +14,12 @@
 $ rpm --version
 RPM version 4.13.0.1
 
+$ which python
+/path/to/your_python
+
+$ which pip
+/path/to/pip_on_your_python
+
 $ pip list
 Package    Version
 ---------- -------
@@ -22,7 +28,7 @@ setuptools 28.8.0
 
 $ pip install --no-cache-dir rpm-py-installer
 
-(venv) $ pip list
+$ pip list
 Package          Version-
 ---------------- --------
 pip              9.0.1
