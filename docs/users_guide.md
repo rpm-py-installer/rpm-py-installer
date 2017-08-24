@@ -21,9 +21,11 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
 | VERBOSE | Verbose mode. true/false | false |
 
 
-## Note
+## FAQ & Note
 
-- If pip's cache for rpm-py-installer is available and used, installing process was skipped. Remove pip's cache directory or run `pip install` with `--no-cache-dir` option.
+- Q. I ran by `pip install rpm-py-installer` or as a install dependency in `setup.py`. But the Python binding is not installed.
+
+- A. If pip's cache for rpm-py-installer is available and used, installing process was skipped. Remove pip's cache directory or run `pip install` with `--no-cache-dir` option.
 
   ```
   $ rm -rf ~/.cache/pip
@@ -36,15 +38,29 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
   $ pip install --no-cache-dir rpm-py-installer
   ```
 
-- following package are required on Fedora.
+- Q. I got install error.
+- A. Please run below command, and report with the outputted log on our github issue page. Thank you.
+
+  ```
+  $ PYTHON=/path/to/your_python VERBOSE=true bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)" >& install.log
+  ```
+
+- Q. What is the dependency RPM packages for `rpm-py-installer`?
+- A. Following package are required on Fedora.
   - rpm-libs
   - rpm-devel
 
   See installed packages in [Dockerfile for testing](../tests/docker/Dockerfile) for detail.
 
-- If you want to install the Python binding module on system Python (`/usr/bin/python{3,2,})`, install it manually from the RPM package(`python{,2,3}-rpm`).
+
+- Q. Does this installer install the Python binding module for system Python (`/usr/bin/python*`)?
+- A. No. The installer does not install the Python binding module by itself.
+  It is recommended that you would install it manually from the RPM package(`python{,2,3}-rpm`).
+  After you install it manually, `rpm-py-installer` used as one of the required install dependency on system Python works.
 
 ## Tutorial
+
+Right now the tutorial is only for "direct install".
 
 For example.
 In case of that you want to install the Python binding module for below RPM
