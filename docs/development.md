@@ -5,7 +5,7 @@
 Bump version.
 
 ```
-$ rpm_py_installer/version.py
+$ vi rpm_py_installer/version.py
 $ git add rpm_py_installer/version.py
 $ git commit -m 'Bump version X.Y.Z."
 ```
