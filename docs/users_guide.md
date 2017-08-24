@@ -24,7 +24,6 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
 ## FAQ & Note
 
 - Q. I ran by `pip install rpm-py-installer` or as a install dependency in `setup.py`. But the Python binding is not installed.
-
 - A. If pip's cache for rpm-py-installer is available and used, installing process was skipped. Remove pip's cache directory or run `pip install` with `--no-cache-dir` option.
 
   ```
@@ -38,15 +37,23 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
   $ pip install --no-cache-dir rpm-py-installer
   ```
 
-- Q. I got install error.
-- A. Please run below command, and report with the outputted log on our github issue page. Thank you.
+- Q. I got an install error.
+- A. Could you run below command and check outputted log?
+
+  ```
+  $ VERBOSE=true pip install --no-cache-dir -vvv rpm-py-installer
+  ```
+
+- Q. I can not still solve my install error.
+- A. Could you run below command and check that it is suceeded to install?
+     If it is failed, could you report with the outputted log on our github issue page? Thank you.
 
   ```
   $ PYTHON=/path/to/your_python VERBOSE=true bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)" >& install.log
   ```
 
 - Q. What is the dependency RPM packages for `rpm-py-installer`?
-- A. Following package are required on Fedora.
+- A. Following packages are required on Fedora.
   - rpm-libs
   - rpm-devel
 
@@ -54,7 +61,7 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
 
 
 - Q. Does this installer install the Python binding module for system Python (`/usr/bin/python*`)?
-- A. No. The installer does not install the Python binding module by itself.
+- A. No. The installer does not install the Python binding module on system Python by itself.
   It is recommended that you would install it manually from the RPM package(`python{,2,3}-rpm`).
   After you install it manually, `rpm-py-installer` used as one of the required install dependency on system Python works.
 
@@ -89,7 +96,7 @@ Move to a project that you want to install the python binding module.
 ```
 $ cd $PROJECT_DIR
 
-$ virtualenv --python=python3 ./venv
+$ python3 -m venv ./venv
 
 $ source venv/bin/activate
 ```
