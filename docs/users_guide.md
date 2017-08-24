@@ -18,6 +18,7 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
 | PYTHON | Path to python | python3 |
 | RPM | Path to rpm | rpm |
 | RPM_VERSION | Installed python module's version | Same version with rpm |
+| VERBOSE | Verbose mode. true/false | false |
 
 
 ## Note
@@ -35,8 +36,13 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
   $ pip install --no-cache-dir rpm-py-installer
   ```
 
-- If you want to install the Python binding module on system Python (`/usr/bin/python{3,2,})`, install it manually from the RPM package(`python{3,2}-rpm`).
+- following package are required on Fedora.
+  - rpm-libs
+  - rpm-devel
 
+  See installed packages in [Dockerfile for testing](../tests/docker/Dockerfile) for detail.
+
+- If you want to install the Python binding module on system Python (`/usr/bin/python{3,2,})`, install it manually from the RPM package(`python{,2,3}-rpm`).
 
 ## Tutorial
 
