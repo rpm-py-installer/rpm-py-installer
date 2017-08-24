@@ -65,7 +65,6 @@ setuptools.setup(
     name='rpm_py_installer',
     version=VERSION,
     license='MIT',
-    use_scm_version=True,
     description='RPM Pythoon Installer',
     long_description='A installer for RPM Python binding module.',
     author='Jun Aruga',
@@ -75,9 +74,6 @@ setuptools.setup(
         'rpm_py_installer',
     ],
     install_requires=[],
-    setup_requires=[
-        'pytest-runner',
-    ],
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
