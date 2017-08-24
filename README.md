@@ -2,7 +2,7 @@
 [![PyPI](https://img.shields.io/pypi/v/rpm-py-installer.svg)](https://pypi.python.org/pypi/rpm-py-installer)
 [![Build Status](https://travis-ci.org/junaruga/rpm-py-installer.svg?branch=master)](https://travis-ci.org/junaruga/rpm-py-installer)
 
-`rpm-py-installer` installs [a RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on non-system Python such as source compiled Python, and Python virtualenv, pyenv environment, considering installed RPM itself.
+`rpm-py-installer` installs [a RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on non-system Python such as a source compiled Python, a Python on virtualenv, and  a Python on pyenv environment, considering installed RPM itself.
 
 ## Install a RPM Python binding module by rpm-py-installer
 
