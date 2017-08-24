@@ -3,7 +3,7 @@
 ## How to install
 
 ```
-$ pip install rpm-py-installer
+$ [VAR=VALUE] pip install rpm-py-installer
 ```
 or
 
@@ -28,6 +28,7 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
 
   ```
   $ rm -rf ~/.cache/pip
+
   $ pip install rpm-py-installer
   ```
 
@@ -49,7 +50,10 @@ $ [VAR=VALUE] bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/r
      If it is failed, could you report with the outputted log on our github issue page? Thank you.
 
   ```
-  $ PYTHON=/path/to/your_python VERBOSE=true bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)" >& install.log
+  $ PYTHON=/path/to/your_python \
+      VERBOSE=true \
+      bash -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install)" \
+      >& install.log
   ```
 
 - Q. What is the dependency RPM packages for `rpm-py-installer`?
