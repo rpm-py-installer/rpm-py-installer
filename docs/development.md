@@ -13,7 +13,7 @@ $ git commit -m 'Bump version X.Y.Z.'
 Tagging.
 
 ```
-$ git tag -a X.Y.Z -m 'Tagging X.Y.Z'
+$ git tag -a vX.Y.Z -m 'vX.Y.Z release'
 ```
 
 Upload source distribution to PyPI.
