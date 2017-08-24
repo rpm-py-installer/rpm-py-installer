@@ -28,6 +28,6 @@ $ source venv/bin/activate
 Push the tag information.
 
 ```
-$ git push origin X.Y.Z
+$ git push origin vX.Y.Z
 $ git push origin master
 ```
