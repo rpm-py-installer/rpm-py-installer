@@ -2,18 +2,16 @@
 
 ## Releasing
 
-Bump version.
+Bump version `X.Y.Z`.
 
 ```
 $ vi rpm_py_installer/version.py
-$ git add rpm_py_installer/version.py
-$ git commit -m 'Bump version X.Y.Z.'
 ```
 
-Tagging.
+Do `git add`, `git commit` and tagging.
 
 ```
-$ git tag -a vX.Y.Z -m 'vX.Y.Z release'
+$ python3 scripts/release.py
 ```
 
 Upload source distribution to PyPI.
@@ -25,9 +23,9 @@ $ source venv/bin/activate
 (venv) $ deactivate
 ```
 
-Push the tag information.
+Push the commit and tag information to remote repository.
 
 ```
-$ git push origin vX.Y.Z
 $ git push origin master
+$ git push origin vX.Y.Z
 ```
