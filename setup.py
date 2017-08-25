@@ -62,7 +62,7 @@ class EggInfoCommand(egg_info):
 
 
 setuptools.setup(
-    name='rpm_py_installer',
+    name='rpm-py-installer',
     version=VERSION,
     license='MIT',
     description='RPM Pythoon Installer',
