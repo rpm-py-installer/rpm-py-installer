@@ -2,20 +2,19 @@ import os
 import sys
 
 import setuptools
-from setuptools.command.install import install
 from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
+from setuptools.command.install import install
 
 from rpm_py_installer.version import VERSION
 
 
 def install_rpm_py():
-    if sys.platform in ['darwin', 'linux']:
-        python_path = sys.executable
-        cmd = 'PYTHON="{0}" ./install'.format(python_path)
-        exit_status = os.system(cmd)
-        if exit_status != 0:
-            raise Exception('Command failed: {0}'.format(cmd))
+    python_path = sys.executable
+    cmd = '{0} install.py'.format(python_path)
+    exit_status = os.system(cmd)
+    if exit_status != 0:
+        raise Exception('Command failed: {0}'.format(cmd))
 
 
 class InstallCommand(install):
@@ -73,6 +72,7 @@ setuptools.setup(
     packages=[
         'rpm_py_installer',
     ],
+    # Keep install_requires empty to run install.py directly.
     install_requires=[],
     classifiers=[
         'License :: OSI Approved :: MIT License',

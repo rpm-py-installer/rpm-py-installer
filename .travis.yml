@@ -2,15 +2,23 @@ language: generic
 sudo: required
 services: docker
 env:
-  # - CONTAINER_IMAGE=fedora:25
-  # - CONTAINER_IMAGE=fedora:26
-  # - CONTAINER_IMAGE=fedora:rawhide
-  - CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26
+  - CONTAINER_IMAGE=fedora:26 TOXENV='lint,py36,py35,py27'
+  - CONTAINER_IMAGE=fedora:25 TOXENV=py36
+  - CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26 TOXENV=intg
 before_install:
   - |
-    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" Dockerfile
+    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" .travis/Dockerfile
 install: true
-script: ./test-docker.sh
+script:
+  - |
+    docker build \
+        -t rpm-py-installer \
+        -f .travis/Dockerfile \
+        .
+  - |
+    docker run \
+        -e TOXENV="${TOXENV}" \
+        -t rpm-py-installer
 branches:
   only:
     - master

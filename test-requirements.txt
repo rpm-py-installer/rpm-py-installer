@@ -1,0 +1,16 @@
+# Test
+pytest
+pytest-helpers-namespace
+# For Python 2.7
+backports.unittest_mock
+# Coverage
+pytest-cov
+# Code Analysis for Python
+flake8
+flake8-colors
+flake8-isort
+# flake8-docstrings
+# Code Analysis for Bash
+bashate
+# The pep8-naming is used as a plugin for flake8
+pep8-naming
