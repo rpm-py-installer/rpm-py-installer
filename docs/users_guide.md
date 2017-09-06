@@ -23,18 +23,18 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 ## FAQ & Note
 
 - Q. I ran `pip install rpm-py-installer` or ran `rpm-py-installer` as a required install dependency in `setup.py`. But the Python binding is not installed.
-- A. If pip's cache for rpm-py-installer is available and used, installing process was skipped. Remove pip's cache directory or run `pip install` with `--no-cache-dir` option.
+- A. If `wheel` package is installed, and the cache for `rpm-py-installer` is used, the installing process is skipped. In this case, run `pip install` with `--no-cache-dir` option.
 
   ```
-  $ rm -rf ~/.cache/pip
-
-  $ pip install rpm-py-installer
+  $ pip install --no-cache-dir rpm-py-installer
   ```
 
   or
 
   ```
-  $ pip install --no-cache-dir rpm-py-installer
+  $ rm -rf ~/.cache/pip
+
+  $ pip install rpm-py-installer
   ```
 
 - Q. I got an install error.
@@ -101,7 +101,7 @@ $ source venv/bin/activate
 ```
 
 ```
-(venv) $ pip install --no-cache-dir rpm-py-installer
+(venv) $ pip install rpm-py-installer
 ```
 
 ```
