@@ -17,6 +17,18 @@ def app():
     return Application()
 
 
+@pytest.fixture
+def app_with_env(env):
+    if not isinstance(env, dict):
+        raise ValueError('env: Invalid type: {0}'.format(type(env)))
+    prev_env = os.environ.copy()
+    try:
+        os.environ.update(env)
+        yield Application()
+    finally:
+        os.environ = prev_env
+
+
 def test_cmd_sh_e_is_ok():
     stdout = Cmd.sh_e('pwd')
     assert not stdout
@@ -43,11 +55,29 @@ def test_app_init(app):
     assert 'bin/python' in app.python_path
     assert app.rpm_path
     assert 'rpm' in app.rpm_path
-    assert app.rpm_version
-    assert re.match('^[\d.]+$', app.rpm_version)
+    assert app.rpm_py_version
+    assert re.match('^[\d.]+$', app.rpm_py_version)
     assert app.setup_py_opts == '-q'
     assert app.curl_opts == '--silent'
     assert app.is_work_dir_removed is False
+
+
+@pytest.mark.parametrize('env', [{'RPM': 'pwd'}])
+def test_app_init_env_rpm(app_with_env):
+    assert app_with_env
+    assert re.match('^/.+/pwd$', app_with_env.rpm_path)
+
+
+@pytest.mark.parametrize('env', [{'RPM_PY_VERSION': '1.2.3'}])
+def test_app_init_env_rpm_py_version(app_with_env):
+    assert app_with_env
+    assert app_with_env.rpm_py_version == '1.2.3'
+
+
+@pytest.mark.parametrize('env', [{'VERBOSE': 'true'}])
+def test_app_init_env_verbose(app_with_env):
+    assert app_with_env
+    assert app_with_env.verbose is True
 
 
 def test_verify_system_status_is_ok(app):
