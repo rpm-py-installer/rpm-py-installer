@@ -22,7 +22,6 @@ RUN dnf -y install \
   which \
   ShellCheck \
   && dnf clean all
-
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade pip setuptools
 RUN python3 -m pip install tox
