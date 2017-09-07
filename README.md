@@ -37,7 +37,7 @@ rpm-python       4.13.0.1
 setuptools       28.8.0
 ```
 
-If your Python environment has `wheel`, use `--no-cache-dir` option.
+See Users Guide FAQ Q1 about a case of required `--no-cache-dir`.
 
 ### Install the Python binding module as a required dependency for your pacakge
 
@@ -48,7 +48,7 @@ Then run `pip install`.
 $ pip install --no-cache-dir your_package
 ```
 
-If your Python environment has `wheel`, use `--no-cache-dir` option.
+See Users Guide FAQ Q1 about a case of required `--no-cache-dir`.
 
 ### Direct install
 
