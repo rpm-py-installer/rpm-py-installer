@@ -2,18 +2,24 @@ language: generic
 sudo: required
 services: docker
 env:
-  - CONTAINER_IMAGE=fedora:26 TOXENV='lint,py36,py35,py27'
+  - CONTAINER_IMAGE=fedora:26 TOXENV=lint,py36,py35,py27
   - CONTAINER_IMAGE=fedora:25 TOXENV=py36
   - CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26 TOXENV=intg
-before_install:
+  - CONTAINER_IMAGE=centos:7 TOXENV=py34,py27
+install:
   - |
-    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" .travis/Dockerfile
-install: true
+    DOCKER_FILE=.travis/Dockerfile
+    if [[ "${CONTAINER_IMAGE}" =~ centos ]]; then
+        DOCKER_FILE=.travis/Dockerfile.centos
+    fi
+    export DOCKER_FILE
+  - |
+    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" "${DOCKER_FILE}"
 script:
   - |
     docker build \
         -t rpm-py-installer \
-        -f .travis/Dockerfile \
+        -f "${DOCKER_FILE}" \
         .
   - |
     docker run \
