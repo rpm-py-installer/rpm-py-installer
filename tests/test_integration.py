@@ -35,21 +35,32 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
     assert not is_installed
 
 
-@pytest.mark.integration
+# @pytest.mark.integration
 def test_install_and_uninstall_are_ok_on_non_sys_python(install_script_path):
     python_path = sys.executable
-    exit_status = _run_install_script(python_path, install_script_path)
+    exit_status = _run_install_script(python_path, install_script_path,
+                                      VERBOSE='false')
     assert exit_status == 0
 
     is_installed = _is_rpm_py_installed(python_path)
     assert is_installed
 
+    assert _run_rpm_py(python_path)
+
     was_uninstalled = _uninstall_rpm_py(python_path)
     assert was_uninstalled
 
 
-def _run_install_script(python_path, install_script_path):
-    cmd = 'VERBOSE=true {0} {1}'.format(python_path, install_script_path)
+def _run_install_script(python_path, install_script_path, **env):
+    def append_equal(tup):
+        return '{0}={1}'.format(tup[0], tup[1])
+
+    env_str = ''
+    if env:
+        env_str = ' '.join(map(append_equal, env.items()))
+        env_str += ' '
+
+    cmd = '{0}{1} {2}'.format(env_str, python_path, install_script_path)
     print('CMD: {0}'.format(cmd))
     exit_status = os.system(cmd)
     return exit_status
@@ -70,3 +81,14 @@ def _uninstall_rpm_py(python_path):
             was_uninstalled = True
             break
     return was_uninstalled
+
+
+def _run_rpm_py(python_path):
+    script = '''
+import rpm
+rpm.spec('tests/fixtures/hello.spec')
+print(rpm.expandMacro('%name'))
+'''
+    cmd = '{0} -c "{1}"'.format(python_path, script)
+    exit_status = os.system(cmd)
+    return (exit_status == 0)
