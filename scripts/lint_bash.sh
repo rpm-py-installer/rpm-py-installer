@@ -14,7 +14,8 @@ if ! which shellcheck > /dev/null; then
     exit 1
 fi
 
-FILES="$(find "${ROOT_DIR}/scripts" "${ROOT_DIR}/tests" -name "*.sh")"
+FILES="$(find "${ROOT_DIR}/.travis" "${ROOT_DIR}/scripts" "${ROOT_DIR}/tests" \
+    -name "*.sh")"
 STATUS=0
 
 for FILE in ${FILES}; do
