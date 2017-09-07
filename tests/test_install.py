@@ -25,6 +25,7 @@ def test_cmd_sh_e_is_ok():
 def test_cmd_sh_e_out_is_ok():
     stdout = Cmd.sh_e_out('pwd')
     assert stdout
+    assert re.match('^.*\n$', stdout)
 
 
 def test_cmd_cd_is_ok():
