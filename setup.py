@@ -85,7 +85,7 @@ setuptools.setup(
         'Topic :: System :: Installation/Setup',
     ],
     scripts=[
-        'install',
+        'install.py',
     ],
     cmdclass={
       'install': InstallCommand,
