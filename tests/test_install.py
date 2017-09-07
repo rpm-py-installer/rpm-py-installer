@@ -18,15 +18,12 @@ def app():
 
 
 @pytest.fixture
-def app_with_env(env):
+def app_with_env(env, monkeypatch):
     if not isinstance(env, dict):
         raise ValueError('env: Invalid type: {0}'.format(type(env)))
-    prev_env = os.environ.copy()
-    try:
-        os.environ.update(env)
-        yield Application()
-    finally:
-        os.environ = prev_env
+    for key in env:
+        monkeypatch.setenv(key, env[key])
+    return Application()
 
 
 def test_cmd_sh_e_is_ok():
