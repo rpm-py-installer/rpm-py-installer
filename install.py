@@ -65,12 +65,12 @@ class Application(object):
 
         # Installed RPM Python module's version.
         # Default: Same version with rpm.
-        rpm_version = None
-        if 'RPM_VERSION' in os.environ:
-            rpm_version = os.environ.get('RPM_VERSION')
+        rpm_py_version = None
+        if 'RPM_PY_VERSION' in os.environ:
+            rpm_py_version = os.environ.get('RPM_PY_VERSION')
         else:
             stdout = Cmd.sh_e_out('{0} --version'.format(rpm_path))
-            rpm_version = stdout.split()[2]
+            rpm_py_version = stdout.split()[2]
 
         # Command options
         setup_py_opts = '-q'
@@ -81,7 +81,7 @@ class Application(object):
 
         self.python_path = python_path
         self.rpm_path = rpm_path
-        self.rpm_version = rpm_version
+        self.rpm_py_version = rpm_py_version
         self.setup_py_opts = setup_py_opts
         self.curl_opts = curl_opts
         self.is_work_dir_removed = False
@@ -126,13 +126,13 @@ class Application(object):
     @property
     def rpm_archive_top_dir(self):
         top_dir = self.RPM_ARCHIVE_TOP_DIR_FORMAT.format(
-            version=self.rpm_version
+            version=self.rpm_py_version
         )
         return top_dir
 
     def download_and_expand_rpm_py(self):
         archive_url = self.RPM_ARCHIVE_URL_FORMAT.format(
-            version=self.rpm_version
+            version=self.rpm_py_version
         )
         Log.info("Downloading archive '{0}' in the working directory.".format(
                  archive_url))
@@ -144,7 +144,7 @@ class Application(object):
     def make_setup_py(self):
         replaced_word_dict = {
             '@PACKAGE_NAME@': 'rpm',
-            '@VERSION@': self.rpm_version,
+            '@VERSION@': self.rpm_py_version,
             '@PACKAGE_BUGREPORT@': 'rpm-maint@lists.rpm.org',
         }
 

@@ -16,7 +16,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 | NAME | Description | Default |
 | ---- | ----------- | ------- |
 | RPM | Path to rpm | rpm |
-| RPM_VERSION | Installed python module's version | Same version with rpm |
+| RPM_PY_VERSION | Installed python module's version | Same version with rpm |
 | VERBOSE | Verbose mode. true/false | false |
 
 
@@ -67,7 +67,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 - A. Yes. Possible. But it may be failed to install. Set version number seeing [RPM release page](https://github.com/rpm-software-management/rpm/releases).
 
   ```
-  $ RPM_VERSION=4.13.0 python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+  $ RPM_PY_VERSION=4.13.0 python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
   ```
 
 ## Tutorial
