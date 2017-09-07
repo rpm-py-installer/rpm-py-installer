@@ -20,10 +20,10 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 | VERBOSE | Verbose mode. true/false | false |
 
 
-## FAQ & Note
+## FAQ
 
-- Q. I ran `pip install rpm-py-installer` or ran `rpm-py-installer` as a required install dependency in `setup.py`. But the Python binding is not installed.
-- A. If `wheel` package is installed, and the cache for `rpm-py-installer` is used, the installing process is skipped. In this case, run `pip install` with `--no-cache-dir` option.
+- Q1. I ran `pip install rpm-py-installer` or ran `rpm-py-installer` as a required install dependency in `setup.py`. But the Python binding is not installed.
+- A1. This issue is happened if `wheel` package is installed in your Python environment, and the install is after 2nd time, when the cache is used for `rpm-py-installer`. The installing process for the Python binding module is skipped. In this case, run `pip install` with `--no-cache-dir` option.
 
   ```
   $ pip install --no-cache-dir rpm-py-installer
@@ -37,8 +37,8 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   $ pip install rpm-py-installer
   ```
 
-- Q. I got an install error.
-- A. Could you run below command and check outputted log?
+- Q2. I got an install error.
+- A2. Could you run below command and check outputted log?
 
   ```
   $ VERBOSE=true pip install --no-cache-dir -vvv rpm-py-installer
@@ -50,21 +50,21 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   $ VERBOSE=true python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
   ```
 
-- Q. What is the dependency RPM packages for `rpm-py-installer`?
-- A. Following packages are required on Fedora.
+- Q3. What is the dependency RPM packages for `rpm-py-installer`?
+- A3. Following packages are required on Fedora.
   - rpm-libs
   - rpm-devel
 
   See also installed packages in [Dockerfile for testing](../.travis/Dockerfile).
 
 
-- Q. Does this installer install the Python binding module on system Python (`/usr/bin/python*`)?
-- A. No. The installer skips installing it on system Python.
+- Q4. Does this installer install the Python binding module on system Python (`/usr/bin/python*`)?
+- A4. No. The installer skips installing it on system Python.
   It is recommended that you would install it manually from the RPM package(`python{,2,3}-rpm`).
 
 
-- Q. Is it possible to install the Python binding module's specifying the version.
-- A. Yes. Possible. But it may be failed to install. Set version number seeing [RPM release page](https://github.com/rpm-software-management/rpm/releases).
+- Q5. Is it possible to install the Python binding module's specifying the version.
+- A5. Yes. Possible. But it may be failed to install. Set version number seeing [RPM release page](https://github.com/rpm-software-management/rpm/releases).
 
   ```
   $ RPM_PY_VERSION=4.13.0 python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
