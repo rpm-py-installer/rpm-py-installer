@@ -9,6 +9,7 @@ import sys
 import pytest
 
 
+# Need root authority
 @pytest.mark.integration
 @pytest.mark.parametrize('python_path', (
     '/usr/bin/python3', '/usr/bin/python')
@@ -35,6 +36,8 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
     assert not is_installed
 
 
+# Only this integration test is run as a basic test.
+# Because it works on user's environment. And not so costy.
 # @pytest.mark.integration
 def test_install_and_uninstall_are_ok_on_non_sys_python(install_script_path):
     python_path = sys.executable
