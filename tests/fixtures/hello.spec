@@ -4,7 +4,7 @@ Release: 1%{?dist}
 Summary: Hello, summary
 
 License: Public Domain
-Source0: howdy
+Source0: hello_source
 
 %description
 Hello, description.
