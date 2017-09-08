@@ -13,11 +13,12 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 
 ## Environment variables
 
-| NAME | Description | Default |
-| ---- | ----------- | ------- |
-| RPM | Path to rpm | rpm |
-| RPM_PY_VERSION | Installed python module's version | Same version with rpm |
-| VERBOSE | Verbose mode. true/false | false |
+| NAME | Description | Value | Default |
+| ---- | ----------- | ----- | ------- |
+| RPM | Path to rpm | /path/to/rpm | rpm |
+| RPM_PY_VERSION | Installed python module's version | N.N.N.N |  Same version with rpm |
+| VERBOSE | Verbose mode? | true/false | false |
+| WORK_DIR_REMOVED | Remove work directory? Set "false" to see used archive. | true/false | true |
 
 
 ## FAQ

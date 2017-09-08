@@ -56,7 +56,7 @@ def test_app_init(app):
     assert re.match('^[\d.]+$', app.rpm_py_version)
     assert app.setup_py_opts == '-q'
     assert app.curl_opts == '--silent'
-    assert app.is_work_dir_removed is False
+    assert app.is_work_dir_removed is True
 
 
 @pytest.mark.parametrize('env', [{'RPM': 'pwd'}])
@@ -75,6 +75,16 @@ def test_app_init_env_rpm_py_version(app_with_env):
 def test_app_init_env_verbose(app_with_env):
     assert app_with_env
     assert app_with_env.verbose is True
+
+
+@pytest.mark.parametrize('env', [
+    {'WORK_DIR_REMOVED': 'true'},
+    {'WORK_DIR_REMOVED': 'false'},
+])
+def test_app_init_env_work_dir_removed(app_with_env, env):
+    assert app_with_env
+    value = True if env['WORK_DIR_REMOVED'] == 'true' else False
+    assert app_with_env.is_work_dir_removed is value
 
 
 def test_verify_system_status_is_ok(app):
