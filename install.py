@@ -49,6 +49,8 @@ class Application(object):
         if self.is_work_dir_removed:
             shutil.rmtree(work_dir)
             Log.info("Removed working directory '{0}'".format(work_dir))
+        else:
+            Log.info("Saved working directory '{0}'".format(work_dir))
 
     def load_options_from_env(self):
         verbose = True if os.environ.get('VERBOSE') == 'true' else False
@@ -79,12 +81,19 @@ class Application(object):
             setup_py_opts = '-v'
             curl_opts = ''
 
+        is_work_dir_removed = True
+        if 'WORK_DIR_REMOVED' in os.environ:
+            if os.environ.get('WORK_DIR_REMOVED') == 'true':
+                is_work_dir_removed = True
+            else:
+                is_work_dir_removed = False
+
         self.python_path = python_path
         self.rpm_path = rpm_path
         self.rpm_py_version = rpm_py_version
         self.setup_py_opts = setup_py_opts
         self.curl_opts = curl_opts
-        self.is_work_dir_removed = False
+        self.is_work_dir_removed = is_work_dir_removed
 
     def verify_system_status(self):
         if not sys.platform.startswith('linux'):
