@@ -123,7 +123,7 @@ def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
     assert expected_message == str(ei.value)
 
 
-@mock.patch.object(Log, 'verbose', new=True)
+@mock.patch.object(Log, 'verbose', new=False)
 def test_run(app):
     app.is_work_dir_removed = True
     app.run()
