@@ -2,7 +2,7 @@ language: generic
 sudo: required
 services: docker
 env:
-  - CONTAINER_IMAGE=fedora:26 TOXENV=lint,py36,py35,py27
+  - CONTAINER_IMAGE=fedora:26 TOXENV=lint-py3,lint-py2,py36,py35,py27
   - CONTAINER_IMAGE=fedora:25 TOXENV=py36
   - CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26 TOXENV=intg
   - CONTAINER_IMAGE=centos:7 TOXENV=py34,py27
