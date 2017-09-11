@@ -23,7 +23,7 @@ class Application(object):
     def run(self):
         try:
             self.verify_system_status()
-        except InstallSkipError as ise:
+        except InstallSkipError:
             Log.info('Install skipped.')
             return
 
@@ -255,7 +255,7 @@ else:
         try:
             Cmd.sh_e('{0} --query {1} --quiet'.format(self.rpm_path,
                                                       package_name))
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             installed = False
         return installed
 
