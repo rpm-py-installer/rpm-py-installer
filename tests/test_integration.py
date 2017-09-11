@@ -42,7 +42,8 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
 def test_install_and_uninstall_are_ok_on_non_sys_python(install_script_path):
     python_path = sys.executable
     exit_status = _run_install_script(python_path, install_script_path,
-                                      VERBOSE='false')
+                                      VERBOSE='false',
+                                      WORK_DIR_REMOVED='true')
     assert exit_status == 0
 
     is_installed = _is_rpm_py_installed(python_path)

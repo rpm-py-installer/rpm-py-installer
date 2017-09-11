@@ -74,6 +74,15 @@ class Application(object):
             stdout = Cmd.sh_e_out('{0} --version'.format(rpm_path))
             rpm_py_version = stdout.split()[2]
 
+        # Use optimized setup.py?
+        # Default: true
+        setup_py_optimized = True
+        if 'SETUP_PY_OPTM' in os.environ:
+            if os.environ.get('SETUP_PY_OPTM') == 'true':
+                setup_py_optimized = True
+            else:
+                setup_py_optimized = False
+
         # Command options
         setup_py_opts = '-q'
         curl_opts = '--silent'
@@ -91,6 +100,7 @@ class Application(object):
         self.python_path = python_path
         self.rpm_path = rpm_path
         self.rpm_py_version = rpm_py_version
+        self.setup_py_optimized = setup_py_optimized
         self.setup_py_opts = setup_py_opts
         self.curl_opts = curl_opts
         self.is_work_dir_removed = is_work_dir_removed
@@ -156,13 +166,40 @@ class Application(object):
             '@VERSION@': self.rpm_py_version,
             '@PACKAGE_BUGREPORT@': 'rpm-maint@lists.rpm.org',
         }
+        patches = [
+            # Use setuptools to prevent deprecation message when uninstalling.
+            # https://github.com/rpm-software-management/rpm/pull/323
+            {
+                'src': '^from distutils.core import setup, Extension *\n$',
+                'dest': '''
+import sys
+if sys.version_info >= (3, 0):
+    try:
+        from setuptools import setup, Extension
+    except ImportError:
+        from distutils.core import setup, Extension
+else:
+    from distutils.core import setup, Extension
+'''
+            },
+        ]
 
         with open('setup.py.in') as f_in:
             with open('setup.py', 'w') as f_out:
                 for line in f_in:
                     for key in replaced_word_dict:
                         line = line.replace(key, replaced_word_dict[key])
+
+                    if self.setup_py_optimized:
+                        for patch in patches:
+                            if re.match(patch['src'], line):
+                                line = patch['dest']
+                                patch['matched'] = True
+
                     f_out.write(line)
+        for patch in patches:
+            if 'matched' not in patch or not patch['matched']:
+                Log.warn('Patch not applied {0}'.format(patch['src']))
 
     def install_rpm_py(self):
         self.make_setup_py()
@@ -317,6 +354,10 @@ class Log(object):
     @classmethod
     def error(cls, message):
         print('[ERROR] {0}'.format(message))
+
+    @classmethod
+    def warn(cls, message):
+        print('[WARN] {0}'.format(message))
 
     @classmethod
     def info(cls, message):

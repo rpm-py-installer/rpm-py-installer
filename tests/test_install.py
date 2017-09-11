@@ -54,6 +54,7 @@ def test_app_init(app):
     assert 'rpm' in app.rpm_path
     assert app.rpm_py_version
     assert re.match('^[\d.]+$', app.rpm_py_version)
+    assert app.setup_py_optimized is True
     assert app.setup_py_opts == '-q'
     assert app.curl_opts == '--silent'
     assert app.is_work_dir_removed is True
@@ -69,6 +70,16 @@ def test_app_init_env_rpm(app_with_env):
 def test_app_init_env_rpm_py_version(app_with_env):
     assert app_with_env
     assert app_with_env.rpm_py_version == '1.2.3'
+
+
+@pytest.mark.parametrize('env', [
+    {'SETUP_PY_OPTM': 'true'},
+    {'SETUP_PY_OPTM': 'false'},
+])
+def test_app_init_env_setup_py_optm(app_with_env, env):
+    assert app_with_env
+    value = True if env['SETUP_PY_OPTM'] == 'true' else False
+    assert app_with_env.setup_py_optimized is value
 
 
 @pytest.mark.parametrize('env', [{'VERBOSE': 'true'}])
