@@ -22,19 +22,7 @@ class InstallCommand(install):
     """A class for "pip install".
 
     Handled by "pip install rpm-py-installer",
-    when the package should be published as a source distribution (sdist).
-
-    If pip's cache for rpm-py-installer is available, it is not handled.
-    In the case, install as follows.
-
-    $ rm -rf ~/.cache/pip
-    $ pip install rpm-py-installer
-
-    or
-
-    $ pip install --no-cache-dir rpm-py-installer
-
-    See https://pip.pypa.io/en/stable/reference/pip_install/#caching .
+    when the package is published to PyPI as a source distribution (sdist).
     """
     def run(self):
         install.run(self)
