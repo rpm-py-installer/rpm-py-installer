@@ -17,7 +17,6 @@ RUN yum -y install \
   python-devel \
   /usr/bin/python3.4 \
   /usr/bin/python2.7 \
-  which \
   && yum clean all
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade pip setuptools
