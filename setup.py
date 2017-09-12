@@ -1,5 +1,6 @@
 import os
 import sys
+from distutils.cmd import Command
 
 import setuptools
 from setuptools.command.develop import develop
@@ -60,6 +61,25 @@ class EggInfoCommand(egg_info):
         install_rpm_py()
 
 
+class BdistWheelCommand(Command):
+    """A class for "pip bdist_wheel"
+
+    Raise exception to always disable wheel cache.
+
+    See https://github.com/pypa/pip/issues/4720
+    """
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        raise Exception('bdist_wheel is not supported')
+
+
 setuptools.setup(
     name='rpm-py-installer',
     version=VERSION,
@@ -92,5 +112,6 @@ setuptools.setup(
       'install': InstallCommand,
       'develop': DevelopCommand,
       'egg_info': EggInfoCommand,
+      'bdist_wheel': BdistWheelCommand,
     },
 )
