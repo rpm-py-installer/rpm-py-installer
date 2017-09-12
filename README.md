@@ -15,10 +15,10 @@ $ rpm --version
 RPM version 4.13.0.1
 
 $ which python
-/path/to/your_python
+/path/to/python
 
 $ which pip
-/path/to/pip_on_your_python
+/path/to/pip_on_the_python
 
 $ pip list
 Package    Version
@@ -26,7 +26,7 @@ Package    Version
 pip        9.0.1
 setuptools 28.8.0
 
-$ pip install --no-cache-dir rpm-py-installer
+$ pip install rpm-py-installer
 
 $ pip list
 Package          Version-
@@ -37,18 +37,14 @@ rpm-python       4.13.0.1
 setuptools       28.8.0
 ```
 
-See Users Guide FAQ Q1 about a case of required `--no-cache-dir`.
-
 ### Install the Python binding module as a required dependency for your pacakge
 
 Add `rpm-py-installer` to your package's `setup.py` `install_requires`.
 Then run `pip install`.
 
 ```
-$ pip install --no-cache-dir your_package
+$ pip install your_package
 ```
-
-See Users Guide FAQ Q1 about a case of required `--no-cache-dir`.
 
 ### Direct install
 
