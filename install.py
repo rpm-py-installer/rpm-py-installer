@@ -255,7 +255,7 @@ else:
         try:
             Cmd.sh_e('{0} --query {1} --quiet'.format(self.rpm_path,
                                                       package_name))
-        except subprocess.CalledProcessError:
+        except InstallError:
             installed = False
         return installed
 
