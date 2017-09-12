@@ -57,6 +57,9 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   $ RPM_PY_VERSION=4.13.0 python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
   ```
 
+- Q5. I got message "Failed building wheel for rpm-py-installer" when installing `pip install rpm-py-installer`. Is it problem?
+- A5. No, it isn't. `rpm-py-installer` makes own `python setup.py bdist_wheel` raise an error, to always disable `wheel` cache to run own install process.
+
 ## Tutorial
 
 For example, in case of that you want to install the Python binding module on virtualenv environment.
