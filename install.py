@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
+from distutils.spawn import find_executable
 
 
 class Application(object):
@@ -342,8 +343,7 @@ class Cmd(object):
         if sys.version_info >= (3, 3):
             abs_path_cmd = shutil.which(cmd)
         else:
-            abs_path_cmd = cls.sh_e_out('which {0}'.format(cmd))
-            abs_path_cmd = abs_path_cmd.rstrip()
+            abs_path_cmd = find_executable(cmd)
         return abs_path_cmd
 
 

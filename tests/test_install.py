@@ -51,6 +51,12 @@ def test_cmd_cd_is_ok():
         assert cwd == tmp_dir
 
 
+@pytest.mark.parametrize('cmd', ['rpm', 'curl'])
+def test_cmd_which_is_ok(cmd):
+    abs_path = Cmd.which(cmd)
+    assert re.match('^/.*{0}$'.format(cmd), abs_path)
+
+
 def test_app_init(app):
     assert app
     assert app.verbose is False

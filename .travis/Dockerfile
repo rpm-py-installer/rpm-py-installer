@@ -12,10 +12,17 @@ RUN mv RPM-GPG-KEY-fedora-28-primary /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-28-x86_
 RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-28-x86_64
 
 RUN dnf -y update
-# rpm-devel: rpm.pc used for "python setup.py build".
-# which: Used in install.py, scripts/lint_bash.sh
-# ShellCheck: Used in scripts/lint_bash.sh
-# python2-devel is not available on f25.
+# RPM packages for installing.
+# - rpm-libs
+# - rpm-devel: rpm.pc used for "python setup.py build".
+# - redhat-rpm-config
+# - gcc
+# - python{3,}-devel
+#   python2-devel is not available on f25.
+#
+# RPM packages for testing.
+# - which: Used in scripts/lint_bash.sh
+# - ShellCheck: Used in scripts/lint_bash.sh
 RUN dnf -y install \
   rpm-libs \
   rpm-devel \
