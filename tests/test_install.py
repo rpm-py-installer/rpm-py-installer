@@ -31,6 +31,12 @@ def test_cmd_sh_e_is_ok():
     assert not stdout
 
 
+def test_cmd_sh_e_is_failed():
+    with pytest.raises(InstallError):
+        Cmd.sh_e('ls abcde')
+    assert True
+
+
 def test_cmd_sh_e_out_is_ok():
     stdout = Cmd.sh_e_out('pwd')
     assert stdout
@@ -132,6 +138,17 @@ def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
         'Install it by "dnf install rpm-libs rpm-devel".\n'
     )
     assert expected_message == str(ei.value)
+
+
+def test_is_rpm_package_installed_returns_true(app):
+    with mock.patch.object(Cmd, 'sh_e'):
+        assert app.is_rpm_package_installed('dummy')
+
+
+def test_is_rpm_package_installed_returns_false(app):
+    with mock.patch.object(Cmd, 'sh_e') as mock_sh_e:
+        mock_sh_e.side_effect = InstallError('test.')
+        assert not app.is_rpm_package_installed('dummy')
 
 
 @mock.patch.object(Log, 'verbose', new=False)
