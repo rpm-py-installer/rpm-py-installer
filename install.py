@@ -14,9 +14,9 @@ from distutils.spawn import find_executable
 class Application(object):
     RPM_ARCHIVE_URL_FORMAT = (
         'https://github.com/rpm-software-management/rpm/archive'
-        '/rpm-{version}-release.tar.gz'
+        '/{tag_name}.tar.gz'
     )
-    RPM_ARCHIVE_TOP_DIR_FORMAT = 'rpm-rpm-{version}-release'
+    RPM_ARCHIVE_TOP_DIR_NAME_FORMAT = 'rpm-{tag_name}'
 
     def __init__(self):
         self.load_options_from_env()
@@ -32,9 +32,8 @@ class Application(object):
         Log.info("Created working directory '{0}'".format(work_dir))
 
         with Cmd.pushd(work_dir):
-            self.download_and_expand_rpm_py()
-
-            rpm_py_dir = os.path.join(self.rpm_archive_top_dir, 'python')
+            top_dir_name = self.download_and_expand_rpm_py()
+            rpm_py_dir = os.path.join(top_dir_name, 'python')
             Cmd.cd(rpm_py_dir)
 
             self.install_rpm_py()
@@ -140,22 +139,58 @@ class Application(object):
                 )
                 raise InstallError(message)
 
-    @property
-    def rpm_archive_top_dir(self):
-        top_dir = self.RPM_ARCHIVE_TOP_DIR_FORMAT.format(
-            version=self.rpm_py_version
+    def get_rpm_archive_top_dir_name(self, tag_name):
+        top_dir = self.RPM_ARCHIVE_TOP_DIR_NAME_FORMAT.format(
+            tag_name=tag_name
         )
         return top_dir
 
     def download_and_expand_rpm_py(self):
-        archive_url = self.RPM_ARCHIVE_URL_FORMAT.format(
-            version=self.rpm_py_version
-        )
-        Log.info("Downloading archive '{0}' in the working directory.".format(
-                 archive_url))
+        tag_names = self.predict_candidate_git_tag_names()
+        tar_gz_file_name = None
 
-        tar_gz_file_name = Cmd.curl_remote_name(archive_url)
+        downloaded = False
+        count = 1
+        tag_name_len = len(tag_names)
+        decided_tag_name = None
+        for tag_name in tag_names:
+            archive_url = self.RPM_ARCHIVE_URL_FORMAT.format(
+                                                      tag_name=tag_name)
+            Log.info("Downloading archive. '{0}'.".format(archive_url))
+            try:
+                tar_gz_file_name = Cmd.curl_remote_name(archive_url)
+            except ArchiveNotFoundError:
+                Log.info('Arcive not found. URL: {0}'.format(archive_url))
+                if count < tag_name_len:
+                    Log.info('Try to download next candidate URL.')
+            else:
+                downloaded = True
+                decided_tag_name = tag_name
+                break
+        if not downloaded:
+            # TODO: Try to get source by git clone.
+            raise InstallError('Failed to download archive.')
+
         Cmd.tar_xzf(tar_gz_file_name)
+        return self.get_rpm_archive_top_dir_name(decided_tag_name)
+
+    def predict_candidate_git_tag_names(self):
+        version = self.rpm_py_version
+        name_release = 'rpm-{0}-release'.format(version)
+        name_non_release = 'rpm-{0}'.format(version)
+        tag_names = None
+        # version string: N.N.N.N is for release.
+        if re.match(r'^[\d.]+$', version):
+            tag_names = [
+                name_release,
+                name_non_release,
+            ]
+        else:
+            tag_names = [
+                name_non_release,
+                name_release,
+            ]
+        return tag_names
 
     def make_setup_py(self):
         replaced_word_dict = {
@@ -265,6 +300,10 @@ class InstallSkipError(Exception):
     pass
 
 
+class ArchiveNotFoundError(Exception):
+    pass
+
+
 class Cmd(object):
     @classmethod
     def sh_e(cls, cmd, **kwargs):
@@ -361,8 +400,12 @@ class Cmd(object):
         try:
             response = urlopen(file_url)
         except HTTPError as e:
-            raise InstallError('Download failed: URL: {0}, reason: {1}'.format(
-                               file_url, e))
+            message = 'Download failed: URL: {0}, reason: {1}'.format(
+                      file_url, e)
+            if 'HTTP Error 404' in str(e):
+                raise ArchiveNotFoundError(message)
+            else:
+                raise InstallError(message)
 
         tar_gz_file_obj = io.BytesIO(response.read())
         with open(tar_gz_file_name, 'wb') as f_out:
