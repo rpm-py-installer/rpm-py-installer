@@ -9,7 +9,8 @@ from unittest import mock
 
 import pytest
 
-from install import Application, Cmd, InstallError, InstallSkipError, Log
+from install import (Application, ArchiveNotFoundError, Cmd, InstallError,
+                     InstallSkipError, Log)
 
 
 @pytest.fixture
@@ -65,7 +66,7 @@ def test_cmd_curl_is_ok(file_url):
 def test_cmd_curl_is_failed(file_url):
     not_existed_file_url = file_url + '.dummy'
     with pytest.helpers.work_dir():
-        with pytest.raises(InstallError) as ei:
+        with pytest.raises(ArchiveNotFoundError) as ei:
             Cmd.curl_remote_name(not_existed_file_url)
     assert re.match('^Download failed: .* HTTP Error 404: Not Found$',
                     str(ei.value))
@@ -93,7 +94,9 @@ def test_app_init(app):
     assert app.rpm_path
     assert 'rpm' in app.rpm_path
     assert app.rpm_py_version
-    assert re.match('^[\d.]+$', app.rpm_py_version)
+    # Actual string is N.N.N.N or N.N.N.N-(rc|beta)N
+    # Check verstion string roughly right now.
+    assert re.match('^[\d.]+(-[a-z\d]+)?$', app.rpm_py_version)
     assert app.setup_py_optimized is True
     assert app.setup_py_opts == '-q'
     assert app.is_work_dir_removed is True
@@ -184,8 +187,54 @@ def test_is_rpm_package_installed_returns_false(app):
         assert not app.is_rpm_package_installed('dummy')
 
 
+@pytest.mark.parametrize('value_dict', [
+    {
+        'version': '4.13.0',
+        'tag_names': [
+            'rpm-4.13.0-release',
+            'rpm-4.13.0',
+        ],
+    },
+    {
+        'version': '4.14.0-rc1',
+        'tag_names': [
+            'rpm-4.14.0-rc1',
+            'rpm-4.14.0-rc1-release',
+        ],
+    },
+
+])
+def test_predict_candidate_git_tag_names_is_ok(app, value_dict):
+    app.rpm_py_version = value_dict['version']
+    tag_names = app.predict_candidate_git_tag_names()
+    assert tag_names == value_dict['tag_names']
+
+
 @mock.patch.object(Log, 'verbose', new=False)
-def test_run(app):
+def test_run_is_ok(app):
     app.is_work_dir_removed = True
     app.run()
+    assert True
+
+
+@mock.patch.object(Log, 'verbose', new=False)
+@pytest.mark.parametrize('rpm_py_version',
+                         ['4.13.0', '4.14.0-rc1'])
+def test_run_is_ok_by_rpm_py_version(app, rpm_py_version):
+    app.is_work_dir_removed = True
+    app.rpm_py_version = rpm_py_version
+    tag_names = app.predict_candidate_git_tag_names()
+    top_dir_name = app.get_rpm_archive_top_dir_name(tag_names[0])
+
+    def mock_download_and_expand_rpm_py(*args, **kwargs):
+        rpm_py_dir = os.path.join(top_dir_name, 'python')
+        os.makedirs(rpm_py_dir)
+        return top_dir_name
+
+    app.download_and_expand_rpm_py = mock_download_and_expand_rpm_py
+    app.install_rpm_py = mock.MagicMock(return_value=True)
+    app.is_python_binding_installed = mock.MagicMock(return_value=True)
+
+    with pytest.helpers.work_dir():
+        app.run()
     assert True
