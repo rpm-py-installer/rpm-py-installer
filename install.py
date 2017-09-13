@@ -1,9 +1,11 @@
+import io
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from contextlib import contextmanager
 from distutils.spawn import find_executable
@@ -84,10 +86,8 @@ class Application(object):
 
         # Command options
         setup_py_opts = '-q'
-        curl_opts = '--silent'
         if verbose:
             setup_py_opts = '-v'
-            curl_opts = ''
 
         is_work_dir_removed = True
         if 'WORK_DIR_REMOVED' in os.environ:
@@ -101,7 +101,6 @@ class Application(object):
         self.rpm_py_version = rpm_py_version
         self.setup_py_optimized = setup_py_optimized
         self.setup_py_opts = setup_py_opts
-        self.curl_opts = curl_opts
         self.is_work_dir_removed = is_work_dir_removed
 
     def verify_system_status(self):
@@ -154,10 +153,9 @@ class Application(object):
         )
         Log.info("Downloading archive '{0}' in the working directory.".format(
                  archive_url))
-        if not Cmd.which('curl'):
-            raise InstallError('curl not found. Install curl.')
-        Cmd.sh_e('curl --location {0} "{1}" | tar xz'.format(
-                 self.curl_opts, archive_url))
+
+        tar_gz_file_name = Cmd.curl_remote_name(archive_url)
+        Cmd.tar_xzf(tar_gz_file_name)
 
     def make_setup_py(self):
         replaced_word_dict = {
@@ -343,6 +341,49 @@ class Cmd(object):
         else:
             abs_path_cmd = find_executable(cmd)
         return abs_path_cmd
+
+    @classmethod
+    def curl_remote_name(cls, file_url):
+        """A command that behaves like "curl --remote-name".
+
+        Raise HTTPError if the file_url not found.
+        """
+        tar_gz_file_name = file_url.split('/')[-1]
+
+        if sys.version_info >= (3, 2):
+            from urllib.request import urlopen
+            from urllib.error import HTTPError
+        else:
+            from urllib2 import urlopen
+            from urllib2 import HTTPError
+
+        response = None
+        try:
+            response = urlopen(file_url)
+        except HTTPError as e:
+            raise InstallError('Download failed: URL: {0}, reason: {1}'.format(
+                               file_url, e))
+
+        tar_gz_file_obj = io.BytesIO(response.read())
+        with open(tar_gz_file_name, 'wb') as f_out:
+            f_out.write(tar_gz_file_obj.read())
+        return tar_gz_file_name
+
+    @classmethod
+    def tar_xzf(cls, tar_gz_file_path):
+        """A command like "tar xzf tar_gz_file_path".
+
+        Raise tarfile.ReadError if the file is broken.
+        """
+        try:
+            with tarfile.open(tar_gz_file_path) as tar:
+                tar.extractall()
+        except tarfile.ReadError as e:
+            message_format = (
+                'Extract failed: '
+                'tar_gz_file_path: {0}, reason: {1}'
+            )
+            raise InstallError(message_format.format(tar_gz_file_path, e))
 
 
 class Log(object):

@@ -1,7 +1,9 @@
 """Common functions and a list of pytest.fixture here."""
 
 import os
+import shutil
 import sys
+import tempfile
 from contextlib import contextmanager
 
 import pytest
@@ -17,6 +19,25 @@ def install_script_path():
     return install_path
 
 
+@pytest.fixture
+def file_url():
+    url = (
+        'https://raw.githubusercontent.com/junaruga/rpm-py-installer'
+        '/master/README.md'
+    )
+    return url
+
+
+@pytest.fixture
+def tar_gz_file_path():
+    return os.path.abspath('tests/fixtures/valid.tar.gz')
+
+
+@pytest.fixture
+def invalid_tar_gz_file_path():
+    return os.path.abspath('tests/fixtures/invalid.tar.gz')
+
+
 @pytest.helpers.register
 @contextmanager
 def reset_dir():
@@ -25,6 +46,18 @@ def reset_dir():
         yield
     finally:
         os.chdir(current_dir)
+
+
+@pytest.helpers.register
+@contextmanager
+def work_dir():
+    with reset_dir():
+        tmp_dir = tempfile.mkdtemp(suffix='-rpm-py-installer-test')
+        os.chdir(tmp_dir)
+        try:
+            yield
+        finally:
+            shutil.rmtree(tmp_dir)
 
 
 @pytest.helpers.register
