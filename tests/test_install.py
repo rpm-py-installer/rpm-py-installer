@@ -51,10 +51,38 @@ def test_cmd_cd_is_ok():
         assert cwd == tmp_dir
 
 
-@pytest.mark.parametrize('cmd', ['rpm', 'curl'])
+@pytest.mark.parametrize('cmd', ['rpm'])
 def test_cmd_which_is_ok(cmd):
     abs_path = Cmd.which(cmd)
     assert re.match('^/.*{0}$'.format(cmd), abs_path)
+
+
+def test_cmd_curl_is_ok(file_url):
+    with pytest.helpers.work_dir():
+        assert Cmd.curl_remote_name(file_url)
+
+
+def test_cmd_curl_is_failed(file_url):
+    not_existed_file_url = file_url + '.dummy'
+    with pytest.helpers.work_dir():
+        with pytest.raises(InstallError) as ei:
+            Cmd.curl_remote_name(not_existed_file_url)
+    assert re.match('^Download failed: .* HTTP Error 404: Not Found$',
+                    str(ei.value))
+
+
+def test_cmd_tar_xzf_is_ok(tar_gz_file_path):
+    with pytest.helpers.work_dir():
+        Cmd.tar_xzf(tar_gz_file_path)
+        assert os.path.isdir('a')
+
+
+def test_cmd_tar_xzf_is_failed(invalid_tar_gz_file_path):
+    with pytest.helpers.work_dir():
+        with pytest.raises(InstallError) as ei:
+            Cmd.tar_xzf(invalid_tar_gz_file_path)
+    assert re.match('^Extract failed: .* could not be opened successfully$',
+                    str(ei.value))
 
 
 def test_app_init(app):
@@ -68,7 +96,6 @@ def test_app_init(app):
     assert re.match('^[\d.]+$', app.rpm_py_version)
     assert app.setup_py_optimized is True
     assert app.setup_py_opts == '-q'
-    assert app.curl_opts == '--silent'
     assert app.is_work_dir_removed is True
 
 
