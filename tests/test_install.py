@@ -52,7 +52,7 @@ def test_cmd_cd_is_ok():
         assert cwd == tmp_dir
 
 
-@pytest.mark.parametrize('cmd', ['rpm'])
+@pytest.mark.parametrize('cmd', ['rpm', 'git'])
 def test_cmd_which_is_ok(cmd):
     abs_path = Cmd.which(cmd)
     assert re.match('^/.*{0}$'.format(cmd), abs_path)
@@ -97,6 +97,7 @@ def test_app_init(app):
     # Actual string is N.N.N.N or N.N.N.N-(rc|beta)N
     # Check verstion string roughly right now.
     assert re.match('^[\d.]+(-[a-z\d]+)?$', app.rpm_py_version)
+    assert app.git_branch is None
     assert app.setup_py_optimized is True
     assert app.setup_py_opts == '-q'
     assert app.is_work_dir_removed is True
@@ -112,6 +113,12 @@ def test_app_init_env_rpm(app_with_env):
 def test_app_init_env_rpm_py_version(app_with_env):
     assert app_with_env
     assert app_with_env.rpm_py_version == '1.2.3'
+
+
+@pytest.mark.parametrize('env', [{'GIT_BRANCH': 'master'}])
+def test_app_init_env_git_branch(app_with_env):
+    assert app_with_env
+    assert app_with_env.git_branch == 'master'
 
 
 @pytest.mark.parametrize('env', [
@@ -138,6 +145,12 @@ def test_app_init_env_work_dir_removed(app_with_env, env):
     assert app_with_env
     value = True if env['WORK_DIR_REMOVED'] == 'true' else False
     assert app_with_env.is_work_dir_removed is value
+
+
+def test_rpm_py_version_info_is_ok(app):
+    app.rpm_py_version = '4.14.0-rc1'
+    version_info = app.rpm_py_version_info
+    assert version_info == ('4', '14', '0', 'rc1')
 
 
 def test_verify_system_status_is_ok(app):
@@ -210,6 +223,100 @@ def test_predict_candidate_git_tag_names_is_ok(app, value_dict):
     assert tag_names == value_dict['tag_names']
 
 
+def test_download_and_expand_rpm_py_is_ok_from_archive_url(app):
+    app.git_branch = None
+    # app.rpm_py_version = '4.14.0-rc1'
+    target_top_dir_name = 'foo'
+    app.download_and_expand_from_archive_url = mock.MagicMock(
+        return_value=target_top_dir_name)
+    top_dir_name = app.download_and_expand_rpm_py()
+    assert app.download_and_expand_from_archive_url.called
+    assert top_dir_name == target_top_dir_name
+
+
+def test_download_and_expand_rpm_py_is_ok_by_git(app):
+    app.git_branch = 'foo'
+    target_top_dir_name = 'bar'
+    app.download_and_expand_by_git = mock.MagicMock(
+        return_value=target_top_dir_name)
+    top_dir_name = app.download_and_expand_rpm_py()
+    assert app.download_and_expand_by_git.called
+    assert top_dir_name == target_top_dir_name
+
+
+def test_download_and_expand_rpm_py_is_failed_on_archive_url_ok_on_git(app):
+    app.git_branch = None
+
+    def mock_predict_candidate_git_tag_names(*args, **kwargs):
+        return [
+            'rpm-1.2.3-dummy',
+            'rpm-4.5.6-dummy',
+        ]
+
+    app.predict_candidate_git_tag_names = mock_predict_candidate_git_tag_names
+    app.rpm_py_version = '4.13.0'
+
+    target_top_dir_name = 'bar'
+    app.download_and_expand_by_git = mock.MagicMock(
+        return_value=target_top_dir_name)
+
+    with pytest.helpers.work_dir():
+        top_dir_name = app.download_and_expand_rpm_py()
+        app.download_and_expand_by_git.called
+        assert top_dir_name == target_top_dir_name
+
+
+def test_download_and_expand_by_git_is_ok(app):
+    # Existed branch
+    app.git_branch = 'rpm-4.14.x'
+    with pytest.helpers.work_dir():
+        top_dir_name = app.download_and_expand_by_git()
+        assert top_dir_name == 'rpm'
+
+
+def test_download_and_expand_by_git_is_failed(app):
+    # Not existed branch
+    app.git_branch = 'rpm-4.14.x-dummy'
+    with pytest.helpers.work_dir():
+        with pytest.raises(InstallError):
+            app.download_and_expand_by_git()
+
+
+def test_download_and_expand_by_git_is_ok_with_predicted_branch(app):
+    app.git_branch = None
+    app.predict_git_branch = mock.MagicMock(
+        return_value='rpm-4.13.0.1')
+    with mock.patch.object(Cmd, 'sh_e') as mock_sh_e:
+        top_dir_name = app.download_and_expand_by_git()
+        mock_sh_e.called
+        assert top_dir_name == 'rpm'
+
+
+@pytest.mark.parametrize('value_dict', [
+    {
+        # Set version name with the major version and minior version
+        # mapping to the stable branch.
+        'version_info': ('4', '13', '0'),
+        'branch': 'rpm-4.13.x',
+    },
+    {
+        # Set version name not mapping to the stable branch.
+        # to get the source from master branch.
+        # It is likely to be used for development.
+        'version_info': ('5', '99', '0', 'dev'),
+        'branch': 'master',
+    },
+])
+@mock.patch.object(Log, 'verbose', new=False)
+def test_predict_git_branch(app, value_dict, monkeypatch):
+    app.git_branch = None
+    version_info = value_dict['version_info']
+    monkeypatch.setattr(type(app), 'rpm_py_version_info',
+                        mock.PropertyMock(return_value=version_info))
+    branch = app.predict_git_branch()
+    assert branch == value_dict['branch']
+
+
 @mock.patch.object(Log, 'verbose', new=False)
 def test_run_is_ok(app):
     app.is_work_dir_removed = True
@@ -217,9 +324,9 @@ def test_run_is_ok(app):
     assert True
 
 
-@mock.patch.object(Log, 'verbose', new=False)
 @pytest.mark.parametrize('rpm_py_version',
                          ['4.13.0', '4.14.0-rc1'])
+@mock.patch.object(Log, 'verbose', new=False)
 def test_run_is_ok_by_rpm_py_version(app, rpm_py_version):
     app.is_work_dir_removed = True
     app.rpm_py_version = rpm_py_version
