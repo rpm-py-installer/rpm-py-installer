@@ -12,9 +12,10 @@ from distutils.spawn import find_executable
 
 
 class Application(object):
+    RPM_GIT_REPO_BASE_URL = 'https://github.com/rpm-software-management/rpm'
+    RPM_GIT_REPO_URL = '{0}.git'.format(RPM_GIT_REPO_BASE_URL)
     RPM_ARCHIVE_URL_FORMAT = (
-        'https://github.com/rpm-software-management/rpm/archive'
-        '/{tag_name}.tar.gz'
+        RPM_GIT_REPO_BASE_URL + '/archive/{tag_name}.tar.gz'
     )
     RPM_ARCHIVE_TOP_DIR_NAME_FORMAT = 'rpm-{tag_name}'
 
@@ -74,6 +75,11 @@ class Application(object):
             stdout = Cmd.sh_e_out('{0} --version'.format(rpm_path))
             rpm_py_version = stdout.split()[2]
 
+        # Git branch name. Default: None
+        git_branch = None
+        if 'GIT_BRANCH' in os.environ:
+            git_branch = os.environ.get('GIT_BRANCH')
+
         # Use optimized setup.py?
         # Default: true
         setup_py_optimized = True
@@ -98,9 +104,16 @@ class Application(object):
         self.python_path = python_path
         self.rpm_path = rpm_path
         self.rpm_py_version = rpm_py_version
+        self.git_branch = git_branch
         self.setup_py_optimized = setup_py_optimized
         self.setup_py_opts = setup_py_opts
         self.is_work_dir_removed = is_work_dir_removed
+
+    @property
+    def rpm_py_version_info(self):
+        version_str = self.rpm_py_version
+        version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
+        return tuple(version_info_list)
 
     def verify_system_status(self):
         if not sys.platform.startswith('linux'):
@@ -146,33 +159,52 @@ class Application(object):
         return top_dir
 
     def download_and_expand_rpm_py(self):
+        top_dir_name = None
+        if self.git_branch:
+            # Download a source by git clone.
+            top_dir_name = self.download_and_expand_by_git()
+        else:
+            # Download a source from the arcihve URL.
+            # Downloading the compressed archive is better than "git clone",
+            # because it is faster.
+            # If download failed due to URL not found, try "git clone".
+            try:
+                top_dir_name = self.download_and_expand_from_archive_url()
+            except ArchiveNotFoundError:
+                Log.info('Try to download by git clone.')
+                top_dir_name = self.download_and_expand_by_git()
+        return top_dir_name
+
+    def download_and_expand_from_archive_url(self):
         tag_names = self.predict_candidate_git_tag_names()
         tar_gz_file_name = None
 
-        downloaded = False
-        count = 1
         tag_name_len = len(tag_names)
         decided_tag_name = None
-        for tag_name in tag_names:
+        for index, tag_name in enumerate(tag_names):
             archive_url = self.RPM_ARCHIVE_URL_FORMAT.format(
                                                       tag_name=tag_name)
             Log.info("Downloading archive. '{0}'.".format(archive_url))
             try:
                 tar_gz_file_name = Cmd.curl_remote_name(archive_url)
-            except ArchiveNotFoundError:
-                Log.info('Arcive not found. URL: {0}'.format(archive_url))
-                if count < tag_name_len:
+            except ArchiveNotFoundError as e:
+                Log.info('Archive not found. URL: {0}'.format(archive_url))
+                if index + 1 < tag_name_len:
                     Log.info('Try to download next candidate URL.')
+                else:
+                    raise e
             else:
-                downloaded = True
                 decided_tag_name = tag_name
                 break
-        if not downloaded:
-            # TODO: Try to get source by git clone.
-            raise InstallError('Failed to download archive.')
 
         Cmd.tar_xzf(tar_gz_file_name)
-        return self.get_rpm_archive_top_dir_name(decided_tag_name)
+
+        top_dir_name = self.get_rpm_archive_top_dir_name(decided_tag_name)
+        return top_dir_name
+
+    def download_and_expand_by_git(self):
+        self.do_git_clone()
+        return 'rpm'
 
     def predict_candidate_git_tag_names(self):
         version = self.rpm_py_version
@@ -191,6 +223,44 @@ class Application(object):
                 name_release,
             ]
         return tag_names
+
+    def do_git_clone(self):
+        if not Cmd.which('git'):
+            raise InstallError('git command not found. Install git.')
+
+        branch = None
+        if self.git_branch:
+            branch = self.git_branch
+        else:
+            branch = self.predict_git_branch()
+
+        git_clone_cmd = 'git clone -b {branch} --depth=1 {repo_url}'.format(
+            branch=branch,
+            repo_url=self.RPM_GIT_REPO_URL,
+        )
+        Log.info("Downloading source by git clone. 'branch: {0}'".format(
+                 branch))
+        Cmd.sh_e(git_clone_cmd)
+
+    def predict_git_branch(self):
+        git_branch = None
+
+        version_info = self.rpm_py_version_info
+        stable_branch = 'rpm-{major}.{minor}.x'.format(
+            major=version_info[0],
+            minor=version_info[1],
+        )
+        git_ls_remote_cmd = 'git ls-remote --heads {repo_url} {branch}'.format(
+            repo_url=self.RPM_GIT_REPO_URL,
+            branch=stable_branch,
+        )
+        stdout = Cmd.sh_e_out(git_ls_remote_cmd)
+        if stable_branch in stdout:
+            git_branch = stable_branch
+        else:
+            git_branch = 'master'
+
+        return git_branch
 
     def make_setup_py(self):
         replaced_word_dict = {

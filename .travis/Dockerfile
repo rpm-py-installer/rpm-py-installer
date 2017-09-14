@@ -19,6 +19,8 @@ RUN dnf -y update
 # - gcc
 # - python{3,}-devel
 #   python2-devel is not available on f25.
+# - git: Used to get the rpm-python by git commmand,
+#        if a target rpm archive URL is not found on the server.
 #
 # RPM packages for testing.
 # - which: Used in scripts/lint_bash.sh
@@ -33,6 +35,7 @@ RUN dnf -y install \
   /usr/bin/python3.6 \
   /usr/bin/python3.5 \
   /usr/bin/python2.7 \
+  /usr/bin/git \
   which \
   ShellCheck \
   && dnf clean all

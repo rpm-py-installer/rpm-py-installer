@@ -17,6 +17,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 | ---- | ----------- | ----- | ------- |
 | RPM | Path to rpm | /path/to/rpm | rpm |
 | RPM_PY_VERSION | Installed python module's version | N.N.N.N |  Same version with rpm |
+| GIT_BRANCH | Branch name for [RPM git repo](https://github.com/rpm-software-management/rpm). If this option is set, `rpm-py-installer` downloads the RPM source by `git clone` rather than downloading the archive file to get the Python binding. | ex. master, rpm-4.14.x | None |
 | SETUP_PY_OPTM | Use optimized `setup.py` for the Python binding for comfort install? Or Set "false" to use original one. | true/false | true |
 | VERBOSE | Verbose mode? | true/false | false |
 | WORK_DIR_REMOVED | Remove work directory? Set "false" to see used archive. | true/false | true |
