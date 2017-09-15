@@ -1,4 +1,7 @@
 #!/bin/bash -v
+
+set -e
+
 # shellcheck disable=SC2039
 
 pushd "$(dirname "${0}")/.." > /dev/null

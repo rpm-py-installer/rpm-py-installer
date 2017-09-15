@@ -154,34 +154,34 @@ def test_rpm_py_version_info_is_ok(app):
 
 
 def test_verify_system_status_is_ok(app):
-    app.verify_system_status()
+    app._verify_system_status()
     assert True
 
 
 def test_verify_system_status_is_skipped_sys_python_and_rpm_py_installed(app):
-    app.is_system_python = mock.MagicMock(return_value=True)
-    app.is_python_binding_installed = mock.MagicMock(return_value=True)
+    app._is_system_python = mock.MagicMock(return_value=True)
+    app._is_python_binding_installed = mock.MagicMock(return_value=True)
 
     with pytest.raises(InstallSkipError):
-        app.verify_system_status()
+        app._verify_system_status()
 
     assert True
 
 
 def test_verify_system_status_is_error_on_sys_py_and_rpm_py_not_installed(app):
-    app.is_system_python = mock.MagicMock(return_value=True)
-    app.is_python_binding_installed = mock.MagicMock(return_value=False)
+    app._is_system_python = mock.MagicMock(return_value=True)
+    app._is_python_binding_installed = mock.MagicMock(return_value=False)
     with pytest.raises(InstallError) as ei:
-        app.verify_system_status()
+        app._verify_system_status()
     assert re.match('^RPM Python binding on system Python.*manually.$',
                     str(ei.value))
 
 
 def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
-    app.is_system_rpm = mock.MagicMock(return_value=True)
-    app.is_rpm_package_installed = mock.MagicMock(return_value=False)
+    app._is_system_rpm = mock.MagicMock(return_value=True)
+    app._is_rpm_package_installed = mock.MagicMock(return_value=False)
     with pytest.raises(InstallError) as ei:
-        app.verify_system_status()
+        app._verify_system_status()
     expected_message = (
         'Required RPM not installed: [rpm-libs, rpm-devel].\n'
         'Install it by "dnf install rpm-libs rpm-devel".\n'
@@ -191,13 +191,13 @@ def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
 
 def test_is_rpm_package_installed_returns_true(app):
     with mock.patch.object(Cmd, 'sh_e'):
-        assert app.is_rpm_package_installed('dummy')
+        assert app._is_rpm_package_installed('dummy')
 
 
 def test_is_rpm_package_installed_returns_false(app):
     with mock.patch.object(Cmd, 'sh_e') as mock_sh_e:
         mock_sh_e.side_effect = InstallError('test.')
-        assert not app.is_rpm_package_installed('dummy')
+        assert not app._is_rpm_package_installed('dummy')
 
 
 @pytest.mark.parametrize('value_dict', [
@@ -219,7 +219,7 @@ def test_is_rpm_package_installed_returns_false(app):
 ])
 def test_predict_candidate_git_tag_names_is_ok(app, value_dict):
     app.rpm_py_version = value_dict['version']
-    tag_names = app.predict_candidate_git_tag_names()
+    tag_names = app._predict_candidate_git_tag_names()
     assert tag_names == value_dict['tag_names']
 
 
@@ -227,20 +227,20 @@ def test_download_and_expand_rpm_py_is_ok_from_archive_url(app):
     app.git_branch = None
     # app.rpm_py_version = '4.14.0-rc1'
     target_top_dir_name = 'foo'
-    app.download_and_expand_from_archive_url = mock.MagicMock(
+    app._download_and_expand_from_archive_url = mock.MagicMock(
         return_value=target_top_dir_name)
-    top_dir_name = app.download_and_expand_rpm_py()
-    assert app.download_and_expand_from_archive_url.called
+    top_dir_name = app._download_and_expand_rpm_py()
+    assert app._download_and_expand_from_archive_url.called
     assert top_dir_name == target_top_dir_name
 
 
 def test_download_and_expand_rpm_py_is_ok_by_git(app):
     app.git_branch = 'foo'
     target_top_dir_name = 'bar'
-    app.download_and_expand_by_git = mock.MagicMock(
+    app._download_and_expand_by_git = mock.MagicMock(
         return_value=target_top_dir_name)
-    top_dir_name = app.download_and_expand_rpm_py()
-    assert app.download_and_expand_by_git.called
+    top_dir_name = app._download_and_expand_rpm_py()
+    assert app._download_and_expand_by_git.called
     assert top_dir_name == target_top_dir_name
 
 
@@ -253,16 +253,16 @@ def test_download_and_expand_rpm_py_is_failed_on_archive_url_ok_on_git(app):
             'rpm-4.5.6-dummy',
         ]
 
-    app.predict_candidate_git_tag_names = mock_predict_candidate_git_tag_names
+    app._predict_candidate_git_tag_names = mock_predict_candidate_git_tag_names
     app.rpm_py_version = '4.13.0'
 
     target_top_dir_name = 'bar'
-    app.download_and_expand_by_git = mock.MagicMock(
+    app._download_and_expand_by_git = mock.MagicMock(
         return_value=target_top_dir_name)
 
     with pytest.helpers.work_dir():
-        top_dir_name = app.download_and_expand_rpm_py()
-        app.download_and_expand_by_git.called
+        top_dir_name = app._download_and_expand_rpm_py()
+        app._download_and_expand_by_git.called
         assert top_dir_name == target_top_dir_name
 
 
@@ -270,7 +270,7 @@ def test_download_and_expand_by_git_is_ok(app):
     # Existed branch
     app.git_branch = 'rpm-4.14.x'
     with pytest.helpers.work_dir():
-        top_dir_name = app.download_and_expand_by_git()
+        top_dir_name = app._download_and_expand_by_git()
         assert top_dir_name == 'rpm'
 
 
@@ -279,15 +279,15 @@ def test_download_and_expand_by_git_is_failed(app):
     app.git_branch = 'rpm-4.14.x-dummy'
     with pytest.helpers.work_dir():
         with pytest.raises(InstallError):
-            app.download_and_expand_by_git()
+            app._download_and_expand_by_git()
 
 
 def test_download_and_expand_by_git_is_ok_with_predicted_branch(app):
     app.git_branch = None
-    app.predict_git_branch = mock.MagicMock(
+    app._predict_git_branch = mock.MagicMock(
         return_value='rpm-4.13.0.1')
     with mock.patch.object(Cmd, 'sh_e') as mock_sh_e:
-        top_dir_name = app.download_and_expand_by_git()
+        top_dir_name = app._download_and_expand_by_git()
         mock_sh_e.called
         assert top_dir_name == 'rpm'
 
@@ -313,7 +313,7 @@ def test_predict_git_branch(app, value_dict, monkeypatch):
     version_info = value_dict['version_info']
     monkeypatch.setattr(type(app), 'rpm_py_version_info',
                         mock.PropertyMock(return_value=version_info))
-    branch = app.predict_git_branch()
+    branch = app._predict_git_branch()
     assert branch == value_dict['branch']
 
 
@@ -330,17 +330,17 @@ def test_run_is_ok(app):
 def test_run_is_ok_by_rpm_py_version(app, rpm_py_version):
     app.is_work_dir_removed = True
     app.rpm_py_version = rpm_py_version
-    tag_names = app.predict_candidate_git_tag_names()
-    top_dir_name = app.get_rpm_archive_top_dir_name(tag_names[0])
+    tag_names = app._predict_candidate_git_tag_names()
+    top_dir_name = app._get_rpm_archive_top_dir_name(tag_names[0])
 
     def mock_download_and_expand_rpm_py(*args, **kwargs):
         rpm_py_dir = os.path.join(top_dir_name, 'python')
         os.makedirs(rpm_py_dir)
         return top_dir_name
 
-    app.download_and_expand_rpm_py = mock_download_and_expand_rpm_py
-    app.install_rpm_py = mock.MagicMock(return_value=True)
-    app.is_python_binding_installed = mock.MagicMock(return_value=True)
+    app._download_and_expand_rpm_py = mock_download_and_expand_rpm_py
+    app._install_rpm_py = mock.MagicMock(return_value=True)
+    app._is_python_binding_installed = mock.MagicMock(return_value=True)
 
     with pytest.helpers.work_dir():
         app.run()

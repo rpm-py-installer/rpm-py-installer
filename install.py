@@ -1,3 +1,7 @@
+"""Classes for all of install.
+
+Import only standard modules to run install.py directly.
+"""
 import io
 import json
 import os
@@ -12,6 +16,8 @@ from distutils.spawn import find_executable
 
 
 class Application(object):
+    """A class for main applicaton logic."""
+
     RPM_GIT_REPO_BASE_URL = 'https://github.com/rpm-software-management/rpm'
     RPM_GIT_REPO_URL = '{0}.git'.format(RPM_GIT_REPO_BASE_URL)
     RPM_ARCHIVE_URL_FORMAT = (
@@ -20,11 +26,13 @@ class Application(object):
     RPM_ARCHIVE_TOP_DIR_NAME_FORMAT = 'rpm-{tag_name}'
 
     def __init__(self):
-        self.load_options_from_env()
+        """Initialize this class."""
+        self._load_options_from_env()
 
     def run(self):
+        """Run install process."""
         try:
-            self.verify_system_status()
+            self._verify_system_status()
         except InstallSkipError:
             Log.info('Install skipped.')
             return
@@ -33,12 +41,12 @@ class Application(object):
         Log.info("Created working directory '{0}'".format(work_dir))
 
         with Cmd.pushd(work_dir):
-            top_dir_name = self.download_and_expand_rpm_py()
+            top_dir_name = self._download_and_expand_rpm_py()
             rpm_py_dir = os.path.join(top_dir_name, 'python')
             Cmd.cd(rpm_py_dir)
 
-            self.install_rpm_py()
-            if not self.is_python_binding_installed():
+            self._install_rpm_py()
+            if not self._is_python_binding_installed():
                 message = (
                     'RPM Python binding module failed to install '
                     'with unknown reason.'
@@ -53,7 +61,7 @@ class Application(object):
         else:
             Log.info("Saved working directory '{0}'".format(work_dir))
 
-    def load_options_from_env(self):
+    def _load_options_from_env(self):
         verbose = True if os.environ.get('VERBOSE') == 'true' else False
         # Set it as early as possible for other functions.
         self.verbose = verbose
@@ -111,16 +119,20 @@ class Application(object):
 
     @property
     def rpm_py_version_info(self):
+        """RPM Python binding's version info.
+
+        tuple object. ex. ('4', '14', '0', 'rc1')
+        """
         version_str = self.rpm_py_version
         version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
         return tuple(version_info_list)
 
-    def verify_system_status(self):
+    def _verify_system_status(self):
         if not sys.platform.startswith('linux'):
             raise InstallError('Supported platform is Linux only.')
 
-        if self.is_system_python():
-            if self.is_python_binding_installed():
+        if self._is_system_python():
+            if self._is_python_binding_installed():
                 message = (
                     'RPM Python binding already installed on system Python. '
                     'Nothing to do.'
@@ -134,12 +146,12 @@ class Application(object):
                 )
                 raise InstallError(message)
 
-        if self.is_system_rpm():
+        if self._is_system_rpm():
             missing_packages = []
             # rpm-libs is required for /usr/lib64/librpm*.so
             # rpm-devel is required for /usr/lib64/pkgconfig/rpm.pc
             for package_name in ('rpm-libs', 'rpm-devel'):
-                if not self.is_rpm_package_installed(package_name):
+                if not self._is_rpm_package_installed(package_name):
                     missing_packages.append(package_name)
             if missing_packages:
                 comma_packages = ', '.join(missing_packages)
@@ -152,31 +164,31 @@ class Application(object):
                 )
                 raise InstallError(message)
 
-    def get_rpm_archive_top_dir_name(self, tag_name):
+    def _get_rpm_archive_top_dir_name(self, tag_name):
         top_dir = self.RPM_ARCHIVE_TOP_DIR_NAME_FORMAT.format(
             tag_name=tag_name
         )
         return top_dir
 
-    def download_and_expand_rpm_py(self):
+    def _download_and_expand_rpm_py(self):
         top_dir_name = None
         if self.git_branch:
             # Download a source by git clone.
-            top_dir_name = self.download_and_expand_by_git()
+            top_dir_name = self._download_and_expand_by_git()
         else:
             # Download a source from the arcihve URL.
             # Downloading the compressed archive is better than "git clone",
             # because it is faster.
             # If download failed due to URL not found, try "git clone".
             try:
-                top_dir_name = self.download_and_expand_from_archive_url()
+                top_dir_name = self._download_and_expand_from_archive_url()
             except ArchiveNotFoundError:
                 Log.info('Try to download by git clone.')
-                top_dir_name = self.download_and_expand_by_git()
+                top_dir_name = self._download_and_expand_by_git()
         return top_dir_name
 
-    def download_and_expand_from_archive_url(self):
-        tag_names = self.predict_candidate_git_tag_names()
+    def _download_and_expand_from_archive_url(self):
+        tag_names = self._predict_candidate_git_tag_names()
         tar_gz_file_name = None
 
         tag_name_len = len(tag_names)
@@ -199,14 +211,14 @@ class Application(object):
 
         Cmd.tar_xzf(tar_gz_file_name)
 
-        top_dir_name = self.get_rpm_archive_top_dir_name(decided_tag_name)
+        top_dir_name = self._get_rpm_archive_top_dir_name(decided_tag_name)
         return top_dir_name
 
-    def download_and_expand_by_git(self):
-        self.do_git_clone()
+    def _download_and_expand_by_git(self):
+        self._do_git_clone()
         return 'rpm'
 
-    def predict_candidate_git_tag_names(self):
+    def _predict_candidate_git_tag_names(self):
         version = self.rpm_py_version
         name_release = 'rpm-{0}-release'.format(version)
         name_non_release = 'rpm-{0}'.format(version)
@@ -224,7 +236,7 @@ class Application(object):
             ]
         return tag_names
 
-    def do_git_clone(self):
+    def _do_git_clone(self):
         if not Cmd.which('git'):
             raise InstallError('git command not found. Install git.')
 
@@ -232,7 +244,7 @@ class Application(object):
         if self.git_branch:
             branch = self.git_branch
         else:
-            branch = self.predict_git_branch()
+            branch = self._predict_git_branch()
 
         git_clone_cmd = 'git clone -b {branch} --depth=1 {repo_url}'.format(
             branch=branch,
@@ -242,7 +254,7 @@ class Application(object):
                  branch))
         Cmd.sh_e(git_clone_cmd)
 
-    def predict_git_branch(self):
+    def _predict_git_branch(self):
         git_branch = None
 
         version_info = self.rpm_py_version_info
@@ -262,7 +274,7 @@ class Application(object):
 
         return git_branch
 
-    def make_setup_py(self):
+    def _make_setup_py(self):
         replaced_word_dict = {
             '@PACKAGE_NAME@': 'rpm',
             '@VERSION@': self.rpm_py_version,
@@ -303,20 +315,20 @@ else:
             if 'matched' not in patch or not patch['matched']:
                 Log.warn('Patch not applied {0}'.format(patch['src']))
 
-    def install_rpm_py(self):
-        self.make_setup_py()
+    def _install_rpm_py(self):
+        self._make_setup_py()
         Cmd.sh_e('{0} setup.py {1} build'.format(self.python_path,
                                                  self.setup_py_opts))
         Cmd.sh_e('{0} setup.py {1} install'.format(self.python_path,
                                                    self.setup_py_opts))
 
-    def is_system_python(self):
+    def _is_system_python(self):
         return self.python_path.startswith('/usr/bin/python')
 
-    def is_system_rpm(self):
+    def _is_system_rpm(self):
         return self.rpm_path.startswith('/usr/bin/rpm')
 
-    def is_python_binding_installed(self):
+    def _is_python_binding_installed(self):
         cmd = '{0} -m pip --version'.format(self.python_path)
         pip_version_out = Cmd.sh_e_out(cmd)
         pip_version = pip_version_out.split()[1]
@@ -352,7 +364,7 @@ else:
 
         return installed
 
-    def is_rpm_package_installed(self, package_name):
+    def _is_rpm_package_installed(self, package_name):
         installed = True
         try:
             Cmd.sh_e('{0} --query {1} --quiet'.format(self.rpm_path,
@@ -363,20 +375,32 @@ else:
 
 
 class InstallError(Exception):
+    """A exception class for general install error."""
+
     pass
 
 
 class InstallSkipError(Exception):
+    """A exception class for skipping the install process."""
+
     pass
 
 
 class ArchiveNotFoundError(Exception):
+    """A exception class RPM archive not found on the server."""
+
     pass
 
 
 class Cmd(object):
+    """A utility class like a UNIX command."""
+
     @classmethod
     def sh_e(cls, cmd, **kwargs):
+        """Run the command. It behaves like "sh -e".
+
+        It raises InstallError if the command failed.
+        """
         Log.debug('CMD: {0}'.format(cmd))
         cmd_kwargs = {
             'shell': True,
@@ -415,6 +439,7 @@ class Cmd(object):
 
     @classmethod
     def sh_e_out(cls, cmd, **kwargs):
+        """Run the command. and returns the stdout."""
         cmd_kwargs = {
             'stdout': subprocess.PIPE,
         }
@@ -423,12 +448,17 @@ class Cmd(object):
 
     @classmethod
     def cd(cls, directory):
+        """Change directory. It behaves like "cd directory"."""
         Log.debug('CMD: cd {0}'.format(directory))
         os.chdir(directory)
 
     @classmethod
     @contextmanager
     def pushd(cls, new_dir):
+        """Change directory, and back to previous directory.
+
+        It behaves like "pushd directory; something; popd".
+        """
         previous_dir = os.getcwd()
         try:
             new_ab_dir = None
@@ -444,6 +474,10 @@ class Cmd(object):
 
     @classmethod
     def which(cls, cmd):
+        """Return an absolute path of the command.
+
+        It behaves like "which command".
+        """
         abs_path_cmd = None
         if sys.version_info >= (3, 3):
             abs_path_cmd = shutil.which(cmd)
@@ -453,9 +487,10 @@ class Cmd(object):
 
     @classmethod
     def curl_remote_name(cls, file_url):
-        """A command that behaves like "curl --remote-name".
+        """Download file_url, and save as a file name of the URL.
 
-        Raise HTTPError if the file_url not found.
+        It behaves like "curl -O or --remote-name".
+        It raises HTTPError if the file_url not found.
         """
         tar_gz_file_name = file_url.split('/')[-1]
 
@@ -484,9 +519,10 @@ class Cmd(object):
 
     @classmethod
     def tar_xzf(cls, tar_gz_file_path):
-        """A command like "tar xzf tar_gz_file_path".
+        """Extract tar.gz file.
 
-        Raise tarfile.ReadError if the file is broken.
+        It behaves like "tar xzf tar_gz_file_path".
+        it raises tarfile.ReadError if the file is broken.
         """
         try:
             with tarfile.open(tar_gz_file_path) as tar:
@@ -500,28 +536,41 @@ class Cmd(object):
 
 
 class Log(object):
+    """A class for logging."""
+
     # Class variable
     verbose = False
 
     @classmethod
     def error(cls, message):
+        """Log a message with level ERROR."""
         print('[ERROR] {0}'.format(message))
 
     @classmethod
     def warn(cls, message):
+        """Log a message with level WARN."""
         print('[WARN] {0}'.format(message))
 
     @classmethod
     def info(cls, message):
+        """Log a message with level INFO."""
         print('[INFO] {0}'.format(message))
 
     @classmethod
     def debug(cls, message):
+        """Log a message with level DEBUG.
+
+        It does not log if verbose mode.
+        """
         if cls.verbose:
             print('[DEBUG] {0}'.format(message))
 
 
 def main():
+    """Run main logic.
+
+    It is called at first when install.py is called.
+    """
     Log.info('Installing...')
     app = Application()
     app.run()

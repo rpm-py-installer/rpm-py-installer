@@ -32,6 +32,8 @@ RUN dnf -y install \
   # Used in scripts/lint_bash.sh
   which \
   # Used in scripts/lint_bash.sh
+  /usr/bin/find \
+  # Used in scripts/lint_bash.sh
   ShellCheck \
   && dnf clean all
 RUN python3 -m ensurepip
