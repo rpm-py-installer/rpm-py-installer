@@ -97,6 +97,6 @@ $ source venv/bin/activate
 
 ```
 (venv) $ pip3 list | grep rpm
-rpm-py-installer 0.1.0
+rpm-py-installer 0.4.0
 rpm-python       4.13.0.1
 ```

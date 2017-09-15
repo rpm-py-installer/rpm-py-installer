@@ -32,9 +32,12 @@ $ pip list
 Package          Version-
 ---------------- --------
 pip              9.0.1
-rpm-py-installer 0.1.0
+rpm-py-installer 0.4.0
 rpm-python       4.13.0.1
 setuptools       28.8.0
+
+$ python -c "import rpm; print(rpm.__version__)"
+4.13.0.1
 ```
 
 ### Install the Python binding module as a required dependency for your pacakge
