@@ -1,3 +1,4 @@
+"""Classes to set up and install rpm-py-installer."""
 import os
 import sys
 from distutils.cmd import Command
@@ -11,6 +12,7 @@ from rpm_py_installer.version import VERSION
 
 
 def install_rpm_py():
+    """Install RPM Python binding."""
     python_path = sys.executable
     cmd = '{0} install.py'.format(python_path)
     exit_status = os.system(cmd)
@@ -24,7 +26,9 @@ class InstallCommand(install):
     Handled by "pip install rpm-py-installer",
     when the package is published to PyPI as a source distribution (sdist).
     """
+
     def run(self):
+        """Run install process."""
         install.run(self)
         install_rpm_py()
 
@@ -34,7 +38,9 @@ class DevelopCommand(develop):
 
     Handled by "pip install -e".
     """
+
     def run(self):
+        """Run install process with development mode."""
         develop.run(self)
         install_rpm_py()
 
@@ -44,27 +50,42 @@ class EggInfoCommand(egg_info):
 
     Handled by "pip install .".
     """
+
     def run(self):
+        """Run egg_info process."""
         egg_info.run(self)
         install_rpm_py()
 
 
 class BdistWheelCommand(Command):
-    """A class for "pip bdist_wheel"
+    """A class for "pip bdist_wheel".
 
     Raise exception to always disable wheel cache.
 
     See https://github.com/pypa/pip/issues/4720
     """
+
     user_options = []
 
     def initialize_options(self):
+        """Initilize options.
+
+        Just extend the super class's abstract method.
+        """
         pass
 
     def finalize_options(self):
+        """Finalize options.
+
+        Just extend the super class's abstract method.
+        """
         pass
 
     def run(self):
+        """Run bdist_wheel process.
+
+        It raises error to make the method fail intentionally.
+        """
         raise Exception('bdist_wheel is not supported')
 
 
