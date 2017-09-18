@@ -40,7 +40,7 @@ $ python -c "import rpm; print(rpm.__version__)"
 4.13.0.1
 ```
 
-### Install the Python binding module as a required dependency for your pacakge
+### Install as a required dependency for your pacakge
 
 Add `rpm-py-installer` to your package's `setup.py` `install_requires`.
 Then run `pip install`.
@@ -59,7 +59,7 @@ See Users Guide for detail.
 $ /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
 ```
 
-### Usage
+## Usage
 
 See [Users Guide](docs/users_guide.md).
 
