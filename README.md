@@ -1,4 +1,4 @@
-# rpm-py-installer
+# RPM Python binding Installer
 [![PyPI](https://img.shields.io/pypi/v/rpm-py-installer.svg)](https://pypi.python.org/pypi/rpm-py-installer)
 [![Build Status](https://travis-ci.org/junaruga/rpm-py-installer.svg?branch=master)](https://travis-ci.org/junaruga/rpm-py-installer)
 
