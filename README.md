@@ -63,6 +63,10 @@ See Users Guide for detail.
 
 See [Users Guide](docs/users_guide.md).
 
+## Communities using rpm-py-installer
+
+[rebase-helper](https://github.com/rebase-helper/rebase-helper)
+
 ## License
 
 MIT
