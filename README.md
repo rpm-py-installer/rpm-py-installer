@@ -4,6 +4,8 @@
 
 `rpm-py-installer` installs [a RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on non-system Python, such as a source compiled Python, a Python on virtualenv and pyenv environment, considering installed RPM itself.
 
+It installs same version's Python binding with the system RPM safely.
+
 ## Install the RPM Python binding module by rpm-py-installer
 
 `rpm-py-installer` provides several ways to install.
