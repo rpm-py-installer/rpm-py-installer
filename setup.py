@@ -93,8 +93,11 @@ setuptools.setup(
     name='rpm-py-installer',
     version=VERSION,
     license='MIT',
-    description='RPM Pythoon Installer',
-    long_description='A installer for RPM Python binding module.',
+    description='RPM Python binding Installer',
+    long_description='''
+A installer for RPM Python binding module.
+See "Home Page" on GitHub for detail.
+''',
     author='Jun Aruga',
     author_email='jaruga@redhat.com',
     url='https://github.com/junaruga/rpm-py-installer',
