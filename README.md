@@ -43,7 +43,27 @@ $ python -c "import rpm; print(rpm.__version__)"
 ### Install as a required dependency for your pacakge
 
 Add `rpm-py-installer` to your package's `setup.py` `install_requires`.
-Then run `pip install`.
+
+```
+$ pwd
+/path/to/your_project
+
+$ vi setup.py
+...
+setup(
+...
+    install_requires=[
+...
+        'rpm-py-installer',
+...
+    ],
+...
+)
+...
+```
+
+Upload your package to PyPI.
+And run `pip install`.
 
 ```
 $ pip install your_package
