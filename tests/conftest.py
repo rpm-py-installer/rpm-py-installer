@@ -1,5 +1,6 @@
 """Common functions and a list of pytest.fixture here."""
 
+import getpass
 import os
 import shutil
 import sys
@@ -12,6 +13,17 @@ install_path = os.path.abspath('install.py')
 sys.path.insert(0, install_path)
 
 pytest_plugins = ['helpers_namespace']
+
+running_user = getpass.getuser()
+rpm_cmd_exit_status = os.system('rpm --version')
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if item.get_marker('integration') is not None:
+            pass
+        else:
+            item.add_marker(pytest.mark.unit)
 
 
 @pytest.fixture
@@ -36,6 +48,16 @@ def tar_gz_file_path():
 @pytest.fixture
 def invalid_tar_gz_file_path():
     return os.path.abspath('tests/fixtures/invalid.tar.gz')
+
+
+@pytest.helpers.register
+def is_root_user():
+    return running_user == 'root'
+
+
+@pytest.helpers.register
+def is_platform_rpm():
+    return rpm_cmd_exit_status == 0
 
 
 @pytest.helpers.register
