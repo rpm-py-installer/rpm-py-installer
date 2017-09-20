@@ -4,6 +4,7 @@ Tests for install.py
 """
 import os
 import re
+import sys
 import tempfile
 from unittest import mock
 
@@ -14,16 +15,58 @@ from install import (Application, ArchiveNotFoundError, Cmd, InstallError,
 
 
 @pytest.fixture
-def app():
-    return Application()
+def env():
+    pass
 
 
 @pytest.fixture
-def app_with_env(env, monkeypatch):
-    if not isinstance(env, dict):
-        raise ValueError('env: Invalid type: {0}'.format(type(env)))
-    for key in env:
-        monkeypatch.setenv(key, env[key])
+def app(env, monkeypatch):
+    if env:
+        if not isinstance(env, dict):
+            raise ValueError('env: Invalid type: {0}'.format(type(env)))
+        for key in env:
+            monkeypatch.setenv(key, env[key])
+
+    # Apply patch for non-rpm environment.
+    if not pytest.helpers.is_platform_rpm():
+        orig_sh_e = Cmd.sh_e
+        orig_sh_e_out = Cmd.sh_e_out
+        orig_which = Cmd.which
+
+        def mock_sh_e(cmd, **kwargs):
+            if 'setup.py' in cmd:
+                pass
+            else:
+                orig_sh_e(cmd, **kwargs)
+
+        def mock_sh_e_out(cmd, **kwargs):
+            value_dict = {
+                '/usr/bin/rpm --version': 'RPM version 4.13.0.1',
+            }
+            out = None
+            if cmd in value_dict:
+                out = value_dict[cmd]
+            else:
+                out = orig_sh_e_out(cmd, **kwargs)
+
+            return out
+
+        def mock_which(cmd):
+            value_dict = {
+                'rpm': '/usr/bin/rpm',
+            }
+            abs_path_cmd = None
+            if cmd in value_dict:
+                abs_path_cmd = value_dict[cmd]
+            else:
+                abs_path_cmd = orig_which(cmd)
+            return abs_path_cmd
+
+        if sys.version_info >= (3, 0):
+            monkeypatch.setattr(Cmd, 'sh_e', mock_sh_e)
+            monkeypatch.setattr(Cmd, 'sh_e_out', mock_sh_e_out)
+            monkeypatch.setattr(Cmd, 'which', mock_which)
+
     return Application()
 
 
@@ -52,7 +95,7 @@ def test_cmd_cd_is_ok():
         assert cwd == tmp_dir
 
 
-@pytest.mark.parametrize('cmd', ['rpm', 'git'])
+@pytest.mark.parametrize('cmd', ['git'])
 def test_cmd_which_is_ok(cmd):
     abs_path = Cmd.which(cmd)
     assert re.match('^/.*{0}$'.format(cmd), abs_path)
@@ -104,47 +147,47 @@ def test_app_init(app):
 
 
 @pytest.mark.parametrize('env', [{'RPM': 'pwd'}])
-def test_app_init_env_rpm(app_with_env):
-    assert app_with_env
-    assert re.match('^/.+/pwd$', app_with_env.rpm_path)
+def test_app_init_env_rpm(app):
+    assert app
+    assert re.match('^/.+/pwd$', app.rpm_path)
 
 
 @pytest.mark.parametrize('env', [{'RPM_PY_VERSION': '1.2.3'}])
-def test_app_init_env_rpm_py_version(app_with_env):
-    assert app_with_env
-    assert app_with_env.rpm_py_version == '1.2.3'
+def test_app_init_env_rpm_py_version(app):
+    assert app
+    assert app.rpm_py_version == '1.2.3'
 
 
 @pytest.mark.parametrize('env', [{'GIT_BRANCH': 'master'}])
-def test_app_init_env_git_branch(app_with_env):
-    assert app_with_env
-    assert app_with_env.git_branch == 'master'
+def test_app_init_env_git_branch(app):
+    assert app
+    assert app.git_branch == 'master'
 
 
 @pytest.mark.parametrize('env', [
     {'SETUP_PY_OPTM': 'true'},
     {'SETUP_PY_OPTM': 'false'},
 ])
-def test_app_init_env_setup_py_optm(app_with_env, env):
-    assert app_with_env
+def test_app_init_env_setup_py_optm(app, env):
+    assert app
     value = True if env['SETUP_PY_OPTM'] == 'true' else False
-    assert app_with_env.setup_py_optimized is value
+    assert app.setup_py_optimized is value
 
 
 @pytest.mark.parametrize('env', [{'VERBOSE': 'true'}])
-def test_app_init_env_verbose(app_with_env):
-    assert app_with_env
-    assert app_with_env.verbose is True
+def test_app_init_env_verbose(app):
+    assert app
+    assert app.verbose is True
 
 
 @pytest.mark.parametrize('env', [
     {'WORK_DIR_REMOVED': 'true'},
     {'WORK_DIR_REMOVED': 'false'},
 ])
-def test_app_init_env_work_dir_removed(app_with_env, env):
-    assert app_with_env
+def test_app_init_env_work_dir_removed(app, env):
+    assert app
     value = True if env['WORK_DIR_REMOVED'] == 'true' else False
-    assert app_with_env.is_work_dir_removed is value
+    assert app.is_work_dir_removed is value
 
 
 def test_rpm_py_version_info_is_ok(app):
@@ -154,6 +197,7 @@ def test_rpm_py_version_info_is_ok(app):
 
 
 def test_verify_system_status_is_ok(app):
+    app._is_rpm_package_installed = mock.MagicMock(return_value=True)
     app._verify_system_status()
     assert True
 
@@ -189,9 +233,11 @@ def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
     assert expected_message == str(ei.value)
 
 
-def test_is_rpm_package_installed_returns_true(app):
-    with mock.patch.object(Cmd, 'sh_e'):
-        assert app._is_rpm_package_installed('dummy')
+@pytest.mark.skipif(not pytest.helpers.is_platform_rpm(),
+                    reason='needs rpm command.')
+@pytest.mark.parametrize('package_name', ['rpm-lib'])
+def test_is_rpm_package_installed_returns_true(app, package_name):
+    assert not app._is_rpm_package_installed(package_name)
 
 
 def test_is_rpm_package_installed_returns_false(app):
@@ -320,10 +366,13 @@ def test_predict_git_branch(app, value_dict, monkeypatch):
 @mock.patch.object(Log, 'verbose', new=False)
 def test_run_is_ok(app):
     app.is_work_dir_removed = True
+    app._is_rpm_package_installed = mock.MagicMock(return_value=True)
     app.run()
     assert True
 
 
+@pytest.mark.skipif(not pytest.helpers.is_platform_rpm(),
+                    reason='needs rpm command.')
 @pytest.mark.parametrize('rpm_py_version',
                          ['4.13.0', '4.14.0-rc1'])
 @mock.patch.object(Log, 'verbose', new=False)

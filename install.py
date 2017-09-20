@@ -73,6 +73,8 @@ class Application(object):
         # Linked rpm's path. Default: rpm.
         rpm_path = os.environ.get('RPM', 'rpm')
         rpm_path = Cmd.which(rpm_path)
+        if not rpm_path:
+            raise InstallError('rpm command not found. Install rpm.')
 
         # Installed RPM Python module's version.
         # Default: Same version with rpm.
