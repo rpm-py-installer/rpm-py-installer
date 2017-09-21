@@ -9,11 +9,12 @@ import sys
 import pytest
 
 
-# Need root authority
 @pytest.mark.integration
 @pytest.mark.parametrize('python_path', (
     '/usr/bin/python3', '/usr/bin/python')
 )
+@pytest.mark.skipif(not pytest.helpers.is_root_user(),
+                    reason='needs root authority.')
 def test_install_failed_on_sys_python(install_script_path, python_path):
     # Case 1: rpm-py is installed on system Python.
     # Check rpm binding has already been installed before test.

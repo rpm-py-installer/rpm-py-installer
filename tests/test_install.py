@@ -14,16 +14,18 @@ from install import (Application, ArchiveNotFoundError, Cmd, InstallError,
 
 
 @pytest.fixture
-def app():
-    return Application()
+def env():
+    pass
 
 
 @pytest.fixture
-def app_with_env(env, monkeypatch):
-    if not isinstance(env, dict):
-        raise ValueError('env: Invalid type: {0}'.format(type(env)))
-    for key in env:
-        monkeypatch.setenv(key, env[key])
+def app(env, monkeypatch):
+    if env:
+        if not isinstance(env, dict):
+            raise ValueError('env: Invalid type: {0}'.format(type(env)))
+        for key in env:
+            monkeypatch.setenv(key, env[key])
+
     return Application()
 
 
@@ -104,47 +106,47 @@ def test_app_init(app):
 
 
 @pytest.mark.parametrize('env', [{'RPM': 'pwd'}])
-def test_app_init_env_rpm(app_with_env):
-    assert app_with_env
-    assert re.match('^/.+/pwd$', app_with_env.rpm_path)
+def test_app_init_env_rpm(app):
+    assert app
+    assert re.match('^/.+/pwd$', app.rpm_path)
 
 
 @pytest.mark.parametrize('env', [{'RPM_PY_VERSION': '1.2.3'}])
-def test_app_init_env_rpm_py_version(app_with_env):
-    assert app_with_env
-    assert app_with_env.rpm_py_version == '1.2.3'
+def test_app_init_env_rpm_py_version(app):
+    assert app
+    assert app.rpm_py_version == '1.2.3'
 
 
 @pytest.mark.parametrize('env', [{'GIT_BRANCH': 'master'}])
-def test_app_init_env_git_branch(app_with_env):
-    assert app_with_env
-    assert app_with_env.git_branch == 'master'
+def test_app_init_env_git_branch(app):
+    assert app
+    assert app.git_branch == 'master'
 
 
 @pytest.mark.parametrize('env', [
     {'SETUP_PY_OPTM': 'true'},
     {'SETUP_PY_OPTM': 'false'},
 ])
-def test_app_init_env_setup_py_optm(app_with_env, env):
-    assert app_with_env
+def test_app_init_env_setup_py_optm(app, env):
+    assert app
     value = True if env['SETUP_PY_OPTM'] == 'true' else False
-    assert app_with_env.setup_py_optimized is value
+    assert app.setup_py_optimized is value
 
 
 @pytest.mark.parametrize('env', [{'VERBOSE': 'true'}])
-def test_app_init_env_verbose(app_with_env):
-    assert app_with_env
-    assert app_with_env.verbose is True
+def test_app_init_env_verbose(app):
+    assert app
+    assert app.verbose is True
 
 
 @pytest.mark.parametrize('env', [
     {'WORK_DIR_REMOVED': 'true'},
     {'WORK_DIR_REMOVED': 'false'},
 ])
-def test_app_init_env_work_dir_removed(app_with_env, env):
-    assert app_with_env
+def test_app_init_env_work_dir_removed(app, env):
+    assert app
     value = True if env['WORK_DIR_REMOVED'] == 'true' else False
-    assert app_with_env.is_work_dir_removed is value
+    assert app.is_work_dir_removed is value
 
 
 def test_rpm_py_version_info_is_ok(app):
@@ -154,6 +156,7 @@ def test_rpm_py_version_info_is_ok(app):
 
 
 def test_verify_system_status_is_ok(app):
+    app._is_rpm_package_installed = mock.MagicMock(return_value=True)
     app._verify_system_status()
     assert True
 
@@ -189,9 +192,9 @@ def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
     assert expected_message == str(ei.value)
 
 
-def test_is_rpm_package_installed_returns_true(app):
-    with mock.patch.object(Cmd, 'sh_e'):
-        assert app._is_rpm_package_installed('dummy')
+@pytest.mark.parametrize('package_name', ['rpm-lib'])
+def test_is_rpm_package_installed_returns_true(app, package_name):
+    assert not app._is_rpm_package_installed(package_name)
 
 
 def test_is_rpm_package_installed_returns_false(app):
@@ -320,6 +323,7 @@ def test_predict_git_branch(app, value_dict, monkeypatch):
 @mock.patch.object(Log, 'verbose', new=False)
 def test_run_is_ok(app):
     app.is_work_dir_removed = True
+    app._is_rpm_package_installed = mock.MagicMock(return_value=True)
     app.run()
     assert True
 
