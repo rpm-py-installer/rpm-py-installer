@@ -13,8 +13,6 @@ matrix:
     - env: CONTAINER_IMAGE=centos:7 TOXENV=py34,py27
   allow_failures:
     - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py36,py27
-    - language: python
-      python: nightly
   fast_finish: true
 install:
   - |
@@ -41,7 +39,6 @@ script:
         -e TOXENV="${TOXENV}" \
         -t \
         rpm-py-installer
-
 branches:
   only:
     - master
