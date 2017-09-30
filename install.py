@@ -135,17 +135,17 @@ class Application(object):
 
         if self._is_system_python():
             if self._is_python_binding_installed():
-                message = (
-                    'RPM Python binding already installed on system Python. '
-                    'Nothing to do.'
-                )
+                message = '''
+RPM Python binding already installed on system Python.
+Nothing to do.
+'''
                 Log.info(message)
                 raise InstallSkipError(message)
             else:
-                message = (
-                    'RPM Python binding on system Python should be installed '
-                    'by "dnf install python{,2,3}-rpm" manually.'
-                )
+                message = '''
+RPM Python binding on system Python should be installed manually.
+Install the proper RPM package of python{,2,3}-rpm.
+'''
                 raise InstallError(message)
 
         if self._is_system_rpm():
@@ -157,13 +157,10 @@ class Application(object):
                     missing_packages.append(package_name)
             if missing_packages:
                 comma_packages = ', '.join(missing_packages)
-                space_packages = ' '.join(missing_packages)
-                message = 'Required RPM not installed: [{0}].\n'.format(
-                    comma_packages
-                )
-                message += 'Install it by "dnf install {0}".\n'.format(
-                    space_packages
-                )
+                message = '''
+Required RPM not installed: [{0}].
+Install the RPM package.
+'''.format(comma_packages)
                 raise InstallError(message)
 
     def _get_rpm_archive_top_dir_name(self, tag_name):

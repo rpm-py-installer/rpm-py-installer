@@ -176,8 +176,11 @@ def test_verify_system_status_is_error_on_sys_py_and_rpm_py_not_installed(app):
     app._is_python_binding_installed = mock.MagicMock(return_value=False)
     with pytest.raises(InstallError) as ei:
         app._verify_system_status()
-    assert re.match('^RPM Python binding on system Python.*manually.$',
-                    str(ei.value))
+    expected_message = '''
+RPM Python binding on system Python should be installed manually.
+Install the proper RPM package of python{,2,3}-rpm.
+'''
+    assert expected_message == str(ei.value)
 
 
 def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
@@ -185,10 +188,10 @@ def test_verify_system_status_is_error_on_sys_rpm_and_missing_packages(app):
     app._is_rpm_package_installed = mock.MagicMock(return_value=False)
     with pytest.raises(InstallError) as ei:
         app._verify_system_status()
-    expected_message = (
-        'Required RPM not installed: [rpm-libs, rpm-devel].\n'
-        'Install it by "dnf install rpm-libs rpm-devel".\n'
-    )
+    expected_message = '''
+Required RPM not installed: [rpm-libs, rpm-devel].
+Install the RPM package.
+'''
     assert expected_message == str(ei.value)
 
 
