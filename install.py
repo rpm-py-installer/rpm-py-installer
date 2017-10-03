@@ -469,6 +469,7 @@ class Installer(object):
         if not self._is_rpm_devel_installed():
             self._prepare_so_files()
             self._prepare_include_files()
+            self._prepare_dependency_so_include_files()
             self.setup_py.add_patchs_to_build_without_pkg_config(
                 self.rpm.lib_dir, self.rpm.include_dir
             )
@@ -481,6 +482,9 @@ class Installer(object):
     def _is_rpm_devel_installed(self):
         return self.rpm.is_package_installed('rpm-devel')
 
+    def _is_popt_devel_installed(self):
+        return self.rpm.is_package_installed('popt-devel')
+
     def _prepare_so_files(self):
         build_link_dir = None
 
@@ -489,7 +493,8 @@ class Installer(object):
                 build_link_dir = self.rpm.lib_dir
             else:
                 self.rpm.download_and_extract('rpm-build-libs')
-                build_link_dir = os.path.join(os.getcwd(), self.rpm.lib_dir)
+                current_dir = os.getcwd()
+                build_link_dir = current_dir + self.rpm.lib_dir
         else:
             if not self._is_rpm_build_libs_installed():
                 message = '''
@@ -567,12 +572,59 @@ when a RPM download plugin not installed.
                         Cmd.mkdir_p(dst_dir)
                     shutil.copyfile(header_file, dst_header_file)
 
+    def _prepare_dependency_so_include_files(self):
+        """Prepare build dependency's so and include files.
+
+        - popt-devel
+        """
+        if self._has_dependency_rpm_popt_devel():
+            if self._is_popt_devel_installed():
+                pass
+            elif self.rpm.is_downloadable():
+                if not self.rpm.is_package_installed('popt'):
+                    message = '''
+Required RPM not installed: [popt],
+'''
+                    raise InstallError(message)
+
+                self.rpm.download_and_extract('popt-devel')
+
+                # Copy libpopt.so to rpm_root/lib/.libs/.
+                pattern = 'libpopt.so*'
+                so_files = Cmd.find(self.rpm.lib_dir, pattern)
+                if not so_files:
+                    message = 'so file pattern {0} not found at {1}'.format(
+                        pattern, self.rpm.lib_dir
+                    )
+                    raise InstallError(message)
+                cmd = 'ln -sf {0} ../lib/.libs/libpopt.so'.format(
+                      so_files[0])
+                Cmd.sh_e(cmd)
+
+                # Copy popt.h to rpm_root/include
+                shutil.copy('./usr/include/popt.h', '../include')
+            else:
+                message = '''
+Required RPM not installed: [popt-devel],
+when a RPM download plugin not installed.
+'''
+                raise InstallError(message)
+
     def _build_and_install(self):
         python_path = self.python.python_path
         Cmd.sh_e('{0} setup.py {1} build'.format(python_path,
                                                  self.setup_py_opts))
         Cmd.sh_e('{0} setup.py {1} install'.format(python_path,
                                                    self.setup_py_opts))
+
+    def _has_dependency_rpm_popt_devel(self):
+        found = False
+        with open('../include/rpm/rpmlib.h') as f_in:
+            for line in f_in:
+                if re.match(r'^#include .*popt.h.*$', line):
+                    found = True
+                    break
+        return found
 
 
 class Python(object):
@@ -750,9 +802,9 @@ Install the RPM package.
         if not package_name:
             ValueError('package_name required.')
         if self.is_dnf:
-            cmd = 'dnf download {0}'.format(package_name)
+            cmd = 'dnf download {0}.{1}'.format(package_name, self.arch)
         else:
-            cmd = 'yumdownloader {0}'.format(package_name)
+            cmd = 'yumdownloader {0}.{1}'.format(package_name, self.arch)
         Cmd.sh_e(cmd)
 
     def extract(self, package_name):
@@ -938,6 +990,7 @@ class Cmd(object):
 
         It does not include symbolic file in the result.
         """
+        Log.debug('find {0} with pattern: {1}'.format(searched_dir, pattern))
         matched_files = []
         for root_dir, dir_names, file_names in os.walk(searched_dir,
                                                        followlinks=False):

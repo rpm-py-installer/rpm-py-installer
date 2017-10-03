@@ -513,6 +513,25 @@ def test_installer_init_is_ok(installer):
     assert installer.setup_py_opts == '-q'
 
 
+def test_installer_prepare_dependency_raises_error_for_popt_devel(installer):
+    installer._has_dependency_rpm_popt_devel = mock.MagicMock(
+        return_value=True
+    )
+    installer._is_popt_devel_installed = mock.MagicMock(
+        return_value=False
+    )
+    installer.rpm.is_downloadable = mock.MagicMock(
+        return_value=False
+    )
+    with pytest.raises(InstallError) as ei:
+        installer._prepare_dependency_so_include_files()
+    expected_message = '''
+Required RPM not installed: [popt-devel],
+when a RPM download plugin not installed.
+'''
+    assert expected_message == str(ei.value)
+
+
 def test_installer_run_raises_error_for_rpm_build_libs(installer):
     installer._is_rpm_devel_installed = mock.MagicMock(
         return_value=False
@@ -661,20 +680,28 @@ def test_app_run_is_ok_on_download_by_rpm_py_version(app, rpm_py_version):
     assert True
 
 
-@pytest.mark.parametrize('is_rpm_devel, is_downloadable, is_rpm_build_libs', [
-    (True, False, False),
-    (False, True, False),
-    (False, False, True),
-], ids=[
-    'rpm-devel installed',
-    'rpm-devel not installed, RPM package downloadable',
-    'rpm-devel not installed, rpm-build-lib installed',
-])
+@pytest.mark.parametrize(
+    'is_rpm_devel, is_popt_devel, is_downloadable, is_rpm_build_libs', [
+        (True,  True, False, False),
+        (False, False, True, True),
+        (False, False, True, False),
+    ], ids=[
+        'rpm-devel and popt-devel installed',
+        'rpm-devel, popt-devel not installed, RPM downloadable',
+        'rpm-devel, popt-devel, rpm-build-libs not installed, '
+        'RPM downloadable',
+    ]
+)
 @mock.patch.object(Log, 'verbose', new=False)
-def test_app_run_is_ok(app, is_rpm_devel, is_downloadable, is_rpm_build_libs):
+def test_app_run_is_ok(
+    app, is_rpm_devel, is_popt_devel, is_downloadable, is_rpm_build_libs
+):
     app.is_work_dir_removed = True
     app.rpm_py.installer._is_rpm_devel_installed = mock.MagicMock(
         return_value=is_rpm_devel
+    )
+    app.rpm_py.installer._is_popt_devel_installed = mock.MagicMock(
+        return_value=is_popt_devel
     )
     app.rpm_py.installer.rpm.is_downloadable = mock.MagicMock(
         return_value=is_downloadable
@@ -689,6 +716,7 @@ def test_app_run_is_ok(app, is_rpm_devel, is_downloadable, is_rpm_build_libs):
         )
 
     app.run()
+
     assert app.rpm_py.installer._is_rpm_devel_installed.called
     if not is_rpm_devel:
         assert app.rpm_py.installer.rpm.is_downloadable.called

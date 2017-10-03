@@ -33,9 +33,6 @@ RUN dnf -y install \
   'dnf-command(download)' \
   # Used if downloading and extracting build dependency packages in installing.
   /usr/bin/cpio \
-  # popt.h (popt-devel) is used in rpmlib.h
-  # if building without rpm-devel package.
-  /usr/include/popt.h \
   # -- RPM packages for testing --
   # Used in scripts/lint_bash.sh
   which \

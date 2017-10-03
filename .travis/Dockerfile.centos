@@ -22,7 +22,6 @@ RUN yum -y install \
   rpm-build-libs \
   /usr/bin/yumdownloader \
   /usr/bin/cpio \
-  /usr/include/popt.h \
   && yum clean all
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade pip setuptools
