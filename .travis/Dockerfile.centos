@@ -9,15 +9,20 @@ RUN yum -y install \
   --setopt=deltarpm=0 \
   --setopt=install_weak_deps=false \
   --setopt=tsflags=nodocs \
+  # -- RPM packages required for installing --
   rpm-libs \
-  rpm-devel \
   redhat-rpm-config \
   gcc \
   python34-devel \
   python-devel \
   /usr/bin/python3.4 \
   /usr/bin/python2.7 \
+  # -- RPM packages required for a specified case --
   /usr/bin/git \
+  rpm-build-libs \
+  /usr/bin/yumdownloader \
+  /usr/bin/cpio \
+  /usr/include/popt.h \
   && yum clean all
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade pip setuptools

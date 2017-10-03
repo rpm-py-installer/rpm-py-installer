@@ -13,10 +13,8 @@ RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-28-x86_64
 
 RUN dnf -y update
 RUN dnf -y install \
-  # RPM packages for installing.
+  # -- RPM packages required for installing --
   rpm-libs \
-  # rpm.pc used for "python setup.py build".
-  rpm-devel \
   redhat-rpm-config \
   gcc \
   python3-devel \
@@ -25,10 +23,20 @@ RUN dnf -y install \
   /usr/bin/python3.6 \
   /usr/bin/python3.5 \
   /usr/bin/python2.7 \
+  # -- RPM packages required for a specified case --
   # Used to get the rpm-python by git commmand,
   # if a target rpm archive URL is not found on the server.
   /usr/bin/git \
-  # RPM packages for testing.
+  # rpm-build-libs or DNF download plugin is required for building.
+  # rpm-build-libs might be always installed.
+  rpm-build-libs \
+  'dnf-command(download)' \
+  # Used if downloading and extracting build dependency packages in installing.
+  /usr/bin/cpio \
+  # popt.h (popt-devel) is used in rpmlib.h
+  # if building without rpm-devel package.
+  /usr/include/popt.h \
+  # -- RPM packages for testing --
   # Used in scripts/lint_bash.sh
   which \
   # Used in scripts/lint_bash.sh
