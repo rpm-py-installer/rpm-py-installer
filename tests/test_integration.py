@@ -47,13 +47,11 @@ def test_install_and_uninstall_are_ok_on_non_sys_python(install_script_path):
 # rpm-build-libs might be always installed,
 # Because when running "dnf remove rpm-build-libs", "dnf" itself was removed.
 @pytest.mark.parametrize('is_rpm_devel, is_downloadable, is_rpm_build_libs', [
-    (True, False, True),
     (False, True, True),
-    (False, False, True),
+    (True, False, True),
 ], ids=[
-    'rpm-devel installed',
     'rpm-devel not installed, RPM package downloadable',
-    'rpm-devel not installed, rpm-build-lib installed',
+    'rpm-devel installed',
 ])
 @pytest.mark.skipif(not pytest.helpers.is_root_user(),
                     reason='needs root authority.')
@@ -64,24 +62,24 @@ def test_install_and_uninstall_are_ok_on_sys_status(
     if is_rpm_devel:
         _run_cmd('{0} -y install rpm-devel'.format(pkg_cmd))
     else:
-        _run_cmd('{0} -y remove rpm-devel'.format(pkg_cmd))
+        _run_cmd('{0} -y remove rpm-devel popt-devel'.format(pkg_cmd))
 
     if is_downloadable:
         _install_rpm_download_utility(is_dnf)
     else:
         _uninstall_rpm_download_utility(is_dnf)
 
-    if is_rpm_build_libs:
-        _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
-    else:
-        _run_cmd('{0} -y remove rpm-build-libs'.format(pkg_cmd))
+    # if is_rpm_build_libs:
+    #     _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
+    # else:
+    #     _run_cmd('{0} -y remove rpm-build-libs'.format(pkg_cmd))
 
     _assert_install_and_uninstall(install_script_path)
 
     # Reset as default system status.
-    _run_cmd('{0} -y remove rpm-devel'.format(pkg_cmd))
+    _run_cmd('{0} -y remove rpm-devel popt-devel'.format(pkg_cmd))
     _install_rpm_download_utility(is_dnf)
-    _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
+    # _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
 
     assert True
 
