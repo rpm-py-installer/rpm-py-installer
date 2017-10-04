@@ -4,6 +4,7 @@ Import only standard modules to run install.py directly.
 """
 import contextlib
 import fnmatch
+import glob
 import io
 import json
 import os
@@ -14,6 +15,7 @@ import sys
 import tarfile
 import tempfile
 from distutils.spawn import find_executable
+from distutils.sysconfig import get_python_lib
 
 
 class Application(object):
@@ -73,8 +75,7 @@ class Application(object):
         if 'RPM_PY_VERSION' in os.environ:
             rpm_py_version = os.environ.get('RPM_PY_VERSION')
         else:
-            stdout = Cmd.sh_e_out('{0} --version'.format(rpm_path))
-            rpm_py_version = stdout.split()[2]
+            rpm_py_version = rpm.version
 
         # Git branch name. Default: None
         git_branch = None
@@ -131,14 +132,19 @@ Install the proper RPM package of python{,2,3}-rpm.
         # rpm-libs is required for /usr/lib64/librpm*.so
         self.rpm.verify_packages_installed(['rpm-libs'])
 
-        is_rpm_build_libs = self.rpm.is_package_installed('rpm-build-libs')
-        if not is_rpm_build_libs and not self.rpm.is_downloadable():
-            message = '''
-RPM: rpm-build-libs or
+        # Check RPM so files to build the Python binding.
+        message_format = '''
+RPM: {0} or
 RPM download tool (dnf-plugins-core (dnf) or yum-utils (yum)) required.
 Install any of those.
-'''.format(self.rpm.package_cmd)
-            raise InstallError(message)
+'''
+        if self.rpm.has_sys_rpm_rpm_bulid_libs():
+            if (not self.rpm.is_package_installed('rpm-build-libs')
+               and not self.rpm.is_downloadable()):
+                raise InstallError(message_format.format('rpm-build-libs'))
+        else:
+            # All the needed so files are included in rpm-libs package.
+            pass
 
 
 class RpmPy(object):
@@ -169,8 +175,15 @@ class RpmPy(object):
         """Download and install RPM Python binding."""
         top_dir_name = self.downloader.download_and_expand()
         rpm_py_dir = os.path.join(top_dir_name, 'python')
-        Cmd.cd(rpm_py_dir)
-        self.installer.run()
+
+        setup_py_in_found = False
+        with Cmd.pushd(rpm_py_dir):
+            if self.installer.setup_py.exists_in_path():
+                setup_py_in_found = True
+                self.installer.run()
+
+        if not setup_py_in_found:
+            self.installer.install_from_rpm_py_rpm()
 
 
 class RpmPyVersion(object):
@@ -188,13 +201,9 @@ class RpmPyVersion(object):
 
     @property
     def info(self):
-        """RPM Python binding's version info.
-
-        tuple object. ex. ('4', '14', '0', 'rc1')
-        """
+        """RPM Python binding's version info."""
         version_str = self.version
-        version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
-        return tuple(version_info_list)
+        return Utils.version_str2tuple(version_str)
 
     @property
     def is_release(self):
@@ -264,6 +273,14 @@ else:
         if optimized:
             patches = self.DEFAULT_PATCHES
         self.patches = patches
+
+    def exists_in_path(self):
+        """Return if setup.py.in exists.
+
+        If RPM version >= 4.10.0-beta1, setup.py.in exist.
+        otherwise RPM version <= 4.9.x, setup.py.in does not exist.
+        """
+        return os.path.isfile(self.IN_PATH)
 
     def add_patchs_to_build_without_pkg_config(self, lib_dir, include_dir):
         """Add patches to remove pkg-config command and rpm.pc part.
@@ -483,7 +500,18 @@ class Downloader(object):
         )
         Log.info("Downloading source by git clone. 'branch: {0}'".format(
                  branch))
-        Cmd.sh_e(git_clone_cmd)
+        _, stderr = Cmd.sh_e(git_clone_cmd)
+        # Verify stderr message in addition.
+        # Old git (at least v1.7.1) does not return non zero exist status,
+        # when running "git clone -b branch" and the branch is not found.
+        # https://github.com/git/git/tree/master/Documentation/RelNotes
+        if re.match(r'warning: Remote branch [^ ]+ not found', stderr,
+                    re.MULTILINE):
+            message_format = (
+                'fatal: Remote branch {0} not '
+                'found in upstream origin.'
+            )
+            raise InstallError(message_format.format(branch))
 
     def _predict_git_branch(self):
         git_branch = None
@@ -558,6 +586,28 @@ Can you install the RPM package, and run this installer again?
             else:
                 raise e
 
+    def install_from_rpm_py_rpm(self):
+        """Run install main logic.
+
+        It is run when RPM does not have setup.py.in in the source
+        such as the RPM source is old.
+        """
+        self.rpm.download_and_extract('rpm-python')
+
+        # Find ./usr/lib64/pythonN.N/site-packages/rpm directory.
+        downloaded_rpm_dirs = glob.glob('usr/*/*/site-packages/rpm')
+        if not downloaded_rpm_dirs:
+            raise InstallError('site-packages/rpm directory not found.')
+        src_rpm_dir = downloaded_rpm_dirs[0]
+
+        dst_rpm_dir = self.python.python_lib_rpm_dir
+        if os.path.isdir(dst_rpm_dir):
+            Log.debug("Remove existed rpm directory {0}".format(dst_rpm_dir))
+            shutil.rmtree(dst_rpm_dir)
+        Log.debug("Copy directory from '{0}' to '{1}'".format(
+                  src_rpm_dir, dst_rpm_dir))
+        shutil.copytree(src_rpm_dir, dst_rpm_dir)
+
     def _is_rpm_build_libs_installed(self):
         return self.rpm.is_package_installed('rpm-build-libs')
 
@@ -568,57 +618,67 @@ Can you install the RPM package, and run this installer again?
         return self.rpm.is_package_installed('popt-devel')
 
     def _prepare_so_files(self):
-        build_link_dir = None
+        so_file_dict = {
+            'rpmio': {
+                'sym_src_dir': self.rpm.lib_dir,
+                'sym_dst_dir': 'rpmio/.libs',
+                'require': True,
+            },
+            'rpm': {
+                'sym_src_dir': self.rpm.lib_dir,
+                'sym_dst_dir': 'lib/.libs',
+                'require': True,
+            },
+            'rpmbuild': {
+                'sym_src_dir': self.rpm.lib_dir,
+                'sym_dst_dir': 'build/.libs',
+                'require': True,
+            },
+            'rpmsign': {
+                'sym_src_dir': self.rpm.lib_dir,
+                'sym_dst_dir': 'sign/.libs',
+            },
+        }
 
-        if self.rpm.is_downloadable():
-            if self._is_rpm_build_libs_installed():
-                build_link_dir = self.rpm.lib_dir
-            else:
+        if not self.rpm.has_sys_rpm_rpm_bulid_libs():
+            # All the needed so files are installed.
+            pass
+        elif self.rpm.is_downloadable():
+            if not self._is_rpm_build_libs_installed():
                 self.rpm.download_and_extract('rpm-build-libs')
+
                 # rpm-sign-libs was splitted from rpm-build-libs
                 # from rpm-4.14.1-8 on Fedora.
                 try:
                     self.rpm.download_and_extract('rpm-sign-libs')
                 except InstallError:
                     pass
+
                 current_dir = os.getcwd()
-                build_link_dir = current_dir + self.rpm.lib_dir
-        else:
-            if not self._is_rpm_build_libs_installed():
-                message = '''
+                work_lib_dir = current_dir + self.rpm.lib_dir
+                so_file_dict['rpmbuild']['sym_src_dir'] = work_lib_dir
+                so_file_dict['rpmsign']['sym_src_dir'] = work_lib_dir
+        elif not self._is_rpm_build_libs_installed():
+            message = '''
 Required RPM not installed: [rpm-build-libs],
 when a RPM download plugin not installed.
 '''
-                raise InstallError(message)
-            build_link_dir = self.rpm.lib_dir
+            raise InstallError(message)
 
-        so_dicts = [
-            {
-                'name': 'rpmio',
-                'sym_src_dir': self.rpm.lib_dir,
-                'sym_dst_dir': 'rpmio/.libs',
-            },
-            {
-                'name': 'rpm',
-                'sym_src_dir': self.rpm.lib_dir,
-                'sym_dst_dir': 'lib/.libs',
-            },
-            {
-                'name': 'rpmbuild',
-                'sym_src_dir': build_link_dir,
-                'sym_dst_dir': 'build/.libs',
-            },
-            {
-                'name': 'rpmsign',
-                'sym_src_dir': build_link_dir,
-                'sym_dst_dir': 'sign/.libs',
-            },
-        ]
-
-        for so_dict in so_dicts:
-            pattern = 'lib{0}.so*'.format(so_dict['name'])
+        for name in so_file_dict:
+            so_dict = so_file_dict[name]
+            pattern = 'lib{0}.so*'.format(name)
             so_files = Cmd.find(so_dict['sym_src_dir'], pattern)
             if not so_files:
+                is_required = so_dict.get('require', False)
+                if not is_required:
+                    message_format = (
+                        "Skip creating symbolic link of "
+                        "not existed so file '{0}'"
+                    )
+                    Log.debug(message_format.format(name))
+                    continue
+
                 message = 'so file pattern {0} not found at {1}'.format(
                     pattern, so_dict['sym_src_dir']
                 )
@@ -630,7 +690,7 @@ when a RPM download plugin not installed.
 
             cmd = 'ln -sf {0} {1}/lib{2}.so'.format(so_files[0],
                                                     sym_dst_dir,
-                                                    so_dict['name'])
+                                                    name)
             Cmd.sh_e(cmd)
 
     def _prepare_include_files(self):
@@ -643,6 +703,10 @@ when a RPM download plugin not installed.
         with Cmd.pushd('..'):
             src_include_dir = os.path.abspath('./include')
             for header_dir in src_header_dirs:
+                if not os.path.isdir(header_dir):
+                    Log.debug("Skip not existed header directory '{0}'".format(
+                              header_dir))
+                    continue
                 header_files = Cmd.find(header_dir, '*.h')
                 for header_file in header_files:
                     pattern = '^{0}/'.format(header_dir)
@@ -678,15 +742,27 @@ Required RPM not installed: [popt],
                 self.rpm.download_and_extract('popt-devel')
 
                 # Copy libpopt.so to rpm_root/lib/.libs/.
+                popt_lib_dirs = [
+                    self.rpm.lib_dir,
+                    # /lib64/libpopt.so* installed at popt-1.13-7.el6.x86_64.
+                    '/lib64',
+                ]
                 pattern = 'libpopt.so*'
-                so_files = Cmd.find(self.rpm.lib_dir, pattern)
-                if not so_files:
+                popt_so_file = None
+                for popt_lib_dir in popt_lib_dirs:
+                    so_files = Cmd.find(popt_lib_dir, pattern)
+                    if so_files:
+                        popt_so_file = so_files[0]
+                        break
+
+                if not popt_so_file:
                     message = 'so file pattern {0} not found at {1}'.format(
-                        pattern, self.rpm.lib_dir
+                        pattern, str(popt_lib_dirs)
                     )
                     raise InstallError(message)
+
                 cmd = 'ln -sf {0} ../lib/.libs/libpopt.so'.format(
-                      so_files[0])
+                      popt_so_file)
                 Cmd.sh_e(cmd)
 
                 # Copy popt.h to rpm_root/include
@@ -726,7 +802,40 @@ class Python(object):
         """Check if the Python is system Python."""
         return self.python_path.startswith('/usr/bin/python')
 
+    @property
+    def python_lib_dir(self):
+        """site-packages directory such as /../pythonN.N/site-packages ."""
+        return get_python_lib()
+
+    @property
+    def python_lib_rpm_dir(self):
+        """Installed directory of RPM Python binding."""
+        return os.path.join(self.python_lib_dir, 'rpm')
+
     def is_python_binding_installed(self):
+        """Check if the Python binding module has already installed.
+
+        Consider below cases.
+        - pip command is not installed.
+        - The installed RPM Python binding does not have information
+          showed as a result of pip list.
+        """
+        is_installed = False
+        is_install_error = False
+
+        try:
+            is_installed = self.is_python_binding_installed_on_pip()
+        except InstallError:
+            # Consider a case of pip is not installed in old Python (<= 2.6).
+            is_install_error = True
+        if not is_installed or is_install_error:
+            init_py = os.path.join(self.python_lib_rpm_dir, '__init__.py')
+            if os.path.isfile(init_py):
+                is_installed = True
+
+        return is_installed
+
+    def is_python_binding_installed_on_pip(self):
         """Check if the Python binding module has already installed."""
         pip_version = self._get_pip_version()
         Log.debug('Pip version: {0}'.format(pip_version))
@@ -791,18 +900,56 @@ class Python(object):
 class Rpm(object):
     """A class for RPM environment including DNF and Yum."""
 
-    def __init__(self, rpm_path):
+    def __init__(self, rpm_path, **kwargs):
         """Initialize this class."""
         is_dnf = True if Cmd.which('dnf') else False
 
+        is_file_checked = kwargs.get('check', True)
+        if is_file_checked and not os.path.isfile(rpm_path):
+            raise InstallError("RPM binary command '{0}' not found.".format(
+                               rpm_path))
         self.rpm_path = rpm_path
         self.is_dnf = is_dnf
         self.arch = Cmd.sh_e_out('uname -m').rstrip()
         self._lib_dir = None
 
+    @property
+    def version(self):
+        """RPM vesion string."""
+        stdout = Cmd.sh_e_out('{0} --version'.format(self.rpm_path))
+        rpm_version = stdout.split()[2]
+        return rpm_version
+
+    @property
+    def version_info(self):
+        """RPM version info."""
+        version_str = self.version
+        return Utils.version_str2tuple(version_str)
+
     def is_system_rpm(self):
         """Check if the RPM is system RPM."""
-        return self.rpm_path.startswith('/usr/bin/rpm')
+        sys_rpm_paths = [
+            '/usr/bin/rpm',
+            # On CentOS6, system RPM is installed in this directory.
+            '/bin/rpm',
+        ]
+        matched = False
+        for sys_rpm_path in sys_rpm_paths:
+            if self.rpm_path.startswith(sys_rpm_path):
+                matched = True
+                break
+        return matched
+
+    def has_sys_rpm_rpm_bulid_libs(self):
+        """Return if the sysmtem RPM has rpm-build-libs pacakage.
+
+        rpm-bulid-libs was created from rpm 4.9.0-0.beta1.1 on Fedora.
+        https://src.fedoraproject.org/rpms/rpm/blob/master/f/rpm.spec
+        > * 4.9.0-0.beta1.1
+        > - split librpmbuild and librpmsign to a separate rpm-build-libs
+        >   package
+        """
+        return self.version_info >= (4, 9, 0)
 
     def is_package_installed(self, package_name):
         """Check if the RPM package is installed."""
@@ -969,6 +1116,10 @@ class Cmd(object):
             proc = subprocess.Popen(cmd, **cmd_kwargs)
             stdout, stderr = proc.communicate()
             returncode = proc.returncode
+            message_format = (
+                'CMD Return Code: [{0}], Stdout: [{1}], Stderr: [{2}]'
+            )
+            Log.debug(message_format.format(returncode, stdout, stderr))
             if returncode != 0:
                 message = 'CMD: [{0}], Return Code: [{1}] at [{2}]'.format(
                     cmd, returncode, os.getcwd())
@@ -977,8 +1128,11 @@ class Cmd(object):
                 raise InstallError(message)
 
             if stdout is not None:
-                stdout = stdout.decode('ascii')
-            return stdout
+                stdout = stdout.decode('utf-8')
+            if stderr is not None:
+                stderr = stderr.decode('utf-8')
+
+            return (stdout, stderr)
         except Exception as e:
             try:
                 proc.kill()
@@ -993,7 +1147,7 @@ class Cmd(object):
             'stdout': subprocess.PIPE,
         }
         cmd_kwargs.update(kwargs)
-        return cls.sh_e(cmd, **cmd_kwargs)
+        return cls.sh_e(cmd, **cmd_kwargs)[0]
 
     @classmethod
     def cd(cls, directory):
@@ -1110,6 +1264,30 @@ class Cmd(object):
         It behaves like "mkdir -p directory_path".
         """
         os.makedirs(path)
+
+
+class Utils(object):
+    """A general utility class."""
+
+    @classmethod
+    def version_str2tuple(cls, version_str):
+        """Version info.
+
+        tuple object. ex. ('4', '14', '0', 'rc1')
+        """
+        version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
+
+        def convert_to_int(string):
+            value = None
+            if re.match(r'^\d+$', string):
+                value = int(string)
+            else:
+                value = string
+            return value
+
+        version_info_list = [convert_to_int(s) for s in version_info_list]
+
+        return tuple(version_info_list)
 
 
 class Log(object):

@@ -2,7 +2,9 @@
 
 import getpass
 import os
+import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
@@ -29,6 +31,53 @@ def pytest_collection_modifyitems(items):
 @pytest.fixture
 def install_script_path():
     return install_path
+
+
+@pytest.fixture
+def rpm_version_info():
+    p = subprocess.Popen(['rpm', '--version'], stdout=subprocess.PIPE)
+    out = p.communicate()[0]
+    out = out.decode()
+    version_str = out.split()[2]
+    version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
+
+    def convert_to_int(string):
+        value = None
+        if re.match(r'^\d+$', string):
+            value = int(string)
+        else:
+            value = string
+        return value
+
+    version_info_list = [convert_to_int(s) for s in version_info_list]
+
+    return tuple(version_info_list)
+
+
+@pytest.fixture
+def rpm_version_info_min_rpm_build_libs():
+    return (4, 9)
+
+
+@pytest.fixture
+def rpm_version_info_min_setup_py_in():
+    return (4, 10)
+
+
+@pytest.fixture
+def has_rpm_rpm_build_libs(
+    rpm_version_info,
+    rpm_version_info_min_rpm_build_libs
+):
+    return rpm_version_info >= rpm_version_info_min_rpm_build_libs
+
+
+@pytest.fixture
+def has_rpm_setup_py_in(
+    rpm_version_info,
+    rpm_version_info_min_setup_py_in
+):
+    return rpm_version_info >= rpm_version_info_min_setup_py_in
 
 
 @pytest.fixture

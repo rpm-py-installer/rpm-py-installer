@@ -23,7 +23,8 @@ from install import (Application,
                      Rpm,
                      RpmPy,
                      RpmPyVersion,
-                     SetupPy)
+                     SetupPy,
+                     Utils)
 
 RPM_ORG_VALID_ARCHIVE_URL_DICT = {
     'site': 'rpm.org',
@@ -53,8 +54,18 @@ GIT_HUB_INVALID_ARCHIVE_URL_DICT = {
 
 
 @pytest.fixture
-def sys_rpm():
-    return Rpm('/usr/bin/rpm')
+def sys_rpm_path():
+    rpm_path = None
+    if os.path.isfile('/usr/bin/rpm'):
+        rpm_path = '/usr/bin/rpm'
+    else:
+        rpm_path = '/bin/rpm'
+    return rpm_path
+
+
+@pytest.fixture
+def sys_rpm(sys_rpm_path):
+    return Rpm(sys_rpm_path)
 
 
 @pytest.fixture
@@ -94,9 +105,32 @@ def app(env, monkeypatch):
     return copy.deepcopy(Application())
 
 
+@pytest.mark.parametrize('version_str,version_info', [
+    (
+        '4.13.0',
+        (4, 13, 0),
+    ),
+    (
+        '4.14.0-rc1',
+        (4, 14, 0, 'rc1'),
+    ),
+])
+def test_utils_version_str2tuple_is_ok(version_str, version_info):
+    version_tuple = Utils.version_str2tuple(version_str)
+    assert version_tuple == version_info
+
+
 def test_cmd_sh_e_is_ok():
-    stdout = Cmd.sh_e('pwd')
+    stdout, stderr = Cmd.sh_e('pwd')
     assert not stdout
+    assert stderr == ''
+
+
+def test_cmd_sh_e_is_ok_with_stderr():
+    stdout, stderr = Cmd.sh_e('echo "abc" 1>&2')
+    assert not stdout
+    assert stderr
+    assert stderr == 'abc\n'
 
 
 def test_cmd_sh_e_is_failed():
@@ -256,7 +290,7 @@ def test_python_is_python_binding_installed_on_pip_9(rpm_py_name):
 
         json_obj = [json_rpm_py_obj]
         python._get_pip_list_json_obj = mock.MagicMock(return_value=json_obj)
-        assert python.is_python_binding_installed() is installed
+        assert python.is_python_binding_installed_on_pip() is installed
 
 
 @pytest.mark.parametrize('rpm_py_name',
@@ -285,18 +319,40 @@ def test_python_is_python_binding_installed_on_pip_less_than_9(rpm_py_name):
         installed = value_dict['installed']
 
         python._get_pip_list_lines = mock.MagicMock(return_value=lines)
-        assert python.is_python_binding_installed() is installed
+        assert python.is_python_binding_installed_on_pip() is installed
 
 
 @pytest.mark.parametrize('is_dnf', [True, False])
-def test_rpm_init_is_ok(is_dnf):
+def test_rpm_init_is_ok(is_dnf, sys_rpm_path):
     with mock.patch.object(Cmd, 'which') as mock_which:
         mock_which.return_value = is_dnf
-        rpm = Rpm('/usr/bin/rpm')
+        rpm = Rpm(sys_rpm_path)
         assert mock_which.called
-        assert rpm.rpm_path == '/usr/bin/rpm'
+        assert rpm.rpm_path == sys_rpm_path
         assert rpm.is_dnf is is_dnf
         assert rpm.arch == 'x86_64'
+
+
+def test_rpm_init_raises_error_on_not_existed_rpm():
+    with pytest.raises(InstallError) as ei:
+        Rpm('/usr/bin/rpm123')
+    expected_message = "RPM binary command '/usr/bin/rpm123' not found."
+    assert expected_message == str(ei.value)
+
+
+def test_rpm_version_is_ok(sys_rpm):
+    assert sys_rpm.version
+    assert re.match('^\d\.\d', sys_rpm.version)
+
+
+def test_rpm_version_info_is_ok(monkeypatch):
+    rpm = Rpm('/usr/local/bin/rpm', check=False)
+    monkeypatch.setattr(type(rpm), 'version',
+                        mock.PropertyMock(return_value='4.14.0.rc1'))
+    info = rpm.version_info
+    assert info
+    assert isinstance(info, tuple)
+    assert info == (4, 14, 0, 'rc1')
 
 
 def test_rpm_is_system_rpm_returns_true(sys_rpm):
@@ -304,8 +360,25 @@ def test_rpm_is_system_rpm_returns_true(sys_rpm):
 
 
 def test_rpm_is_system_rpm_returns_false():
-    rpm = Rpm('/usr/local/bin/rpm')
+    rpm = Rpm('/usr/local/bin/rpm', check=False)
     assert rpm.is_system_rpm() is False
+
+
+@pytest.mark.parametrize('version_info,has_rpm_bulid_libs', [
+    ((4, 8, 1),          False),
+    ((4, 9, 0, 'beta1'), True),
+    ((4, 9, 0, 'rc1'),   True),
+    ((4, 9, 0),          True),
+    ((4, 10, 0),         True),
+])
+def test_rpm_has_sys_rpm_rpm_bulid_libs_is_ok(
+    version_info, has_rpm_bulid_libs, monkeypatch
+):
+    rpm = Rpm('/usr/local/bin/rpm', check=False)
+    monkeypatch.setattr(type(rpm), 'version_info',
+                        mock.PropertyMock(return_value=version_info))
+    has_build_libs = rpm.has_sys_rpm_rpm_bulid_libs()
+    assert has_build_libs == has_rpm_bulid_libs
 
 
 @pytest.mark.parametrize('package_name', ['rpm-lib'])
@@ -374,13 +447,13 @@ def test_rpm_extract_is_ok(sys_rpm, rpm_files):
 @pytest.mark.parametrize('version,info,is_release,git_branch', [
     (
         '4.13.0',
-        ('4', '13', '0'),
+        (4, 13, 0),
         True,
         'rpm-4.13.x',
     ),
     (
         '4.14.0-rc1',
-        ('4', '14', '0', 'rc1'),
+        (4, 14, 0, 'rc1'),
         False,
         'rpm-4.14.x',
     ),
@@ -546,8 +619,13 @@ def test_downloader_download_and_expand_by_git_is_failed(downloader):
     # Not existed branch
     downloader.git_branch = 'rpm-4.14.x-dummy'
     with pytest.helpers.work_dir():
-        with pytest.raises(InstallError):
+        with pytest.raises(InstallError) as ei:
             downloader._download_and_expand_by_git()
+        expected_message = (
+            'fatal: Remote branch rpm-4.14.x-dummy not '
+            'found in upstream origin'
+        )
+        assert expected_message in str(ei.value)
 
 
 def test_downloader_download_and_expand_by_git_is_ok_with_predicted(
@@ -557,6 +635,7 @@ def test_downloader_download_and_expand_by_git_is_ok_with_predicted(
     downloader._predict_git_branch = mock.MagicMock(
         return_value='rpm-4.13.0.1')
     with mock.patch.object(Cmd, 'sh_e') as mock_sh_e:
+        mock_sh_e.return_value = ('stdout', 'stderr')
         top_dir_name = downloader._download_and_expand_by_git()
         assert mock_sh_e.called
         assert top_dir_name == 'rpm'
@@ -566,14 +645,14 @@ def test_downloader_download_and_expand_by_git_is_ok_with_predicted(
     {
         # Set version name with the major version and minior version
         # mapping to the stable branch.
-        'version_info': ('4', '13', '0'),
+        'version_info': (4, 13, 0),
         'branch': 'rpm-4.13.x',
     },
     {
         # Set version name not mapping to the stable branch.
         # to get the source from master branch.
         # It is likely to be used for development.
-        'version_info': ('5', '99', '0', 'dev'),
+        'version_info': (5, 99, 0, 'dev'),
         'branch': 'master',
     },
 ])
@@ -656,6 +735,9 @@ when a RPM download plugin not installed.
 
 
 def test_installer_run_raises_error_for_rpm_build_libs(installer):
+    installer.rpm.has_sys_rpm_rpm_bulid_libs = mock.MagicMock(
+        return_value=True
+    )
     installer._is_rpm_devel_installed = mock.MagicMock(
         return_value=False
     )
@@ -676,6 +758,39 @@ Required RPM not installed: [rpm-build-libs],
 when a RPM download plugin not installed.
 '''
     assert expected_message == str(ei.value)
+
+
+@pytest.mark.parametrize('setup_py_in_exists', [True, False])
+def test_rpm_py_download_and_install(setup_py_in_exists):
+    version_str = '4.13.0'
+    version = RpmPyVersion(version_str)
+    python = Python()
+    rpm_py = RpmPy(version, python, sys_rpm)
+
+    top_dir_name = 'rpm-{0}'.format(version_str)
+    rpm_py.downloader.download_and_expand = mock.Mock(
+        return_value=top_dir_name
+    )
+    rpm_py.installer.run = mock.Mock(
+        return_value=None
+    )
+    rpm_py.installer.install_from_rpm_py_rpm = mock.Mock(
+        return_value=None
+    )
+
+    with pytest.helpers.work_dir():
+        python_dir = os.path.join(top_dir_name, 'python')
+        os.makedirs(python_dir)
+        if setup_py_in_exists:
+            pytest.helpers.touch(os.path.join(python_dir, 'setup.py.in'))
+        rpm_py.download_and_install()
+
+        if setup_py_in_exists:
+            assert rpm_py.installer.run.called
+            assert not rpm_py.installer.install_from_rpm_py_rpm.called
+        else:
+            assert not rpm_py.installer.run.called
+            assert rpm_py.installer.install_from_rpm_py_rpm.called
 
 
 def test_app_init(app):
@@ -798,6 +913,9 @@ def test_app_run_is_ok_on_download_by_rpm_py_version(app, rpm_py_version):
         return top_dir_name
 
     app.rpm_py.downloader.download_and_expand = mock_download_and_expand
+    app.rpm_py.installer.setup_py.exists_in_path = mock.MagicMock(
+        return_value=True
+    )
     app.rpm_py.installer.run = mock.MagicMock(return_value=True)
     app.python.is_python_binding_installed = mock.MagicMock(return_value=True)
 
@@ -820,7 +938,8 @@ def test_app_run_is_ok_on_download_by_rpm_py_version(app, rpm_py_version):
 )
 @mock.patch.object(Log, 'verbose', new=False)
 def test_app_run_is_ok(
-    app, is_rpm_devel, is_popt_devel, is_downloadable, is_rpm_build_libs
+    app, is_rpm_devel, is_popt_devel, is_downloadable, is_rpm_build_libs,
+    rpm_version_info_min_setup_py_in
 ):
     app.is_work_dir_removed = True
     app.rpm_py.installer._is_rpm_devel_installed = mock.MagicMock(
@@ -842,6 +961,10 @@ def test_app_run_is_ok(
         )
 
     app.run()
+
+    # If setup.py.in does not exist in old RPM, skip below checks.
+    if app.rpm.version_info < rpm_version_info_min_setup_py_in:
+        return
 
     assert app.rpm_py.installer._is_rpm_devel_installed.called
     if not is_rpm_devel:
