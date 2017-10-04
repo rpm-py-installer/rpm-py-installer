@@ -12,4 +12,4 @@ CONTAINER_IMAGE=centos:7
 docker pull "docker.io/${CONTAINER_IMAGE}"
 docker tag "docker.io/${CONTAINER_IMAGE}" "${CONTAINER_IMAGE}"
 
-docker run -it "${CONTAINER_IMAGE}" bash
+docker run -it --rm "${CONTAINER_IMAGE}" bash
