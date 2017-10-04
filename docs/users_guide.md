@@ -40,8 +40,22 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 
 - Q2. What is the dependency RPM packages for `rpm-py-installer`?
 - A2. Following packages are required on Fedora.
-  - rpm-libs
-  - rpm-devel
+  - `rpm-libs`
+  - one of dnf download plugin(`dnf-plugins-core`), `yumdownloader` or `rpm-devel`
+
+  If `rpm-devel` has been installed, it is used. If not, the download utiliy is used to download and use the build required RPM packages in installing process.
+
+  To install dnf download plugin on DNF environment such as Fedora.
+
+  ```
+  # dnf install 'dnf-command(download)'
+  ```
+
+  To install `yumdownloader` on Yum environment such as CentOS.
+
+  ```
+  # yum install /usr/bin/yumdownloader
+  ```
 
   See also installed packages in [Dockerfile for testing](../.travis/Dockerfile).
 
