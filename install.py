@@ -466,15 +466,27 @@ class Installer(object):
 
     def run(self):
         """Run install main logic."""
-        if not self._is_rpm_devel_installed():
-            self._prepare_so_files()
-            self._prepare_include_files()
-            self._prepare_dependency_so_include_files()
-            self.setup_py.add_patchs_to_build_without_pkg_config(
-                self.rpm.lib_dir, self.rpm.include_dir
-            )
-        self.setup_py.apply_and_save()
-        self._build_and_install()
+        try:
+            if not self._is_rpm_devel_installed():
+                self._prepare_so_files()
+                self._prepare_include_files()
+                self._prepare_dependency_so_include_files()
+                self.setup_py.add_patchs_to_build_without_pkg_config(
+                    self.rpm.lib_dir, self.rpm.include_dir
+                )
+            self.setup_py.apply_and_save()
+            self._build_and_install()
+        except InstallError as e:
+            if not self._is_rpm_devel_installed():
+                org_message = str(e)
+                message = '''
+Install failed without rpm-devel package by below reason.
+Can you install the RPM package, and run this installer again?
+'''
+                message += org_message
+                raise InstallError(message)
+            else:
+                raise e
 
     def _is_rpm_build_libs_installed(self):
         return self.rpm.is_package_installed('rpm-build-libs')

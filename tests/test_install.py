@@ -546,6 +546,9 @@ def test_installer_run_raises_error_for_rpm_build_libs(installer):
     with pytest.raises(InstallError) as ei:
         installer.run()
     expected_message = '''
+Install failed without rpm-devel package by below reason.
+Can you install the RPM package, and run this installer again?
+
 Required RPM not installed: [rpm-build-libs],
 when a RPM download plugin not installed.
 '''
