@@ -895,7 +895,7 @@ class Cmd(object):
         except Exception as e:
             try:
                 proc.kill()
-            except:
+            except Exception:
                 pass
             raise e
 
