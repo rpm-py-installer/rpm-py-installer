@@ -35,7 +35,7 @@ Package          Version-
 ---------------- --------
 pip              9.0.1
 rpm-py-installer 0.4.0
-rpm-python       4.13.0.1
+rpm-python       4.13.0.1 <= Same version with the system RPM's one.
 setuptools       28.8.0
 
 $ python -c "import rpm; print(rpm.__version__)"
