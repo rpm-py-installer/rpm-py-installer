@@ -65,15 +65,26 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   It is recommended that you would install it manually from the RPM package(`python{,2,3}-rpm`).
 
 
-- Q4. Is it possible to install the Python binding module's specifying the version.
-- A4. Yes. Possible. But it may be failed to install. Set version number seeing [RPM release page](https://github.com/rpm-software-management/rpm/releases).
+- Q4. How is `rpm-py-installer` version mapped to `python[23]-rpm` version?
+- A4. The version mapping's default behavior is to use same version with the system RPM's version on local. See [#94](https://github.com/junaruga/rpm-py-installer/issues/94) for detail.
+
+- Q5. Is it possible to install the Python binding module's specifying the version.
+- A5. Yes. Possible. But it may be failed to install. Set version number seeing [RPM release page](https://github.com/rpm-software-management/rpm/releases).
 
   ```
   $ RPM_PY_VERSION=4.13.0 python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
   ```
+- Q6. How to update my Python package's RPM spec file `foo.spec`?
+- A6. You can add below command in your spec file `foo.spec`.
 
-- Q5. I got message "Failed building wheel for rpm-py-installer" when installing `pip install rpm-py-installer`. Is it problem?
-- A5. No, it isn't. `rpm-py-installer` makes own `python setup.py bdist_wheel` raise an error, to always disable `wheel` cache to run own install process.
+  ```
+  sed -i '/rpm-py-installer/d' setup.py
+  ```
+
+  or set `setup.py`'s `install_requires` conditionally. Refer [rebase-helper's `setup.py`](https://github.com/rebase-helper/rebase-helper/blob/master/setup.py) for sample.
+
+- Q7. I got message "Failed building wheel for rpm-py-installer" when installing `pip install rpm-py-installer`. Is it problem?
+- A7. No, it isn't. `rpm-py-installer` makes own `python setup.py bdist_wheel` raise an error, to always disable `wheel` cache to run own install process.
 
 ## Tutorial
 
