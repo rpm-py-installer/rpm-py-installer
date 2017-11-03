@@ -886,7 +886,6 @@ class Cmd(object):
                     cmd, returncode, os.getcwd())
                 if stderr is not None:
                     message += ' Stderr: [{0}]'.format(stderr)
-                Log.error(message)
                 raise InstallError(message)
 
             if stdout is not None:
