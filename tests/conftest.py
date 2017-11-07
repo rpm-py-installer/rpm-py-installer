@@ -51,13 +51,20 @@ def file_url():
 
 
 @pytest.fixture
-def tar_gz_file_path():
-    return os.path.abspath('tests/fixtures/valid.tar.gz')
+def archive_file_path_dicts():
+    archive_dir = os.path.abspath('tests/fixtures/archive')
 
-
-@pytest.fixture
-def invalid_tar_gz_file_path():
-    return os.path.abspath('tests/fixtures/invalid.tar.gz')
+    path_dicts = {
+        'tar.gz': {
+            'valid': os.path.join(archive_dir, 'valid.tar.gz'),
+            'invalid': os.path.join(archive_dir, 'invalid.tar.gz'),
+         },
+        'tar.bz2': {
+            'valid': os.path.join(archive_dir, 'valid.tar.bz2'),
+            'invalid': os.path.join(archive_dir, 'invalid.tar.bz2'),
+        },
+    }
+    return path_dicts
 
 
 @pytest.fixture
