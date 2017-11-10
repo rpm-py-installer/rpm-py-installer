@@ -25,6 +25,32 @@ from install import (Application,
                      RpmPyVersion,
                      SetupPy)
 
+RPM_ORG_VALID_ARCHIVE_URL_DICT = {
+    'site': 'rpm.org',
+    'url': 'http://ftp.rpm.org/releases'
+           '/rpm-4.13.x/rpm-4.13.0.2.tar.bz2',
+    'top_dir_name': 'rpm-4.13.0.2',
+}
+
+RPM_ORG_INVALID_ARCHIVE_URL_DICT = {
+    'site': 'rpm.org',
+    'url': 'http://ftp.rpm.org/releases'
+           '/rpm-4.13.x/rpm-4.13.0.2-dummy.tar.bz2',
+    'top_dir_name': 'rpm-4.13.0.2',
+}
+GIT_HUB_VALID_ARCHIVE_URL_DICT = {
+    'site': 'github',
+    'url': 'https://github.com/rpm-software-management/rpm/archive'
+           '/rpm-4.13.0.2-release.tar.gz',
+    'top_dir_name': 'rpm-rpm-4.13.0.2-release',
+}
+GIT_HUB_INVALID_ARCHIVE_URL_DICT = {
+    'site': 'github',
+    'url': 'https://github.com/rpm-software-management/rpm/archive'
+           '/rpm-4.13.0.2-release-dummy.tar.gz',
+    'top_dir_name': 'rpm-rpm-4.13.0.2-release',
+}
+
 
 @pytest.fixture
 def sys_rpm():
@@ -128,16 +154,25 @@ def test_cmd_curl_is_failed(file_url):
                     str(ei.value))
 
 
-def test_cmd_tar_xzf_is_ok(tar_gz_file_path):
+@pytest.mark.parametrize('file_type', ['tar.gz', 'tar.bz2'])
+def test_cmd_tar_archive_is_ok(archive_file_path_dicts, file_type):
+    archive_file_path = archive_file_path_dicts[file_type]['valid']
+    if not archive_file_path:
+        raise ValueError('archive_file_path')
     with pytest.helpers.work_dir():
-        Cmd.tar_xzf(tar_gz_file_path)
+        Cmd.tar_extract(archive_file_path)
         assert os.path.isdir('a')
 
 
-def test_cmd_tar_xzf_is_failed(invalid_tar_gz_file_path):
+@pytest.mark.parametrize('file_type', ['tar.gz', 'tar.bz2'])
+def test_cmd_tar_archive_is_failed(archive_file_path_dicts, file_type):
+    archive_file_path = archive_file_path_dicts[file_type]['invalid']
+    if not archive_file_path:
+        raise ValueError('archive_file_path')
+
     with pytest.helpers.work_dir():
         with pytest.raises(InstallError) as ei:
-            Cmd.tar_xzf(invalid_tar_gz_file_path)
+            Cmd.tar_extract(archive_file_path)
     assert re.match('^Extract failed: .* could not be opened successfully$',
                     str(ei.value))
 
@@ -336,39 +371,47 @@ def test_rpm_extract_is_ok(sys_rpm, rpm_files):
         ]
 
 
-def test_rpm_py_version_is_ok():
-    version = '4.14.0-rc1'
+@pytest.mark.parametrize('version,info,is_release,git_branch', [
+    (
+        '4.13.0',
+        ('4', '13', '0'),
+        True,
+        'rpm-4.13.x',
+    ),
+    (
+        '4.14.0-rc1',
+        ('4', '14', '0', 'rc1'),
+        False,
+        'rpm-4.14.x',
+    ),
+])
+def test_rpm_py_version_is_ok(version, info, is_release, git_branch):
     rpm_py_version = RpmPyVersion(version)
     assert '{0}'.format(rpm_py_version) == version
     assert rpm_py_version.version == version
-    assert rpm_py_version.info == ('4', '14', '0', 'rc1')
+    assert rpm_py_version.info == info
+    assert rpm_py_version.is_release is is_release
+    assert rpm_py_version.git_branch == git_branch
 
 
-@pytest.mark.parametrize('value_dict', [
-    {
-        'version': '4.13.0',
-        'tag_names': [
-            'rpm-4.13.0-release',
-            'rpm-4.13.0',
-        ],
-    },
-    {
-        'version': '4.14.0-rc1',
-        'tag_names': [
-            'rpm-4.14.0-rc1',
-            'rpm-4.14.0-rc1-release',
-        ],
-    },
-
+@pytest.mark.parametrize('version,tag_names', [
+    (
+        '4.13.0',
+        ['rpm-4.13.0-release', 'rpm-4.13.0'],
+    ),
+    (
+        '4.14.0-rc1',
+        ['rpm-4.14.0-rc1', 'rpm-4.14.0-rc1-release'],
+    ),
 ])
-def test_downloader_predict_candidate_git_tag_names_is_ok(value_dict):
-    rpm_py_version = RpmPyVersion(value_dict['version'])
+def test_downloader_predict_candidate_git_tag_names_is_ok(version, tag_names):
+    rpm_py_version = RpmPyVersion(version)
     downloader = Downloader(rpm_py_version)
-    tag_names = downloader._predict_candidate_git_tag_names()
-    assert tag_names == value_dict['tag_names']
+    candidate_tag_names = downloader._predict_candidate_git_tag_names()
+    assert candidate_tag_names == tag_names
 
 
-def test_downloader_download_and_expand_is_ok_from_archive_url(downloader):
+def test_downloader_download_and_expand_is_ok_on_archive(downloader):
     downloader.git_branch = None
     target_top_dir_name = 'foo'
     downloader._download_and_expand_from_archive_url = mock.MagicMock(
@@ -378,7 +421,7 @@ def test_downloader_download_and_expand_is_ok_from_archive_url(downloader):
     assert top_dir_name == target_top_dir_name
 
 
-def test_downloader_download_and_expand_is_ok_by_git(downloader):
+def test_downloader_download_and_expand_is_ok_on_git(downloader):
     downloader.git_branch = 'foo'
     target_top_dir_name = 'bar'
     downloader._download_and_expand_by_git = mock.MagicMock(
@@ -390,25 +433,105 @@ def test_downloader_download_and_expand_is_ok_by_git(downloader):
 
 def test_downloader_download_and_expand_is_ng_on_archive_ok_on_git(downloader):
     downloader.git_branch = None
-
-    def mock_predict_candidate_git_tag_names(*args, **kwargs):
-        return [
-            'rpm-1.2.3-dummy',
-            'rpm-4.5.6-dummy',
-        ]
-
-    downloader._predict_candidate_git_tag_names = \
-        mock_predict_candidate_git_tag_names
-    downloader.rpm_py_version = RpmPyVersion('4.13.0')
-
+    downloader._download_and_expand_from_archive_url = mock.Mock(
+        side_effect=ArchiveNotFoundError('test.')
+    )
     target_top_dir_name = 'bar'
-    downloader._download_and_expand_by_git = mock.MagicMock(
+    downloader._download_and_expand_by_git = mock.Mock(
                return_value=target_top_dir_name)
 
     with pytest.helpers.work_dir():
         top_dir_name = downloader.download_and_expand()
         downloader._download_and_expand_by_git.called
         assert top_dir_name == target_top_dir_name
+
+
+@pytest.mark.parametrize('archive_dicts,is_ok', [
+    (
+        [RPM_ORG_VALID_ARCHIVE_URL_DICT],
+        True,
+    ),
+    (
+        [GIT_HUB_VALID_ARCHIVE_URL_DICT],
+        True,
+    ),
+    (
+        [RPM_ORG_INVALID_ARCHIVE_URL_DICT, GIT_HUB_VALID_ARCHIVE_URL_DICT],
+        True,
+    ),
+    (
+        [RPM_ORG_INVALID_ARCHIVE_URL_DICT, GIT_HUB_INVALID_ARCHIVE_URL_DICT],
+        False,
+    )
+], ids=[
+    'rpm.org valid URL',
+    'github valid URL',
+    'rpm.org invalid URL => github valid URL',
+    'rpm.org invalid URL => github invalid URL',
+])
+def test_downloader_download_and_expand_from_archive_url(
+    downloader, archive_dicts, is_ok
+):
+    downloader._get_candidate_archive_dicts = mock.Mock(
+        return_value=archive_dicts
+    )
+    with pytest.helpers.work_dir():
+        if is_ok:
+            top_dir_name = downloader._download_and_expand_from_archive_url()
+            assert top_dir_name
+            assert os.path.isdir(top_dir_name)
+        else:
+            with pytest.raises(ArchiveNotFoundError):
+                downloader._download_and_expand_from_archive_url()
+
+
+@pytest.mark.parametrize('version,archive_dicts', [
+    (
+        '4.13.0',
+        [
+            {
+                'site': 'rpm.org',
+                'url': 'http://ftp.rpm.org/releases/'
+                       'rpm-4.13.x/rpm-4.13.0.tar.gz',
+                'top_dir_name': 'rpm-4.13.0',
+            },
+            {
+                'site': 'github',
+                'url': 'https://github.com/rpm-software-management/rpm'
+                       '/archive/rpm-4.13.0-release.tar.gz',
+                'top_dir_name': 'rpm-rpm-4.13.0-release',
+            },
+            {
+                'site': 'github',
+                'url': 'https://github.com/rpm-software-management/rpm'
+                       '/archive/rpm-4.13.0.tar.gz',
+                'top_dir_name': 'rpm-rpm-4.13.0',
+            },
+        ],
+    ),
+    (
+        '4.14.0-rc1',
+        [
+            {
+                'site': 'github',
+                'url': 'https://github.com/rpm-software-management/rpm'
+                       '/archive/rpm-4.14.0-rc1.tar.gz',
+                'top_dir_name': 'rpm-rpm-4.14.0-rc1',
+            },
+            {
+                'site': 'github',
+                'url': 'https://github.com/rpm-software-management/rpm'
+                       '/archive/rpm-4.14.0-rc1-release.tar.gz',
+                'top_dir_name': 'rpm-rpm-4.14.0-rc1-release',
+            },
+        ],
+    ),
+])
+def test_downloader_get_candidate_archive_dicts_is_ok(version, archive_dicts):
+    rpm_py_version = RpmPyVersion(version)
+    downloader = Downloader(rpm_py_version)
+    candidate_archive_dicts = downloader._get_candidate_archive_dicts()
+    assert candidate_archive_dicts == archive_dicts
 
 
 def test_downloader_download_and_expand_by_git_is_ok(downloader):
@@ -666,7 +789,7 @@ def test_app_run_is_ok_on_download_by_rpm_py_version(app, rpm_py_version):
     app.rpm_py.downloader.rpm_py_version = RpmPyVersion(rpm_py_version)
 
     tag_names = app.rpm_py.downloader._predict_candidate_git_tag_names()
-    top_dir_name = app.rpm_py.downloader._get_rpm_archive_top_dir_name(
+    top_dir_name = app.rpm_py.downloader._get_git_hub_archive_top_dir_name(
                    tag_names[0])
 
     def mock_download_and_expand(*args, **kwargs):

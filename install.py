@@ -196,6 +196,19 @@ class RpmPyVersion(object):
         version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
         return tuple(version_info_list)
 
+    @property
+    def is_release(self):
+        """Release version or not."""
+        # version string: N.N.N.N is for release.
+        return True if re.match(r'^[\d.]+$', self.version) else False
+
+    @property
+    def git_branch(self):
+        """Git branch name."""
+        info = self.info
+        return 'rpm-{major}.{minor}.x'.format(
+            major=info[0], minor=info[1])
+
 
 class SetupPy(object):
     """A class for the RPM Python binding's setup.py file.
@@ -307,12 +320,19 @@ else:
 class Downloader(object):
     """A class to download RPM Python binding."""
 
-    RPM_GIT_REPO_BASE_URL = 'https://github.com/rpm-software-management/rpm'
-    RPM_GIT_REPO_URL = '{0}.git'.format(RPM_GIT_REPO_BASE_URL)
-    RPM_ARCHIVE_URL_FORMAT = (
-        RPM_GIT_REPO_BASE_URL + '/archive/{tag_name}.tar.gz'
+    # rpm.org
+    RPM_ORG_BASE_URL = 'http://ftp.rpm.org/releases'
+    RPM_ORG_ARCHIVE_URL_FORMAT = (
+        RPM_ORG_BASE_URL + '/{branch_name}/rpm-{version}.tar.gz'
     )
-    RPM_ARCHIVE_TOP_DIR_NAME_FORMAT = 'rpm-{tag_name}'
+    RPM_ORG_ARCHIVE_TOP_DIR_NAME_FORMAT = 'rpm-{version}'
+    # github
+    RPM_GIT_HUB_BASE_URL = 'https://github.com/rpm-software-management/rpm'
+    RPM_GIT_HUB_REPO_URL = '{0}.git'.format(RPM_GIT_HUB_BASE_URL)
+    RPM_GIT_HUB_ARCHIVE_URL_FORMAT = (
+        RPM_GIT_HUB_BASE_URL + '/archive/{tag_name}.tar.gz'
+    )
+    RPM_GIT_HUB_ARCHIVE_TOP_DIR_NAME_FORMAT = 'rpm-{tag_name}'
 
     def __init__(self, rpm_py_version, **kwargs):
         """Initialize this class."""
@@ -342,37 +362,78 @@ class Downloader(object):
                 top_dir_name = self._download_and_expand_by_git()
         return top_dir_name
 
-    def _get_rpm_archive_top_dir_name(self, tag_name):
-        top_dir = self.RPM_ARCHIVE_TOP_DIR_NAME_FORMAT.format(
-            tag_name=tag_name
-        )
-        return top_dir
-
     def _download_and_expand_from_archive_url(self):
-        tag_names = self._predict_candidate_git_tag_names()
-        tar_gz_file_name = None
-
-        tag_name_len = len(tag_names)
-        decided_tag_name = None
-        for index, tag_name in enumerate(tag_names):
-            archive_url = self.RPM_ARCHIVE_URL_FORMAT.format(
-                                                      tag_name=tag_name)
-            Log.info("Downloading archive. '{0}'.".format(archive_url))
+        archive_dicts = self._get_candidate_archive_dicts()
+        max_num = len(archive_dicts)
+        found_index = None
+        for index, archive_dict in enumerate(archive_dicts):
+            url = archive_dict['url']
+            Log.info("Downloading archive. '{0}'.".format(url))
             try:
-                tar_gz_file_name = Cmd.curl_remote_name(archive_url)
+                Cmd.curl_remote_name(url)
             except ArchiveNotFoundError as e:
-                Log.info('Archive not found. URL: {0}'.format(archive_url))
-                if index + 1 < tag_name_len:
+                Log.info('Archive not found. URL: {0}'.format(url))
+                if index + 1 < max_num:
                     Log.info('Try to download next candidate URL.')
                 else:
                     raise e
             else:
-                decided_tag_name = tag_name
+                found_index = index
                 break
 
-        Cmd.tar_xzf(tar_gz_file_name)
+        found_archive_dict = archive_dicts[found_index]
+        archive_file_name = os.path.basename(found_archive_dict['url'])
+        Cmd.tar_extract(archive_file_name)
 
-        top_dir_name = self._get_rpm_archive_top_dir_name(decided_tag_name)
+        return found_archive_dict['top_dir_name']
+
+    def _get_candidate_archive_dicts(self):
+        archive_dicts = []
+
+        if self.rpm_py_version.is_release:
+            url = self._get_rpm_org_archive_url()
+            top_dir_name = self._get_rpm_org_archive_top_dir_name()
+            archive_dicts.append({
+                'site': 'rpm.org',
+                'url': url,
+                'top_dir_name': top_dir_name,
+            })
+
+        tag_names = self._predict_candidate_git_tag_names()
+        for tag_name in tag_names:
+            url = self._get_git_hub_archive_url(tag_name)
+            top_dir_name = self._get_git_hub_archive_top_dir_name(tag_name)
+            archive_dicts.append({
+                'site': 'github',
+                'url': url,
+                'top_dir_name': top_dir_name,
+            })
+
+        return archive_dicts
+
+    def _get_rpm_org_archive_url(self):
+        url = self.RPM_ORG_ARCHIVE_URL_FORMAT.format(
+            branch_name=self.rpm_py_version.git_branch,
+            version=self.rpm_py_version.version,
+        )
+        return url
+
+    def _get_rpm_org_archive_top_dir_name(self):
+        top_dir_name = self.RPM_ORG_ARCHIVE_TOP_DIR_NAME_FORMAT.format(
+            version=self.rpm_py_version.version
+        )
+        return top_dir_name
+
+    def _get_git_hub_archive_url(self, tag_name):
+        url = self.RPM_GIT_HUB_ARCHIVE_URL_FORMAT.format(
+            tag_name=tag_name
+        )
+        return url
+
+    def _get_git_hub_archive_top_dir_name(self, tag_name):
+        top_dir_name = self.RPM_GIT_HUB_ARCHIVE_TOP_DIR_NAME_FORMAT.format(
+            tag_name=tag_name
+        )
         return top_dir_name
 
     def _download_and_expand_by_git(self):
@@ -384,8 +445,7 @@ class Downloader(object):
         name_release = 'rpm-{0}-release'.format(version)
         name_non_release = 'rpm-{0}'.format(version)
         tag_names = None
-        # version string: N.N.N.N is for release.
-        if re.match(r'^[\d.]+$', version):
+        if self.rpm_py_version.is_release:
             tag_names = [
                 name_release,
                 name_non_release,
@@ -409,7 +469,7 @@ class Downloader(object):
 
         git_clone_cmd = 'git clone -b {branch} --depth=1 {repo_url}'.format(
             branch=branch,
-            repo_url=self.RPM_GIT_REPO_URL,
+            repo_url=self.RPM_GIT_HUB_REPO_URL,
         )
         Log.info("Downloading source by git clone. 'branch: {0}'".format(
                  branch))
@@ -424,7 +484,7 @@ class Downloader(object):
             minor=version_info[1],
         )
         git_ls_remote_cmd = 'git ls-remote --heads {repo_url} {branch}'.format(
-            repo_url=self.RPM_GIT_REPO_URL,
+            repo_url=self.RPM_GIT_HUB_REPO_URL,
             branch=stable_branch,
         )
         stdout = Cmd.sh_e_out(git_ls_remote_cmd)
@@ -979,21 +1039,23 @@ class Cmd(object):
         return tar_gz_file_name
 
     @classmethod
-    def tar_xzf(cls, tar_gz_file_path):
-        """Extract tar.gz file.
+    def tar_extract(cls, tar_comp_file_path):
+        """Extract tar.gz or tar bz2 file.
 
-        It behaves like "tar xzf tar_gz_file_path".
-        it raises tarfile.ReadError if the file is broken.
+        It behaves like
+          - tar xzf tar_gz_file_path
+          - tar xjf tar_bz2_file_path
+        It raises tarfile.ReadError if the file is broken.
         """
         try:
-            with tarfile.open(tar_gz_file_path) as tar:
+            with tarfile.open(tar_comp_file_path) as tar:
                 tar.extractall()
         except tarfile.ReadError as e:
             message_format = (
                 'Extract failed: '
-                'tar_gz_file_path: {0}, reason: {1}'
+                'tar_comp_file_path: {0}, reason: {1}'
             )
-            raise InstallError(message_format.format(tar_gz_file_path, e))
+            raise InstallError(message_format.format(tar_comp_file_path, e))
 
     @classmethod
     def find(cls, searched_dir, pattern):
