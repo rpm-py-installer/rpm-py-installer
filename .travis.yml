@@ -4,7 +4,8 @@ services: docker
 matrix:
   include:
     # https://hub.docker.com/_/fedora/
-    - env: CONTAINER_IMAGE=fedora:26 TOXENV=lint-py3,lint-py2,py36,py35,py27
+    - env: CONTAINER_IMAGE=fedora:27 TOXENV=lint-py3,lint-py2,py36,py35,py27
+    - env: CONTAINER_IMAGE=fedora:26 TOXENV=py36
     - env: CONTAINER_IMAGE=fedora:25 TOXENV=py36
     - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py36,py27
     # https://hub.docker.com/r/junaruga/rpm-py-installer-docker/
