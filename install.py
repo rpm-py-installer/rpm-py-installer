@@ -52,7 +52,7 @@ class Application(object):
             Log.info("Saved working directory '{0}'".format(work_dir))
 
     def _load_options_from_env(self):
-        verbose = True if os.environ.get('VERBOSE') == 'true' else False
+        verbose = True if os.environ.get('RPM_PY_VERBOSE') == 'true' else False
         # Set it as early as possible for other functions.
         self.verbose = verbose
         Log.verbose = verbose
@@ -61,7 +61,7 @@ class Application(object):
         python = Python()
 
         # Linked rpm's path. Default: rpm.
-        rpm_path = os.environ.get('RPM', 'rpm')
+        rpm_path = os.environ.get('RPM_PY_RPM_BIN', 'rpm')
         rpm_path = Cmd.which(rpm_path)
         if not rpm_path:
             raise InstallError('rpm command not found. Install rpm.')
@@ -78,8 +78,8 @@ class Application(object):
 
         # Git branch name. Default: None
         git_branch = None
-        if 'GIT_BRANCH' in os.environ:
-            git_branch = os.environ.get('GIT_BRANCH')
+        if 'RPM_PY_GIT_BRANCH' in os.environ:
+            git_branch = os.environ.get('RPM_PY_GIT_BRANCH')
 
         # Use optimized setup.py?
         # Default: true
@@ -91,8 +91,8 @@ class Application(object):
                 optimized = False
 
         is_work_dir_removed = True
-        if 'WORK_DIR_REMOVED' in os.environ:
-            if os.environ.get('WORK_DIR_REMOVED') == 'true':
+        if 'RPM_PY_WORK_DIR_REMOVED' in os.environ:
+            if os.environ.get('RPM_PY_WORK_DIR_REMOVED') == 'true':
                 is_work_dir_removed = True
             else:
                 is_work_dir_removed = False
