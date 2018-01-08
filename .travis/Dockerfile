@@ -17,6 +17,7 @@ RUN dnf -y install \
   /usr/bin/python3.6 \
   /usr/bin/python3.5 \
   /usr/bin/python2.7 \
+  /usr/bin/python2.6 \
   # -- RPM packages required for a specified case --
   # Used to get the rpm-python by git commmand,
   # if a target rpm archive URL is not found on the server.
