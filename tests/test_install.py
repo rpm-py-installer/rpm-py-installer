@@ -696,7 +696,7 @@ def test_app_init(app):
     assert app.is_work_dir_removed is True
 
 
-@pytest.mark.parametrize('env', [{'RPM': 'pwd'}])
+@pytest.mark.parametrize('env', [{'RPM_PY_RPM_BIN': 'pwd'}])
 def test_app_init_env_rpm(app):
     assert app
     assert re.match('^/.+/pwd$', app.rpm.rpm_path)
@@ -708,7 +708,7 @@ def test_app_init_env_rpm_py_version(app):
     assert app.rpm_py.version.version == '1.2.3'
 
 
-@pytest.mark.parametrize('env', [{'GIT_BRANCH': 'master'}])
+@pytest.mark.parametrize('env', [{'RPM_PY_GIT_BRANCH': 'master'}])
 def test_app_init_env_git_branch(app):
     assert app
     assert app.rpm_py.downloader.git_branch == 'master'
@@ -724,19 +724,19 @@ def test_app_init_env_setup_py_optm(app, env):
     assert app.rpm_py.installer.optimized is value
 
 
-@pytest.mark.parametrize('env', [{'VERBOSE': 'true'}])
+@pytest.mark.parametrize('env', [{'RPM_PY_VERBOSE': 'true'}])
 def test_app_init_env_verbose(app):
     assert app
     assert app.verbose is True
 
 
 @pytest.mark.parametrize('env', [
-    {'WORK_DIR_REMOVED': 'true'},
-    {'WORK_DIR_REMOVED': 'false'},
+    {'RPM_PY_WORK_DIR_REMOVED': 'true'},
+    {'RPM_PY_WORK_DIR_REMOVED': 'false'},
 ])
 def test_app_init_env_work_dir_removed(app, env):
     assert app
-    value = True if env['WORK_DIR_REMOVED'] == 'true' else False
+    value = True if env['RPM_PY_WORK_DIR_REMOVED'] == 'true' else False
     assert app.is_work_dir_removed is value
 
 
