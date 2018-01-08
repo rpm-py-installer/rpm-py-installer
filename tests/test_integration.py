@@ -122,18 +122,30 @@ def _run_install_script(python_path, install_script_path, **env):
 
 
 def _is_rpm_py_installed(python_path):
-    cmd = '{0} -m pip list | grep -E "^rpm(-python)? "'.format(python_path)
+    pip_cmd = _get_pip_cmd(python_path)
+    cmd = '{0} list | grep -E "^rpm(-python)? "'.format(pip_cmd)
     return _run_cmd(cmd)
 
 
 def _uninstall_rpm_py(python_path):
     was_uninstalled = False
+    pip_cmd = _get_pip_cmd(python_path)
     for package_name in ('rpm-python', 'rpm'):
-        cmd = '{0} -m pip uninstall -y {1}'.format(python_path, package_name)
+        cmd = '{0} uninstall -y {1}'.format(pip_cmd, package_name)
         if _run_cmd(cmd):
             was_uninstalled = True
             break
     return was_uninstalled
+
+
+# See install.py Python _get_pip_cmd.
+def _get_pip_cmd(python_path):
+    if ((sys.version_info >= (2, 7, 9) and sys.version_info < (2, 8))
+       or sys.version_info >= (3, 4)):
+        pip_cmd = '{0} -m pip'.format(python_path)
+    else:
+        pip_cmd = 'pip'
+    return pip_cmd
 
 
 def _run_rpm_py(python_path):

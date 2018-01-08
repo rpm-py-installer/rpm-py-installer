@@ -2,6 +2,7 @@
 
 Import only standard modules to run install.py directly.
 """
+import contextlib
 import fnmatch
 import io
 import json
@@ -12,7 +13,6 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-from contextlib import contextmanager
 from distutils.spawn import find_executable
 
 
@@ -230,6 +230,16 @@ if sys.version_info >= (3, 0):
         from distutils.core import setup, Extension
 else:
     from distutils.core import setup, Extension
+''',
+            'required': True,
+        },
+        # Support Python 2.6. subprocess.check_output is new in Python 2.7.
+        {
+            'src': r'\n    pcout = subprocess\.check_output\(cmd.split\(\)\)\.decode\(\) *?\n', # NOQA
+            'dest': '''
+    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+    pcout, _ = p.communicate()
+    pcout = pcout.decode()
 ''',
             'required': True,
         },
@@ -741,20 +751,32 @@ class Python(object):
 
         return installed
 
+    def _get_pip_cmd(self):
+        pip_cmd = None
+        # pip is already installed in Python 2 >=2.7.9 or Python 3 >=3.4 .
+        # https://pip.pypa.io/en/stable/installing/#installation
+        if ((sys.version_info >= (2, 7, 9) and sys.version_info < (2, 8))
+           or sys.version_info >= (3, 4)):
+            pip_cmd = '{0} -m pip'.format(self.python_path)
+        else:
+            # pip can be installed by get-pip.py.
+            pip_cmd = 'pip'
+        return pip_cmd
+
     def _get_pip_version(self):
-        cmd = '{0} -m pip --version'.format(self.python_path)
+        cmd = '{0} --version'.format(self._get_pip_cmd())
         pip_version_out = Cmd.sh_e_out(cmd)
         pip_version = pip_version_out.split()[1]
         return pip_version
 
     def _get_pip_list_json_obj(self):
-        cmd = '{0} -m pip list --format json'.format(self.python_path)
+        cmd = '{0} list --format json'.format(self._get_pip_cmd())
         json_str = Cmd.sh_e_out(cmd)
         json_obj = json.loads(json_str)
         return json_obj
 
     def _get_pip_list_lines(self):
-        cmd = '{0} -m pip list'.format(self.python_path)
+        cmd = '{0} list'.format(self._get_pip_cmd())
         out = Cmd.sh_e_out(cmd)
         lines = out.split('\n')
         return lines
@@ -974,7 +996,7 @@ class Cmd(object):
         os.chdir(directory)
 
     @classmethod
-    @contextmanager
+    @contextlib.contextmanager
     def pushd(cls, new_dir):
         """Change directory, and back to previous directory.
 
@@ -1048,7 +1070,7 @@ class Cmd(object):
         It raises tarfile.ReadError if the file is broken.
         """
         try:
-            with tarfile.open(tar_comp_file_path) as tar:
+            with contextlib.closing(tarfile.open(tar_comp_file_path)) as tar:
                 tar.extractall()
         except tarfile.ReadError as e:
             message_format = (

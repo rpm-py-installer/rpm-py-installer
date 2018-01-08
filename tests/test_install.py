@@ -592,27 +592,27 @@ def test_setup_py_init_is_ok(setup_py):
     assert setup_py.replaced_word_dict
     assert isinstance(setup_py.replaced_word_dict, dict)
     assert isinstance(setup_py.patches, list)
-    assert len(setup_py.patches) == 1
+    assert len(setup_py.patches) == 2
 
 
 def test_setup_py_add_patchs_to_build_without_pkg_config(setup_py):
     setup_py.add_patchs_to_build_without_pkg_config('/usr/lib64',
                                                     '/usr/include')
-    assert len(setup_py.patches) == 4
+    assert len(setup_py.patches) == 5
 
 
 @pytest.mark.parametrize('use_add_patchs', [False, True])
 def test_setup_py_apply_and_save(use_add_patchs):
     rpm_py_version = RpmPyVersion('4.14.0-rc1')
     setup_py = SetupPy(rpm_py_version)
-    assert len(setup_py.patches) == 1
+    assert len(setup_py.patches) == 2
 
     with pytest.helpers.work_dir_with_setup_py():
         if use_add_patchs:
             setup_py.add_patchs_to_build_without_pkg_config(
                 '/usr/lib64', '/usr/include'
             )
-            assert len(setup_py.patches) == 4
+            assert len(setup_py.patches) == 5
         setup_py.apply_and_save()
         with open(setup_py.OUT_PATH) as f_out:
             content = f_out.read()
