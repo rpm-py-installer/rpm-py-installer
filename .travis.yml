@@ -30,7 +30,7 @@ install:
   - |
     sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" "${DOCKER_FILE}"
   - |
-    docker build \
+    travis_retry docker build \
         -t rpm-py-installer \
         -f "${DOCKER_FILE}" \
         .
