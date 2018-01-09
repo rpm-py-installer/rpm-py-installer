@@ -15,12 +15,12 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 
 | NAME | Description | Value | Default |
 | ---- | ----------- | ----- | ------- |
-| RPM | Path to rpm | /path/to/rpm | rpm |
+| RPM_PY_RPM_BIN | Path to rpm | /path/to/rpm | rpm |
 | RPM_PY_VERSION | Installed python module's version | N.N.N.N |  Same version with rpm |
-| GIT_BRANCH | Branch name for [RPM git repo](https://github.com/rpm-software-management/rpm). If this option is set, `rpm-py-installer` downloads the RPM source by `git clone` rather than downloading the archive file to get the Python binding. | ex. master, rpm-4.14.x | None |
+| RPM_PY_GIT_BRANCH | Branch name for [RPM git repo](https://github.com/rpm-software-management/rpm). If this option is set, `rpm-py-installer` downloads the RPM source by `git clone` rather than downloading the archive file to get the Python binding. | ex. master, rpm-4.14.x | None |
 | RPM_PY_OPTM | Use optimized `setup.py` for the Python binding for comfort install? Or Set "false" to use original one. | true/false | true |
-| VERBOSE | Verbose mode? | true/false | false |
-| WORK_DIR_REMOVED | Remove work directory? Set "false" to see used archive. | true/false | true |
+| RPM_PY_VERBOSE | Verbose mode? | true/false | false |
+| RPM_PY_WORK_DIR_REMOVED | Remove work directory? Set "false" to see used archive. | true/false | true |
 
 
 ## FAQ
@@ -29,13 +29,13 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 - A1. Could you run below command and check outputted log?
 
   ```
-  $ VERBOSE=true pip install -vvv rpm-py-installer
+  $ RPM_PY_VERBOSE=true pip install -vvv rpm-py-installer
   ```
 
   or
 
   ```
-  $ VERBOSE=true python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+  $ RPM_PY_VERBOSE=true python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
   ```
 
 - Q2. What is the dependency RPM packages for `rpm-py-installer`?
