@@ -1,4 +1,4 @@
 """Version string."""
 # main = X.Y.Z
 # sub = .devN for pre-alpha releases
-VERSION = '0.5.0'
+VERSION = '0.6.0'
