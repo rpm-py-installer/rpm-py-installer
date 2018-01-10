@@ -72,7 +72,7 @@ And run `pip install`.
 $ pip install your_package
 ```
 
-### Direct install
+### Install directly without rpm-py-installer package
 
 If you want to install the Python binding module without `rpm-py-installer` package.
 
@@ -80,15 +80,13 @@ If you want to install the Python binding module without `rpm-py-installer` pack
 $ /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
 ```
 
-See Users Guide for detail.
-
 ## Usage
 
 See [Users Guide](docs/users_guide.md).
 
 ## Communities using rpm-py-installer
 
-[rebase-helper](https://github.com/rebase-helper/rebase-helper)
+[rebase-helper](https://github.com/rebase-helper/rebase-helper), [koji](https://pagure.io/koji)
 
 ## License
 
