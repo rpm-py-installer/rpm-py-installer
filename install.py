@@ -97,6 +97,14 @@ class Application(object):
             else:
                 is_work_dir_removed = False
 
+        if 'RPM_PY_TRIES' in os.environ:
+            tries = int(os.environ.get('RPM_PY_TRIES'))
+            if tries < 1:
+                message = 'Invalid tries: {0}. Set the value >= 1.'.format(
+                    tries)
+                raise InstallError(message)
+            Retry.tries = tries
+
         self.python = python
         self.rpm = rpm
         self.rpm_py = RpmPy(rpm_py_version, python, rpm,
@@ -899,7 +907,8 @@ Install the RPM package.
             cmd = 'dnf download {0}.{1}'.format(package_name, self.arch)
         else:
             cmd = 'yumdownloader {0}.{1}'.format(package_name, self.arch)
-        Cmd.sh_e(cmd)
+        with Retry.retry_call(cmd):
+            Cmd.sh_e(cmd)
 
     def extract(self, package_name):
         """Extract given package."""
@@ -932,6 +941,33 @@ class ArchiveNotFoundError(Exception):
     """A exception class RPM archive not found on the server."""
 
     pass
+
+
+class Retry(object):
+    """A utility class for retrying."""
+
+    DEFAULT_TRIES = 3
+
+    """Trying number."""
+    tries = DEFAULT_TRIES
+
+    @classmethod
+    @contextlib.contextmanager
+    def retry_call(cls, description='an action'):
+        """Retry given context."""
+        if cls.tries < 1:
+            message = 'Invalid tries: {0}. Set the value >= 1.'.format(
+                cls.tries)
+            raise InstallError(message)
+
+        for index in range(cls.tries):
+            try:
+                yield
+            except Exception as e:
+                if index + 1 >= cls.tries:
+                    raise e
+                else:
+                    Log.info('Retrying {0} for {1}'.format(index, description))
 
 
 class Cmd(object):

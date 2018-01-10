@@ -20,6 +20,7 @@ from install import (Application,
                      InstallSkipError,
                      Log,
                      Python,
+                     Retry,
                      Rpm,
                      RpmPy,
                      RpmPyVersion,
@@ -205,6 +206,13 @@ def test_cmd_mkdir_p_is_ok():
         Cmd.mkdir_p('./a/b')
         pytest.helpers.touch('./a/b/c.txt')
     assert True
+
+
+def test_retry_is_ok():
+    # From here.
+    cmd = 'pwd'
+    with Retry.retry_call(cmd):
+        Cmd.sh_e(cmd)
 
 
 def test_python_init():
