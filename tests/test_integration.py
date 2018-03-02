@@ -74,12 +74,16 @@ def test_install_and_uninstall_are_ok_on_sys_status(
     # else:
     #     _run_cmd('{0} -y remove rpm-build-libs'.format(pkg_cmd))
 
-    _assert_install_and_uninstall(install_script_path)
-
-    # Reset as default system status.
-    _run_cmd('{0} -y remove rpm-devel popt-devel'.format(pkg_cmd))
-    _install_rpm_download_utility(is_dnf)
-    # _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
+    try:
+        _assert_install_and_uninstall(install_script_path)
+    finally:
+        try:
+            # Reset as default system status.
+            _run_cmd('{0} -y remove rpm-devel popt-devel'.format(pkg_cmd))
+            _install_rpm_download_utility(is_dnf)
+            # _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
+        except Exception:
+            pass
 
     assert True
 
@@ -92,8 +96,8 @@ def _assert_install_and_uninstall(install_script_path):
 
     # Run the install script.
     is_ok = _run_install_script(python_path, install_script_path,
-                                VERBOSE='true',
-                                WORK_DIR_REMOVED='true')
+                                RPM_PY_VERBOSE='true',
+                                RPM_PY_WORK_DIR_REMOVED='true')
     assert is_ok
 
     # Installed successfully?
