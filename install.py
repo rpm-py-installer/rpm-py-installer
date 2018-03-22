@@ -575,6 +575,12 @@ Can you install the RPM package, and run this installer again?
                 build_link_dir = self.rpm.lib_dir
             else:
                 self.rpm.download_and_extract('rpm-build-libs')
+                # rpm-sign-libs was splitted from rpm-build-libs
+                # from rpm-4.14.1-8 on Fedora.
+                try:
+                    self.rpm.download_and_extract('rpm-sign-libs')
+                except InstallError:
+                    pass
                 current_dir = os.getcwd()
                 build_link_dir = current_dir + self.rpm.lib_dir
         else:
