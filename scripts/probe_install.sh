@@ -50,8 +50,8 @@ sed -e 's/@PACKAGE_NAME@/rpm/g' \
     > setup.py
 
 # Replace or create include_dirs, library_dirs, libraries, runtime_library_dirs
-sed -i "s|pkgconfig('--cflags')|\['/usr/include'\]|" setup.py
-sed -i "s|pkgconfig('--libs')|\['${RPM_LIB_DIR}', 'rpm', 'rpmio'\]|" setup.py
+sed -i "s|pkgconfig('--cflags')|\\['/usr/include'\\]|" setup.py
+sed -i "s|pkgconfig('--libs')|\\['${RPM_LIB_DIR}', 'rpm', 'rpmio'\\]|" setup.py
 
 pushd ..
 
