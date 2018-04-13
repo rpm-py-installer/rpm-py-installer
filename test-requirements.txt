@@ -5,6 +5,9 @@ pytest-helpers-namespace
 backports.unittest_mock
 # Coverage
 pytest-cov
+# Restrict version for below issue.
+# https://github.com/junaruga/rpm-py-installer/issues/122
+coverage<4.5
 # Code Analysis for Python
 flake8==3.5.0
 flake8-colors
