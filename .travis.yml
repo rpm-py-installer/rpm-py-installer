@@ -31,12 +31,14 @@ install:
     sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" "${DOCKER_FILE}"
   - |
     travis_retry docker build \
+        --rm \
         -t rpm-py-installer \
         -f "${DOCKER_FILE}" \
         .
 script:
   - |
     docker run \
+        --rm \
         -e TOXENV="${TOXENV}" \
         -t \
         rpm-py-installer
