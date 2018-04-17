@@ -29,6 +29,9 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
     # Case 2: rpm-py is not installed on system Python.
     _uninstall_rpm_py(python_path)
 
+    is_installed = _is_rpm_py_installed(python_path)
+    assert not is_installed
+
     is_ok = _run_install_script(python_path, install_script_path)
     assert not is_ok
 
@@ -139,6 +142,39 @@ def _uninstall_rpm_py(python_path):
         if _run_cmd(cmd):
             was_uninstalled = True
             break
+
+    # Old version "pip uninstall" returns the exit status: 0
+    # when the package does not exist.
+    # pip >= 10.0.0 can not uninstall a package installed by distutils.
+    # https://github.com/pypa/pip/commit/fabb739
+    script = '''
+import glob
+import os
+import shutil
+import sys
+from distutils.sysconfig import get_python_lib
+
+lib_dirs = []
+if sys.version_info >= (3, 2):
+    import site
+    lib_dirs = site.getsitepackages()
+
+lib_dirs.append(get_python_lib())
+for lib_dir in lib_dirs:
+    rpm_dir = os.path.join(lib_dir, 'rpm')
+    if os.path.isdir(rpm_dir):
+        shutil.rmtree(rpm_dir)
+        print('rpm_dir: {0} was removed.'.format(rpm_dir))
+    egg_info_files = glob.glob(lib_dir + '/rpm*.egg-info')
+    for egg_info_file in egg_info_files:
+        if os.path.isfile(egg_info_file):
+            os.remove(egg_info_file)
+            print('egg_info_file: {0} was removed.'.format(egg_info_file))
+'''
+    cmd = '{0} -c "{1}"'.format(python_path, script)
+    if _run_cmd(cmd):
+        was_uninstalled = True
+
     return was_uninstalled
 
 
