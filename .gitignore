@@ -6,6 +6,7 @@
 /.cache
 /.coverage
 /.eggs
+/.pytest_cache
 /.tox
 /dist
 /htmlcov
