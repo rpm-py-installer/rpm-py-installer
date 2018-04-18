@@ -1,5 +1,7 @@
 FROM fedora
 
+ARG TOXENV
+
 WORKDIR /build
 COPY . .
 
@@ -27,15 +29,10 @@ RUN dnf -y install \
   rpm-build-libs \
   'dnf-command(download)' \
   # Used if downloading and extracting build dependency packages in installing.
-  /usr/bin/cpio \
+  /usr/bin/cpio
   # -- RPM packages for testing --
-  # Used in scripts/lint_bash.sh
-  which \
-  # Used in scripts/lint_bash.sh
-  /usr/bin/find \
-  # Used in scripts/lint_bash.sh
-  ShellCheck \
-  && dnf clean all
+RUN ./.travis/dnf_install_lint_pkgs.sh
+RUN dnf clean all
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade pip setuptools
 RUN python3 -m pip install tox
