@@ -31,7 +31,7 @@ setuptools 28.8.0
 $ pip install rpm-py-installer
 
 $ pip list
-Package          Version-
+Package          Version
 ---------------- --------
 pip              9.0.1
 rpm-py-installer 0.4.0
@@ -77,7 +77,20 @@ $ pip install your_package
 If you want to install the Python binding module without `rpm-py-installer` package.
 
 ```
-$ /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+$ pip list
+Package    Version
+---------- -------
+pip        9.0.1
+setuptools 28.8.0
+
+$ python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+
+$ pip list
+Package          Version
+---------------- --------
+pip              9.0.1
+rpm-python       4.13.0.1 <= Same version with the system RPM's one.
+setuptools       28.8.0
 ```
 
 ## Usage
