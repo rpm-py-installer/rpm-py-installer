@@ -37,6 +37,7 @@ install:
         --rm \
         -t rpm-py-installer \
         -f "${DOCKER_FILE}" \
+        --build-arg TOXENV="${TOXENV}" \
         .
 script:
   - |
