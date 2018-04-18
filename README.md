@@ -86,7 +86,7 @@ See [Users Guide](docs/users_guide.md).
 
 ## Communities using rpm-py-installer
 
-[rebase-helper](https://github.com/rebase-helper/rebase-helper), [koji](https://pagure.io/koji)
+[rebase-helper](https://github.com/rebase-helper/rebase-helper), [koji](https://pagure.io/koji), [rpkg](https://pagure.io/rpkg)
 
 ## License
 
