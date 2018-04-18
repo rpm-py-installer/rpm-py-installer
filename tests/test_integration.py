@@ -60,8 +60,12 @@ def test_install_and_uninstall_are_ok_on_non_sys_python(install_script_path):
                     reason='needs root authority.')
 def test_install_and_uninstall_are_ok_on_sys_status(
     install_script_path, is_dnf, pkg_cmd,
-    is_rpm_devel, is_downloadable, is_rpm_build_libs
+    is_rpm_devel, is_downloadable, is_rpm_build_libs,
+    has_rpm_setup_py_in
 ):
+    if not has_rpm_setup_py_in and not is_downloadable:
+        pytest.skip('install without setup.py.in should be downlodable.')
+
     if is_rpm_devel:
         _run_cmd('{0} -y install rpm-devel'.format(pkg_cmd))
     else:
@@ -131,7 +135,26 @@ def _run_install_script(python_path, install_script_path, **env):
 def _is_rpm_py_installed(python_path):
     pip_cmd = _get_pip_cmd(python_path)
     cmd = '{0} list | grep -E "^rpm(-python)? "'.format(pip_cmd)
-    return _run_cmd(cmd)
+    is_installed = _run_cmd(cmd)
+    if not is_installed:
+        script = '''
+import os
+import shutil
+import sys
+from distutils.sysconfig import get_python_lib
+
+lib_dir = get_python_lib()
+rpm_dir = os.path.join(lib_dir, 'rpm')
+init_py = os.path.join(rpm_dir, '__init__.py')
+if os.path.isfile(init_py):
+    print('__init__.py {0} exists.'.format(init_py))
+else:
+    sys.exit('__init__.py {0} does not exist.'.format(init_py))
+'''
+        cmd = '{0} -c "{1}"'.format(python_path, script)
+        is_installed = _run_cmd(cmd)
+
+    return is_installed
 
 
 def _uninstall_rpm_py(python_path):
