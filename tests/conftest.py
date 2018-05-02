@@ -18,6 +18,7 @@ pytest_plugins = ['helpers_namespace']
 
 running_user = getpass.getuser()
 _is_dnf = True if os.system('dnf --version') == 0 else False
+_is_debian = True if os.system('apt-get --version') == 0 else False
 
 
 def pytest_collection_modifyitems(items):
@@ -31,6 +32,12 @@ def pytest_collection_modifyitems(items):
 @pytest.fixture
 def install_script_path():
     return install_path
+
+
+@pytest.helpers.register
+@pytest.fixture
+def is_debian():
+    return _is_debian
 
 
 @pytest.fixture

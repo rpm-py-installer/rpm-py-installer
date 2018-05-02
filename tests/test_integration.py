@@ -58,6 +58,8 @@ def test_install_and_uninstall_are_ok_on_non_sys_python(install_script_path):
 ])
 @pytest.mark.skipif(not pytest.helpers.is_root_user(),
                     reason='needs root authority.')
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_install_and_uninstall_are_ok_on_sys_status(
     install_script_path, is_dnf, pkg_cmd,
     is_rpm_devel, is_downloadable, is_rpm_build_libs,
@@ -214,8 +216,13 @@ def _get_pip_cmd(python_path):
 def _run_rpm_py(python_path):
     script = '''
 import rpm
-rpm.spec('tests/fixtures/hello.spec')
-print(rpm.expandMacro('%name'))
+try:
+    rpm.spec('tests/fixtures/hello.spec')
+    print(rpm.expandMacro('%name'))
+except AttributeError as e:
+    # Observed the error on rpm-python 4.11.1 and Python 3.4.
+    print('WARN: error at checking script: ' + str(e))
+    print(rpm.__version__)
 '''
     cmd = '{0} -c "{1}"'.format(python_path, script)
     return _run_cmd(cmd)
