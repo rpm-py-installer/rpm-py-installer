@@ -81,7 +81,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   sed -i '/rpm-py-installer/d' setup.py
   ```
 
-  or set `setup.py`'s `install_requires` conditionally. Refer [rebase-helper's `setup.py`](https://github.com/rebase-helper/rebase-helper/blob/master/setup.py) for sample.
+  or set `setup.py`'s `install_requires` conditionally. Refer the samples [`setup.py`](/tests/sample/setup.py) or [rebase-helper's `setup.py`](https://github.com/rebase-helper/rebase-helper/blob/master/setup.py). If you have a request for this situation, ask us on [the issue page](https://github.com/junaruga/rpm-py-installer/issues/134)
 
 - Q7. I got message "Failed building wheel for rpm-py-installer" when installing `pip install rpm-py-installer`. Is it problem?
 - A7. No, it isn't. `rpm-py-installer` makes own `python setup.py bdist_wheel` raise an error, to always disable `wheel` cache to run own install process.

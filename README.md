@@ -72,6 +72,9 @@ And run `pip install`.
 $ pip install your_package
 ```
 
+Note that if you would provide your project as a RPM package, please consider to apply a conditional import to your `setup.py` not to provide `rpm-py-installer` in the environment. Refer [the setup.py sample](/tests/sample/setup.py) and Users Guide FAQ Q6.
+
+
 ### Install directly without rpm-py-installer package
 
 If you want to install the Python binding module without `rpm-py-installer` package.
