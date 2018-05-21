@@ -7,14 +7,14 @@ matrix:
     - env: CONTAINER_IMAGE=fedora:28 TOXENV=lint-py3,lint-py2,py36,py27
     - env: CONTAINER_IMAGE=fedora:27 TOXENV=py35,py26
     - env: CONTAINER_IMAGE=fedora:26 TOXENV=py36
-    - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py36,py27
+    - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py37,py36,py27
     # https://hub.docker.com/r/junaruga/rpm-py-installer-docker/
     - env: CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26 TOXENV=intg
     # https://hub.docker.com/_/centos/
     - env: CONTAINER_IMAGE=centos:7 TOXENV=py34,py27
     - env: CONTAINER_IMAGE=centos:6 TOXENV=py27,py26
   allow_failures:
-    - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py36,py27
+    - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py37,py36,py27
   fast_finish: true
 install:
   - |
