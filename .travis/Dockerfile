@@ -16,6 +16,7 @@ RUN dnf -y install \
   python3-devel \
   # python2-devel is not available on f25.
   python-devel \
+  /usr/bin/python3.7 \
   /usr/bin/python3.6 \
   /usr/bin/python3.5 \
   /usr/bin/python2.7 \
