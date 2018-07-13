@@ -563,12 +563,6 @@ def test_downloader_download_and_expand_from_archive_url(
         '4.13.0',
         [
             {
-                'site': 'rpm.org',
-                'url': 'http://ftp.rpm.org/releases/'
-                       'rpm-4.13.x/rpm-4.13.0.tar.gz',
-                'top_dir_name': 'rpm-4.13.0',
-            },
-            {
                 'site': 'github',
                 'url': 'https://github.com/rpm-software-management/rpm'
                        '/archive/rpm-4.13.0-release.tar.gz',
@@ -579,6 +573,12 @@ def test_downloader_download_and_expand_from_archive_url(
                 'url': 'https://github.com/rpm-software-management/rpm'
                        '/archive/rpm-4.13.0.tar.gz',
                 'top_dir_name': 'rpm-rpm-4.13.0',
+            },
+            {
+                'site': 'rpm.org',
+                'url': 'http://ftp.rpm.org/releases/'
+                       'rpm-4.13.x/rpm-4.13.0.tar.gz',
+                'top_dir_name': 'rpm-4.13.0',
             },
         ],
     ),

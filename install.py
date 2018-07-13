@@ -417,21 +417,23 @@ class Downloader(object):
     def _get_candidate_archive_dicts(self):
         archive_dicts = []
 
-        if self.rpm_py_version.is_release:
-            url = self._get_rpm_org_archive_url()
-            top_dir_name = self._get_rpm_org_archive_top_dir_name()
-            archive_dicts.append({
-                'site': 'rpm.org',
-                'url': url,
-                'top_dir_name': top_dir_name,
-            })
-
         tag_names = self._predict_candidate_git_tag_names()
         for tag_name in tag_names:
             url = self._get_git_hub_archive_url(tag_name)
             top_dir_name = self._get_git_hub_archive_top_dir_name(tag_name)
             archive_dicts.append({
                 'site': 'github',
+                'url': url,
+                'top_dir_name': top_dir_name,
+            })
+
+        # Set rpm.org server as a secondary server, because it takes long time
+        # to download an archive. GitHub is better to download the archive.
+        if self.rpm_py_version.is_release:
+            url = self._get_rpm_org_archive_url()
+            top_dir_name = self._get_rpm_org_archive_top_dir_name()
+            archive_dicts.append({
+                'site': 'rpm.org',
                 'url': url,
                 'top_dir_name': top_dir_name,
             })
