@@ -17,7 +17,6 @@ RUN dnf -y install \
   # python2-devel is not available on f25.
   python-devel \
   /usr/bin/python3.7 \
-  /usr/bin/python3.6 \
   /usr/bin/python3.5 \
   /usr/bin/python2.7 \
   /usr/bin/python2.6 \
@@ -32,6 +31,12 @@ RUN dnf -y install \
   # Used if downloading and extracting build dependency packages in installing.
   /usr/bin/cpio
   # -- RPM packages for testing --
+
+# Temporary workflow to install python3.6 on rawhide.
+# https://bugzilla.redhat.com/show_bug.cgi?id=1601113
+RUN dnf -y install /usr/bin/python3.6 || true
+RUN dnf -y install /usr/bin/python3 || true
+
 RUN ./.travis/dnf_install_lint_pkgs.sh
 RUN dnf clean all
 RUN python3 -m ensurepip
