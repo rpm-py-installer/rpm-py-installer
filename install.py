@@ -71,11 +71,11 @@ class Application(object):
 
         # Installed RPM Python module's version.
         # Default: Same version with rpm.
-        rpm_py_version = None
+        rpm_py_version_str = None
         if 'RPM_PY_VERSION' in os.environ:
-            rpm_py_version = os.environ.get('RPM_PY_VERSION')
+            rpm_py_version_str = os.environ.get('RPM_PY_VERSION')
         else:
-            rpm_py_version = rpm.version
+            rpm_py_version_str = rpm.version
 
         # Git branch name. Default: None
         git_branch = None
@@ -100,7 +100,7 @@ class Application(object):
 
         self.python = python
         self.rpm = rpm
-        self.rpm_py = RpmPy(rpm_py_version, python, rpm,
+        self.rpm_py = RpmPy(rpm_py_version_str, python, rpm,
                             git_branch=git_branch,
                             optimized=optimized,
                             verbose=verbose)
@@ -138,7 +138,7 @@ RPM: {0} or
 RPM download tool (dnf-plugins-core (dnf) or yum-utils (yum)) required.
 Install any of those.
 '''
-        if self.rpm.has_sys_rpm_rpm_bulid_libs():
+        if self.rpm.has_composed_rpm_bulid_libs():
             if (not self.rpm.is_package_installed('rpm-build-libs')
                and not self.rpm.is_downloadable()):
                 raise InstallError(message_format.format('rpm-build-libs'))
@@ -225,7 +225,7 @@ class SetupPy(object):
     It does parsing and patching for setup.py file.
     """
 
-    DEFAULT_PATCHES = [
+    PATCHES_DEFAULT = [
         # Use setuptools to prevent deprecation message when uninstalling.
         # https://github.com/rpm-software-management/rpm/pull/323
         {
@@ -271,7 +271,7 @@ else:
         optimized = kwargs.get('optimized', True)
         patches = []
         if optimized:
-            patches = self.DEFAULT_PATCHES
+            patches = self.PATCHES_DEFAULT
         self.patches = patches
 
     def exists_in_path(self):
@@ -568,9 +568,9 @@ class Installer(object):
         """Run install main logic."""
         try:
             if not self._is_rpm_devel_installed():
-                self._prepare_so_files()
-                self._prepare_include_files()
-                self._prepare_dependency_so_include_files()
+                self._make_lib_file_symbolic_links()
+                self._copy_each_include_files_to_include_dir()
+                self._make_dep_lib_file_sym_links_and_copy_include_files()
                 self.setup_py.add_patchs_to_build_without_pkg_config(
                     self.rpm.lib_dir, self.rpm.include_dir
                 )
@@ -619,7 +619,33 @@ Can you install the RPM package, and run this installer again?
     def _is_popt_devel_installed(self):
         return self.rpm.is_package_installed('popt-devel')
 
-    def _prepare_so_files(self):
+    def _make_lib_file_symbolic_links(self):
+        """Make symbolic links for lib files.
+
+        Make symbolic links from system library files or downloaded lib files
+        to downloaded source library files.
+
+        For example, case: Fedora x86_64
+        Make symbolic links
+        from
+            a. /usr/lib64/librpmio.so* (one of them)
+            b. /usr/lib64/librpm.so* (one of them)
+            c. If rpm-build-libs package is installed,
+               /usr/lib64/librpmbuild.so* (one of them)
+               otherwise, downloaded and extracted rpm-build-libs.
+               ./usr/lib64/librpmbuild.so* (one of them)
+            c. If rpm-build-libs package is installed,
+               /usr/lib64/librpmsign.so* (one of them)
+               otherwise, downloaded and extracted rpm-build-libs.
+               ./usr/lib64/librpmsign.so* (one of them)
+        to
+            a. rpm/rpmio/.libs/librpmio.so
+            b. rpm/lib/.libs/librpm.so
+            c. rpm/build/.libs/librpmbuild.so
+            d. rpm/sign/.libs/librpmsign.so
+        .
+        This is a status after running "make" on actual rpm build process.
+        """
         so_file_dict = {
             'rpmio': {
                 'sym_src_dir': self.rpm.lib_dir,
@@ -642,30 +668,7 @@ Can you install the RPM package, and run this installer again?
             },
         }
 
-        if not self.rpm.has_sys_rpm_rpm_bulid_libs():
-            # All the needed so files are installed.
-            pass
-        elif self.rpm.is_downloadable():
-            if not self._is_rpm_build_libs_installed():
-                self.rpm.download_and_extract('rpm-build-libs')
-
-                # rpm-sign-libs was splitted from rpm-build-libs
-                # from rpm-4.14.1-8 on Fedora.
-                try:
-                    self.rpm.download_and_extract('rpm-sign-libs')
-                except InstallError:
-                    pass
-
-                current_dir = os.getcwd()
-                work_lib_dir = current_dir + self.rpm.lib_dir
-                so_file_dict['rpmbuild']['sym_src_dir'] = work_lib_dir
-                so_file_dict['rpmsign']['sym_src_dir'] = work_lib_dir
-        elif not self._is_rpm_build_libs_installed():
-            message = '''
-Required RPM not installed: [rpm-build-libs],
-when a RPM download plugin not installed.
-'''
-            raise InstallError(message)
+        self._update_sym_src_dirs_conditionally(so_file_dict)
 
         for name in so_file_dict:
             so_dict = so_file_dict[name]
@@ -695,7 +698,52 @@ when a RPM download plugin not installed.
                                                     name)
             Cmd.sh_e(cmd)
 
-    def _prepare_include_files(self):
+    def _update_sym_src_dirs_conditionally(self, so_file_dict):
+        # RPM is old version that does not have RPM rpm-build-libs.
+        # All the needed so files are installed.
+        if not self.rpm.has_composed_rpm_bulid_libs():
+            return
+        if self._is_rpm_build_libs_installed():
+            return
+
+        if self.rpm.is_downloadable():
+            self.rpm.download_and_extract('rpm-build-libs')
+
+            # rpm-sign-libs was splitted from rpm-build-libs
+            # from rpm-4.14.1-8 on Fedora.
+            try:
+                self.rpm.download_and_extract('rpm-sign-libs')
+            except InstallError:
+                pass
+
+            current_dir = os.getcwd()
+            work_lib_dir = current_dir + self.rpm.lib_dir
+            so_file_dict['rpmbuild']['sym_src_dir'] = work_lib_dir
+            so_file_dict['rpmsign']['sym_src_dir'] = work_lib_dir
+        else:
+            message = '''
+Required RPM not installed: [rpm-build-libs],
+when a RPM download plugin not installed.
+'''
+            raise InstallError(message)
+
+    def _copy_each_include_files_to_include_dir(self):
+        """Copy include header files for each directory to include directory.
+
+        Copy include header files
+        from
+            rpm/
+                rpmio/*.h
+                lib/*.h
+                build/*.h
+                sign/*.h
+        to
+            rpm/
+                include/
+                    rpm/*.h
+        .
+        This is a status after running "make" on actual rpm build process.
+        """
         src_header_dirs = [
             'rpmio',
             'lib',
@@ -726,10 +774,18 @@ when a RPM download plugin not installed.
                         Cmd.mkdir_p(dst_dir)
                     shutil.copyfile(header_file, dst_header_file)
 
-    def _prepare_dependency_so_include_files(self):
-        """Prepare build dependency's so and include files.
+    def _make_dep_lib_file_sym_links_and_copy_include_files(self):
+        """Make symbolick links for lib files and copy include files.
 
+        Do below steps for a dependency packages.
+
+        Dependency packages
         - popt-devel
+
+        Steps
+        1. Make symbolic links from system library files or downloaded lib
+           files to downloaded source library files.
+        2. Copy include header files to include directory.
         """
         if self._has_dependency_rpm_popt_devel():
             if self._is_popt_devel_installed():
@@ -942,7 +998,7 @@ class Rpm(object):
                 break
         return matched
 
-    def has_sys_rpm_rpm_bulid_libs(self):
+    def has_composed_rpm_bulid_libs(self):
         """Return if the sysmtem RPM has rpm-build-libs pacakage.
 
         rpm-bulid-libs was created from rpm 4.9.0-0.beta1.1 on Fedora.
