@@ -811,10 +811,10 @@ def test_app_init(app):
     assert app.is_work_dir_removed is True
 
 
-@pytest.mark.parametrize('env', [{'RPM_PY_RPM_BIN': 'pwd'}])
+@pytest.mark.parametrize('env', [{'RPM_PY_RPM_BIN': 'rpm'}])
 def test_app_init_env_rpm(app):
     assert app
-    assert re.match('^/.+/pwd$', app.rpm.rpm_path)
+    assert re.match('^/.+/rpm$', app.rpm.rpm_path)
 
 
 @pytest.mark.parametrize('env', [{'RPM_PY_VERSION': '1.2.3'}])
