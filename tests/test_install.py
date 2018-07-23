@@ -14,10 +14,13 @@ import pytest
 from install import (Application,
                      ArchiveNotFoundError,
                      Cmd,
+                     DebianRpm,
                      Downloader,
+                     FedoraRpm,
                      Installer,
                      InstallError,
                      InstallSkipError,
+                     Linux,
                      Log,
                      Python,
                      Rpm,
@@ -63,9 +66,24 @@ def sys_rpm_path():
     return rpm_path
 
 
+@pytest.helpers.register
+def get_rpm(is_debian, rpm_path, **kwargs):
+    rpm = None
+    if is_debian:
+        rpm = DebianRpm(rpm_path, **kwargs)
+    else:
+        rpm = FedoraRpm(rpm_path, **kwargs)
+    return rpm
+
+
 @pytest.fixture
-def sys_rpm(sys_rpm_path):
-    return Rpm(sys_rpm_path)
+def sys_rpm(sys_rpm_path, is_debian):
+    return pytest.helpers.get_rpm(is_debian, sys_rpm_path)
+
+
+@pytest.fixture
+def local_rpm(is_debian):
+    return pytest.helpers.get_rpm(is_debian, '/usr/local/bin/rpm', check=False)
 
 
 @pytest.fixture
@@ -323,19 +341,21 @@ def test_python_is_python_binding_installed_on_pip_less_than_9(rpm_py_name):
 
 
 @pytest.mark.parametrize('is_dnf', [True, False])
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_rpm_init_is_ok(is_dnf, sys_rpm_path):
     with mock.patch.object(Cmd, 'which') as mock_which:
         mock_which.return_value = is_dnf
-        rpm = Rpm(sys_rpm_path)
+        rpm = FedoraRpm(sys_rpm_path)
         assert mock_which.called
         assert rpm.rpm_path == sys_rpm_path
         assert rpm.is_dnf is is_dnf
         assert rpm.arch == 'x86_64'
 
 
-def test_rpm_init_raises_error_on_not_existed_rpm():
+def test_rpm_init_raises_error_on_not_existed_rpm(is_debian):
     with pytest.raises(InstallError) as ei:
-        Rpm('/usr/bin/rpm123')
+        pytest.helpers.get_rpm(is_debian, '/usr/bin/rpm123')
     expected_message = "RPM binary command '/usr/bin/rpm123' not found."
     assert expected_message == str(ei.value)
 
@@ -345,8 +365,8 @@ def test_rpm_version_is_ok(sys_rpm):
     assert re.match('^\d\.\d', sys_rpm.version)
 
 
-def test_rpm_version_info_is_ok(monkeypatch):
-    rpm = Rpm('/usr/local/bin/rpm', check=False)
+def test_rpm_version_info_is_ok(monkeypatch, local_rpm):
+    rpm = local_rpm
     monkeypatch.setattr(type(rpm), 'version',
                         mock.PropertyMock(return_value='4.14.0.rc1'))
     info = rpm.version_info
@@ -359,8 +379,8 @@ def test_rpm_is_system_rpm_returns_true(sys_rpm):
     assert sys_rpm.is_system_rpm()
 
 
-def test_rpm_is_system_rpm_returns_false():
-    rpm = Rpm('/usr/local/bin/rpm', check=False)
+def test_rpm_is_system_rpm_returns_false(local_rpm):
+    rpm = local_rpm
     assert rpm.is_system_rpm() is False
 
 
@@ -371,10 +391,12 @@ def test_rpm_is_system_rpm_returns_false():
     ((4, 9, 0),          True),
     ((4, 10, 0),         True),
 ])
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_rpm_has_composed_rpm_bulid_libs_is_ok(
-    version_info, has_rpm_bulid_libs, monkeypatch
+    local_rpm, version_info, has_rpm_bulid_libs, monkeypatch
 ):
-    rpm = Rpm('/usr/local/bin/rpm', check=False)
+    rpm = local_rpm
     monkeypatch.setattr(type(rpm), 'version_info',
                         mock.PropertyMock(return_value=version_info))
     has_build_libs = rpm.has_composed_rpm_bulid_libs()
@@ -392,8 +414,11 @@ def test_rpm_is_package_installed_returns_false(sys_rpm):
         assert not sys_rpm.is_package_installed('dummy')
 
 
-def test_rpm_lib_dir_is_ok(sys_rpm):
-    assert sys_rpm.lib_dir == '/usr/lib64'
+def test_rpm_lib_dir_is_ok(sys_rpm, is_debian):
+    if is_debian:
+        assert sys_rpm.lib_dir == '/usr/lib/x86_64-linux-gnu'
+    else:
+        assert sys_rpm.lib_dir == '/usr/lib64'
 
 
 @pytest.mark.parametrize('value_dict', [
@@ -406,6 +431,8 @@ def test_rpm_lib_dir_is_ok(sys_rpm):
         'cmd': 'yum',
     },
 ])
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_rpm_package_cmd_is_ok(sys_rpm, value_dict):
     sys_rpm.is_dnf = value_dict['is_dnf']
     assert sys_rpm.package_cmd == value_dict['cmd']
@@ -413,6 +440,8 @@ def test_rpm_package_cmd_is_ok(sys_rpm, value_dict):
 
 @pytest.mark.parametrize('is_dnf', [True, False])
 @pytest.mark.parametrize('installed', [True, False])
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_rpm_is_downloadable_is_ok(sys_rpm, is_dnf, installed):
     sys_rpm.is_dnf = is_dnf
     sys_rpm.is_package_installed = mock.MagicMock(return_value=installed)
@@ -420,6 +449,8 @@ def test_rpm_is_downloadable_is_ok(sys_rpm, is_dnf, installed):
 
 
 @pytest.mark.parametrize('is_dnf', [True, False])
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_rpm_download_is_ok(sys_rpm, is_dnf):
     sys_rpm.is_dnf = is_dnf
     with pytest.helpers.work_dir():
@@ -428,6 +459,8 @@ def test_rpm_download_is_ok(sys_rpm, is_dnf):
             assert mock_sh_e.called
 
 
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_rpm_extract_is_ok(sys_rpm, rpm_files):
     with pytest.helpers.work_dir():
         for rpm_file in rpm_files:
@@ -761,11 +794,11 @@ when a RPM download plugin not installed.
 
 
 @pytest.mark.parametrize('setup_py_in_exists', [True, False])
-def test_rpm_py_download_and_install(setup_py_in_exists):
+def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
     version_str = '4.13.0'
-    version = RpmPyVersion(version_str)
     python = Python()
-    rpm_py = RpmPy(version, python, sys_rpm)
+    linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
+    rpm_py = RpmPy(version_str, python, linux)
 
     top_dir_name = 'rpm-{0}'.format(version_str)
     rpm_py.downloader.download_and_expand = mock.Mock(
@@ -798,8 +831,10 @@ def test_app_init(app):
     assert app.verbose is False
     assert app.python
     assert isinstance(app.python, Python)
-    assert app.rpm
-    assert isinstance(app.rpm, Rpm)
+    assert app.linux
+    assert isinstance(app.linux, Linux)
+    assert app.linux.rpm
+    assert isinstance(app.linux.rpm, Rpm)
     assert app.rpm_py
     assert isinstance(app.rpm_py, RpmPy)
     # Actual string is N.N.N.N or N.N.N.N-(rc|beta)N
@@ -814,7 +849,7 @@ def test_app_init(app):
 @pytest.mark.parametrize('env', [{'RPM_PY_RPM_BIN': 'rpm'}])
 def test_app_init_env_rpm(app):
     assert app
-    assert re.match('^/.+/rpm$', app.rpm.rpm_path)
+    assert re.match('^/.+/rpm$', app.linux.rpm.rpm_path)
 
 
 @pytest.mark.parametrize('env', [{'RPM_PY_VERSION': '1.2.3'}])
@@ -856,8 +891,8 @@ def test_app_init_env_work_dir_removed(app, env):
 
 
 def test_app_verify_system_status_is_ok(app):
-    app.rpm.is_package_installed = mock.MagicMock(return_value=True)
-    app._verify_system_status()
+    app.linux.rpm.is_package_installed = mock.MagicMock(return_value=True)
+    app.linux.verify_system_status()
     assert True
 
 
@@ -866,7 +901,7 @@ def test_app_verify_system_status_skipped_on_sys_py_and_installed_rpm_py(app):
     app.python.is_python_binding_installed = mock.MagicMock(return_value=True)
 
     with pytest.raises(InstallSkipError):
-        app._verify_system_status()
+        app.linux.verify_system_status()
 
     assert True
 
@@ -875,7 +910,7 @@ def test_app_verify_system_status_is_error_on_sys_py_and_no_rpm_py(app):
     app.python.is_system_python = mock.MagicMock(return_value=True)
     app.python.is_python_binding_installed = mock.MagicMock(return_value=False)
     with pytest.raises(InstallError) as ei:
-        app._verify_system_status()
+        app.linux.verify_system_status()
     expected_message = '''
 RPM Python binding on system Python should be installed manually.
 Install the proper RPM package of python{,2,3}-rpm.
@@ -883,11 +918,13 @@ Install the proper RPM package of python{,2,3}-rpm.
     assert expected_message == str(ei.value)
 
 
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_app_verify_system_status_is_error_on_sys_rpm_and_missing_pkgs(app):
-    app.rpm.is_system_rpm = mock.MagicMock(return_value=True)
-    app.rpm.is_package_installed = mock.MagicMock(return_value=False)
+    app.linux.rpm.is_system_rpm = mock.MagicMock(return_value=True)
+    app.linux.rpm.is_package_installed = mock.MagicMock(return_value=False)
     with pytest.raises(InstallError) as ei:
-        app._verify_system_status()
+        app.linux.verify_system_status()
     expected_message = '''
 Required RPM not installed: [rpm-libs].
 Install the RPM package.
@@ -937,6 +974,8 @@ def test_app_run_is_ok_on_download_by_rpm_py_version(app, rpm_py_version):
     ]
 )
 @mock.patch.object(Log, 'verbose', new=False)
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_app_run_is_ok(
     app, is_rpm_devel, is_popt_devel, is_downloadable, is_rpm_build_libs,
     rpm_version_info_min_setup_py_in
@@ -963,7 +1002,7 @@ def test_app_run_is_ok(
     app.run()
 
     # If setup.py.in does not exist in old RPM, skip below checks.
-    if app.rpm.version_info < rpm_version_info_min_setup_py_in:
+    if app.linux.rpm.version_info < rpm_version_info_min_setup_py_in:
         return
 
     assert app.rpm_py.installer._is_rpm_devel_installed.called

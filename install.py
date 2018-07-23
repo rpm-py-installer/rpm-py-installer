@@ -28,7 +28,7 @@ class Application(object):
     def run(self):
         """Run install process."""
         try:
-            self._verify_system_status()
+            self.linux.verify_system_status()
         except InstallSkipError:
             Log.info('Install skipped.')
             return
@@ -70,7 +70,7 @@ class Application(object):
         if not rpm_path.endswith('rpm'):
             raise InstallError('Invalid rpm_path: {0}'.format(rpm_path))
 
-        rpm = Rpm(rpm_path)
+        linux = Linux.get_instance(python=python, rpm_path=rpm_path)
 
         # Installed RPM Python module's version.
         # Default: Same version with rpm.
@@ -78,7 +78,7 @@ class Application(object):
         if 'RPM_PY_VERSION' in os.environ:
             rpm_py_version_str = os.environ.get('RPM_PY_VERSION')
         else:
-            rpm_py_version_str = rpm.version
+            rpm_py_version_str = linux.rpm.version
 
         # Git branch name. Default: None
         git_branch = None
@@ -102,65 +102,31 @@ class Application(object):
                 is_work_dir_removed = False
 
         self.python = python
-        self.rpm = rpm
-        self.rpm_py = RpmPy(rpm_py_version_str, python, rpm,
+        self.linux = linux
+        self.rpm_py = RpmPy(rpm_py_version_str, python, linux,
                             git_branch=git_branch,
                             optimized=optimized,
                             verbose=verbose)
         self.is_work_dir_removed = is_work_dir_removed
 
-    def _verify_system_status(self):
-        if not sys.platform.startswith('linux'):
-            raise InstallError('Supported platform is Linux only.')
-
-        if self.python.is_system_python():
-            if self.python.is_python_binding_installed():
-                message = '''
-RPM Python binding already installed on system Python.
-Nothing to do.
-'''
-                Log.info(message)
-                raise InstallSkipError(message)
-            else:
-                message = '''
-RPM Python binding on system Python should be installed manually.
-Install the proper RPM package of python{,2,3}-rpm.
-'''
-                raise InstallError(message)
-
-        if self.rpm.is_system_rpm():
-            self._verify_rpm_package_status()
-
-    def _verify_rpm_package_status(self):
-        # rpm-libs is required for /usr/lib64/librpm*.so
-        self.rpm.verify_packages_installed(['rpm-libs'])
-
-        # Check RPM so files to build the Python binding.
-        message_format = '''
-RPM: {0} or
-RPM download tool (dnf-plugins-core (dnf) or yum-utils (yum)) required.
-Install any of those.
-'''
-        if self.rpm.has_composed_rpm_bulid_libs():
-            if (not self.rpm.is_package_installed('rpm-build-libs')
-               and not self.rpm.is_downloadable()):
-                raise InstallError(message_format.format('rpm-build-libs'))
-        else:
-            # All the needed so files are included in rpm-libs package.
-            pass
-
 
 class RpmPy(object):
     """A class for RPM Python binding."""
 
-    def __init__(self, version, python, rpm, **kwargs):
+    def __init__(self, version, python, linux, **kwargs):
         """Initialize this class."""
         if not version:
             raise ValueError('version required.')
         if not python:
             raise ValueError('python required.')
-        if not rpm:
-            raise ValueError('rpm required.')
+        if not linux:
+            raise ValueError('linux required.')
+        if not isinstance(version, str):
+            ValueError('version invalid instance.')
+        if not isinstance(python, Python):
+            ValueError('python invalid instance.')
+        if not isinstance(linux, Linux):
+            ValueError('linux invalid instance.')
 
         git_branch = kwargs.get('git_branch')
         optimized = kwargs.get('optimized', True)
@@ -170,9 +136,9 @@ class RpmPy(object):
 
         self.version = rpm_py_version
         self.downloader = Downloader(rpm_py_version, git_branch=git_branch)
-        self.installer = Installer(rpm_py_version, python, rpm,
-                                   optimized=optimized,
-                                   verbose=verbose)
+        self.installer = linux.create_installer(rpm_py_version,
+                                                optimized=optimized,
+                                                verbose=verbose)
 
     def download_and_install(self):
         """Download and install RPM Python binding."""
@@ -258,6 +224,42 @@ else:
             'required': True,
         },
     ]
+    # RPM version < 4.12
+    # https://github.com/rpm-software-management/rpm/commit/f996665
+    PATCHS_ADD_EXTRA_LINK_ARGS = [
+        {
+            'src': r'\nimport subprocess\n',
+            'dest': '''
+import subprocess
+import os
+'''
+        },
+        {
+            'src': r'\ncflags = \[.*\]\n',
+            'dest': '''
+cflags = ['-std=c99']
+additional_link_args = []
+
+# See if we're building in-tree
+if os.access('Makefile.am', os.F_OK):
+    cflags.append('-I../include')
+    additional_link_args.extend(['-Wl,-L../rpmio/.libs',
+                                 '-Wl,-L../lib/.libs',
+                                 '-Wl,-L../build/.libs',
+                                 '-Wl,-L../sign/.libs'])
+    os.environ['PKG_CONFIG_PATH'] = '..'
+'''
+        },
+        {
+            'src': r'''
+                   extra_compile_args = cflags
+''',
+            'dest': '''
+                   extra_compile_args = cflags,
+                   extra_link_args = additional_link_args
+'''
+        },
+    ]
     IN_PATH = 'setup.py.in'
     OUT_PATH = 'setup.py'
 
@@ -277,6 +279,8 @@ else:
         patches = []
         if optimized:
             patches = self.PATCHES_DEFAULT
+            if version.info < (4, 12):
+                patches.extend(self.PATCHS_ADD_EXTRA_LINK_ARGS)
         self.patches = patches
 
     def exists_in_path(self):
@@ -854,6 +858,171 @@ when a RPM download plugin not installed.
         return found
 
 
+class DebianInstaller(Installer):
+    """A class to install RPM Python binding on Debian base OS."""
+
+    def __init__(self, rpm_py_version, python, rpm, **kwargs):
+        """Initialize this class."""
+        Installer.__init__(self, rpm_py_version, python, rpm, **kwargs)
+
+    def run(self):
+        """Run install main logic."""
+        self._make_lib_file_symbolic_links()
+        self._copy_each_include_files_to_include_dir()
+        self._make_dep_lib_file_sym_links_and_copy_include_files()
+        self.setup_py.add_patchs_to_build_without_pkg_config(
+            self.rpm.lib_dir, self.rpm.include_dir
+        )
+        self.setup_py.apply_and_save()
+        self._build_and_install()
+        # from here
+
+    def _update_sym_src_dirs_conditionally(self, so_file_dict):
+        pass
+
+    def _make_dep_lib_file_sym_links_and_copy_include_files(self):
+        # TODO: Download libpopt when libpopt-dev is not installed.
+        if not self._is_apt_package_installed('libpopt-dev'):
+            message = '''
+Required RPM not installed: [libpopt-dev],
+'''
+            raise InstallError(message)
+
+    def _is_apt_package_installed(self, package_name):
+        if not package_name:
+            raise ValueError('package_name required.')
+
+        installed = True
+        try:
+            Cmd.sh_e('apt show {0}'.format(package_name))
+        except InstallError:
+            installed = False
+        return installed
+
+
+class Linux(object):
+    """A factory class for Linux OS."""
+
+    def __init__(self, python, rpm_path, **kwargs):
+        """Initialize this class."""
+        if not python:
+            raise ValueError('python required.')
+        if not rpm_path:
+            raise ValueError('rpm_path required.')
+
+        self.python = python
+        self.rpm = self.create_rpm(rpm_path)
+
+    @classmethod
+    def get_instance(cls, python, rpm_path, **kwargs):
+        """Get OS object."""
+        linux = None
+        if Cmd.which('apt-get'):
+            linux = DebianLinux(python, rpm_path, **kwargs)
+        else:
+            linux = FedoraLinux(python, rpm_path, **kwargs)
+        return linux
+
+    def create_rpm(self, rpm_path):
+        """Create Rpm object."""
+        raise NotImplementedError('Implement this method.')
+
+    def create_installer(self, rpm_py_version, **kwargs):
+        """Create Installer object."""
+        raise NotImplementedError('Implement this method.')
+
+    def verify_system_status(self):
+        """Verify system status."""
+        if not sys.platform.startswith('linux'):
+            raise InstallError('Supported platform is Linux only.')
+
+        if self.python.is_system_python():
+            if self.python.is_python_binding_installed():
+                message = '''
+RPM Python binding already installed on system Python.
+Nothing to do.
+'''
+                Log.info(message)
+                raise InstallSkipError(message)
+            else:
+                message = '''
+RPM Python binding on system Python should be installed manually.
+Install the proper RPM package of python{,2,3}-rpm.
+'''
+                raise InstallError(message)
+
+        if self.rpm.is_system_rpm():
+            self.verify_package_status()
+
+    def verify_package_status(self):
+        """Verify package stauts."""
+        raise NotImplementedError('Implement this method.')
+
+
+class FedoraLinux(Linux):
+    """A class for Fedora base OS.
+
+    including CentOS, Red Hat Enterprise Linux.
+    """
+
+    def __init__(self, python, rpm_path, **kwargs):
+        """Initialize this class."""
+        Linux.__init__(self, python, rpm_path, **kwargs)
+
+    def verify_package_status(self):
+        """Verify dependency RPM package status."""
+        # rpm-libs is required for /usr/lib64/librpm*.so
+        self.rpm.verify_packages_installed(['rpm-libs'])
+
+        # Check RPM so files to build the Python binding.
+        message_format = '''
+RPM: {0} or
+RPM download tool (dnf-plugins-core (dnf) or yum-utils (yum)) required.
+Install any of those.
+'''
+        if self.rpm.has_composed_rpm_bulid_libs():
+            if (not self.rpm.is_package_installed('rpm-build-libs')
+               and not self.rpm.is_downloadable()):
+                raise InstallError(message_format.format('rpm-build-libs'))
+        else:
+            # All the needed so files are included in rpm-libs package.
+            pass
+
+    def create_rpm(self, rpm_path):
+        """Create Rpm object."""
+        return FedoraRpm(rpm_path)
+
+    def create_installer(self, rpm_py_version, **kwargs):
+        """Create Installer object."""
+        return Installer(rpm_py_version, self.python, self.rpm, **kwargs)
+
+
+class DebianLinux(Linux):
+    """A class for Debian base OS including Ubuntu."""
+
+    def __init__(self, python, rpm_path, **kwargs):
+        """Initialize this class."""
+        Linux.__init__(self, python, rpm_path, **kwargs)
+
+    def verify_package_status(self):
+        """Verify dependency Debian package status.
+
+        Right now pass everything.
+        Because if rpm command (Package: rpm) is installed, all the necessary
+        libraries should be installed.
+        See https://packages.ubuntu.com/search?keywords=rpm
+        """
+        pass
+
+    def create_rpm(self, rpm_path):
+        """Create Rpm object."""
+        return DebianRpm(rpm_path)
+
+    def create_installer(self, rpm_py_version, **kwargs):
+        """Create Installer object."""
+        return DebianInstaller(rpm_py_version, self.python, self.rpm, **kwargs)
+
+
 class Python(object):
     """A class for Python environment."""
 
@@ -965,14 +1134,11 @@ class Rpm(object):
 
     def __init__(self, rpm_path, **kwargs):
         """Initialize this class."""
-        is_dnf = True if Cmd.which('dnf') else False
-
         is_file_checked = kwargs.get('check', True)
         if is_file_checked and not os.path.isfile(rpm_path):
             raise InstallError("RPM binary command '{0}' not found.".format(
                                rpm_path))
         self.rpm_path = rpm_path
-        self.is_dnf = is_dnf
         self.arch = Cmd.sh_e_out('uname -m').rstrip()
         self._lib_dir = None
 
@@ -1002,17 +1168,6 @@ class Rpm(object):
                 matched = True
                 break
         return matched
-
-    def has_composed_rpm_bulid_libs(self):
-        """Return if the sysmtem RPM has rpm-build-libs pacakage.
-
-        rpm-bulid-libs was created from rpm 4.9.0-0.beta1.1 on Fedora.
-        https://src.fedoraproject.org/rpms/rpm/blob/master/f/rpm.spec
-        > * 4.9.0-0.beta1.1
-        > - split librpmbuild and librpmsign to a separate rpm-build-libs
-        >   package
-        """
-        return self.version_info >= (4, 9, 0)
 
     def is_package_installed(self, package_name):
         """Check if the RPM package is installed."""
@@ -1050,6 +1205,33 @@ Install the RPM package.
 
     @property
     def lib_dir(self):
+        """Return standard library directory path used by RPM libs."""
+        raise NotImplementedError('Implement this property.')
+
+    @property
+    def include_dir(self):
+        """Return include directory.
+
+        TODO: Support non-system RPM.
+        """
+        return '/usr/include'
+
+    def is_downloadable(self):
+        """Return if rpm is downloadable by the package command."""
+        raise NotImplementedError('Implement this method.')
+
+
+class FedoraRpm(Rpm):
+    """A class for RPM environment on Fedora base Linux."""
+
+    def __init__(self, rpm_path, **kwargs):
+        """Initialize this class."""
+        Rpm.__init__(self, rpm_path, **kwargs)
+        is_dnf = True if Cmd.which('dnf') else False
+        self.is_dnf = is_dnf
+
+    @property
+    def lib_dir(self):
         """Return standard library directory path used by RPM libs.
 
         TODO: Support non-system RPM.
@@ -1066,13 +1248,16 @@ Install the RPM package.
             self._lib_dir = rpm_lib_dir
         return self._lib_dir
 
-    @property
-    def include_dir(self):
-        """Return include directory.
+    def has_composed_rpm_bulid_libs(self):
+        """Return if the sysmtem RPM has composed rpm-build-libs pacakage.
 
-        TODO: Support non-system RPM.
+        rpm-bulid-libs was created from rpm 4.9.0-0.beta1.1 on Fedora.
+        https://src.fedoraproject.org/rpms/rpm/blob/master/f/rpm.spec
+        > * 4.9.0-0.beta1.1
+        > - split librpmbuild and librpmsign to a separate rpm-build-libs
+        >   package
         """
-        return '/usr/include'
+        return self.version_info >= (4, 9, 0)
 
     @property
     def package_cmd(self):
@@ -1130,6 +1315,42 @@ Install the RPM package.
             raise InstallError('PRM file not found.')
         cmd = 'rpm2cpio {0} | cpio -idmv'.format(rpm_files[0])
         Cmd.sh_e(cmd)
+
+
+class DebianRpm(Rpm):
+    """A class for RPM environment on Debian base Linux."""
+
+    def __init__(self, rpm_path, **kwargs):
+        """Initialize this class."""
+        Rpm.__init__(self, rpm_path, **kwargs)
+        # self.rpm_path = rpm_path
+        # self.arch = Cmd.sh_e_out('uname -m').rstrip()
+        # self._lib_dir = None
+
+    @property
+    def lib_dir(self):
+        """Return standard library directory path used by RPM libs."""
+        if not self._lib_dir:
+            lib_files = glob.glob("/usr/lib/*/librpm.so*")
+            if not lib_files:
+                raise InstallError("Can not find lib directory.")
+            self._lib_dir = os.path.dirname(lib_files[0])
+        return self._lib_dir
+
+    def is_downloadable(self):
+        """Return if rpm is downloadable by the package command.
+
+        Always return false.
+        """
+        return False
+
+    def download_and_extract(self, package_name):
+        """Download and extract given package."""
+        raise NotImplementedError('Not supported method.')
+
+    def download(self, package_name):
+        """Download given package."""
+        raise NotImplementedError('Not supported method.')
 
 
 class InstallError(Exception):
