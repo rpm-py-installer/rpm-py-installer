@@ -67,6 +67,9 @@ class Application(object):
         rpm_path = Cmd.which(rpm_path)
         if not rpm_path:
             raise InstallError('rpm command not found. Install rpm.')
+        if not rpm_path.endswith('rpm'):
+            raise InstallError('Invalid rpm_path: {0}'.format(rpm_path))
+
         rpm = Rpm(rpm_path)
 
         # Installed RPM Python module's version.
@@ -193,6 +196,8 @@ class RpmPyVersion(object):
         """Initialize this class."""
         if not version:
             ValueError('version required.')
+        if not isinstance(version, str):
+            ValueError('version invalid instance.')
         self.version = version
 
     def __str__(self):
@@ -1333,6 +1338,8 @@ class Utils(object):
 
         tuple object. ex. ('4', '14', '0', 'rc1')
         """
+        if not isinstance(version_str, str):
+            ValueError('version_str invalid instance.')
         version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
 
         def convert_to_int(string):
