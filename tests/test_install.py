@@ -371,13 +371,13 @@ def test_rpm_is_system_rpm_returns_false():
     ((4, 9, 0),          True),
     ((4, 10, 0),         True),
 ])
-def test_rpm_has_sys_rpm_rpm_bulid_libs_is_ok(
+def test_rpm_has_composed_rpm_bulid_libs_is_ok(
     version_info, has_rpm_bulid_libs, monkeypatch
 ):
     rpm = Rpm('/usr/local/bin/rpm', check=False)
     monkeypatch.setattr(type(rpm), 'version_info',
                         mock.PropertyMock(return_value=version_info))
-    has_build_libs = rpm.has_sys_rpm_rpm_bulid_libs()
+    has_build_libs = rpm.has_composed_rpm_bulid_libs()
     assert has_build_libs == has_rpm_bulid_libs
 
 
@@ -726,7 +726,7 @@ def test_installer_prepare_dependency_raises_error_for_popt_devel(installer):
         return_value=False
     )
     with pytest.raises(InstallError) as ei:
-        installer._prepare_dependency_so_include_files()
+        installer._make_dep_lib_file_sym_links_and_copy_include_files()
     expected_message = '''
 Required RPM not installed: [popt-devel],
 when a RPM download plugin not installed.
@@ -735,7 +735,7 @@ when a RPM download plugin not installed.
 
 
 def test_installer_run_raises_error_for_rpm_build_libs(installer):
-    installer.rpm.has_sys_rpm_rpm_bulid_libs = mock.MagicMock(
+    installer.rpm.has_composed_rpm_bulid_libs = mock.MagicMock(
         return_value=True
     )
     installer._is_rpm_devel_installed = mock.MagicMock(
