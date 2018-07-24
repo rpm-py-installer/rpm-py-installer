@@ -573,6 +573,10 @@ class Installer(object):
         self.setup_py_opts = '-v' if verbose else '-q'
         self.optimized = optimized
 
+        self.package_sys_name = 'RPM'
+        self.pacakge_popt_name = 'popt'
+        self.pacakge_popt_devel_name = 'popt-devel'
+
     def run(self):
         """Run install main logic."""
         try:
@@ -625,8 +629,11 @@ Can you install the RPM package, and run this installer again?
     def _is_rpm_devel_installed(self):
         return self.rpm.is_package_installed('rpm-devel')
 
+    def _is_popt_installed(self):
+        return self.rpm.is_package_installed(self.pacakge_popt_name)
+
     def _is_popt_devel_installed(self):
-        return self.rpm.is_package_installed('popt-devel')
+        return self.rpm.is_package_installed(self.pacakge_popt_devel_name)
 
     def _make_lib_file_symbolic_links(self):
         """Make symbolic links for lib files.
@@ -796,50 +803,60 @@ when a RPM download plugin not installed.
            files to downloaded source library files.
         2. Copy include header files to include directory.
         """
-        if self._rpm_py_has_popt_devel_dep():
-            if self._is_popt_devel_installed():
-                pass
-            elif self.rpm.is_downloadable():
-                if not self.rpm.is_package_installed('popt'):
-                    message = '''
-Required RPM not installed: [popt],
-'''
-                    raise InstallError(message)
+        if not self._rpm_py_has_popt_devel_dep():
+            message = (
+                'The RPM Python binding does not have popt-devel dependency'
+            )
+            Log.debug(message)
+            return
+        if self._is_popt_devel_installed():
+            message = '{0} package is installed.'.format(
+                self.pacakge_popt_devel_name)
+            Log.debug(message)
+            return
+        if not self._is_package_downloadable():
+            message = '''
+Install a {0} download plugin or
+install the {0} pacakge [{1}].
+'''.format(self.package_sys_name, self.pacakge_popt_devel_name)
+            raise InstallError(message)
+        if not self._is_popt_installed():
+            message = '''
+Required {0} not installed: [{1}],
+Install the {0} package.
+'''.format(self.package_sys_name, self.pacakge_popt_name)
+            raise InstallError(message)
 
-                self.rpm.download_and_extract('popt-devel')
+        self._download_and_extract_popt_devel()
 
-                # Copy libpopt.so to rpm_root/lib/.libs/.
-                popt_lib_dirs = [
-                    self.rpm.lib_dir,
-                    # /lib64/libpopt.so* installed at popt-1.13-7.el6.x86_64.
-                    '/lib64',
-                ]
-                pattern = 'libpopt.so*'
-                popt_so_file = None
-                for popt_lib_dir in popt_lib_dirs:
-                    so_files = Cmd.find(popt_lib_dir, pattern)
-                    if so_files:
-                        popt_so_file = so_files[0]
-                        break
+        # Copy libpopt.so to rpm_root/lib/.libs/.
+        popt_lib_dirs = [
+            self.rpm.lib_dir,
+            # /lib64/libpopt.so* installed at popt-1.13-7.el6.x86_64.
+            '/lib64',
+            # /lib/*/libpopt.so* installed at libpopt0-1.16-8ubuntu1
+            '/lib',
+        ]
+        pattern = 'libpopt.so*'
+        popt_so_file = None
+        for popt_lib_dir in popt_lib_dirs:
+            so_files = Cmd.find(popt_lib_dir, pattern)
+            if so_files:
+                popt_so_file = so_files[0]
+                break
 
-                if not popt_so_file:
-                    message = 'so file pattern {0} not found at {1}'.format(
-                        pattern, str(popt_lib_dirs)
-                    )
-                    raise InstallError(message)
+        if not popt_so_file:
+            message = 'so file pattern {0} not found at {1}'.format(
+                pattern, str(popt_lib_dirs)
+            )
+            raise InstallError(message)
 
-                cmd = 'ln -sf {0} ../lib/.libs/libpopt.so'.format(
-                      popt_so_file)
-                Cmd.sh_e(cmd)
+        cmd = 'ln -sf {0} ../lib/.libs/libpopt.so'.format(
+               popt_so_file)
+        Cmd.sh_e(cmd)
 
-                # Copy popt.h to rpm_root/include
-                shutil.copy('./usr/include/popt.h', '../include')
-            else:
-                message = '''
-Required RPM not installed: [popt-devel],
-when a RPM download plugin not installed.
-'''
-                raise InstallError(message)
+        # Copy popt.h to rpm_root/include
+        shutil.copy('./usr/include/popt.h', '../include')
 
     def _build_and_install(self):
         python_path = self.python.python_path
@@ -861,6 +878,12 @@ when a RPM download plugin not installed.
                     break
         return found
 
+    def _is_package_downloadable(self):
+        return self.rpm.is_downloadable()
+
+    def _download_and_extract_popt_devel(self):
+        self.rpm.download_and_extract('popt-devel')
+
 
 class DebianInstaller(Installer):
     """A class to install RPM Python binding on Debian base OS."""
@@ -868,6 +891,10 @@ class DebianInstaller(Installer):
     def __init__(self, rpm_py_version, python, rpm, **kwargs):
         """Initialize this class."""
         Installer.__init__(self, rpm_py_version, python, rpm, **kwargs)
+
+        self.package_sys_name = 'Debian Pacakge'
+        self.pacakge_popt_name = 'libpopt0'
+        self.pacakge_popt_devel_name = 'libpopt-dev'
 
     def run(self):
         """Run install main logic."""
@@ -883,24 +910,50 @@ class DebianInstaller(Installer):
     def _update_sym_src_dirs_conditionally(self, so_file_dict):
         pass
 
-    def _make_dep_lib_file_sym_links_and_copy_include_files(self):
-        # TODO: Download libpopt when libpopt-dev is not installed.
-        if not self._is_apt_package_installed('libpopt-dev'):
-            message = '''
-Required RPM not installed: [libpopt-dev],
-'''
-            raise InstallError(message)
+    def _is_popt_installed(self):
+        return self._is_deb_package_installed(self.pacakge_popt_name)
 
-    def _is_apt_package_installed(self, package_name):
+    def _is_popt_devel_installed(self):
+        return self._is_deb_package_installed(self.pacakge_popt_devel_name)
+
+    def _is_package_downloadable(self):
+        # Think as "apt-get download" is always available.
+        return True
+
+    def _download_and_extract_popt_devel(self):
+        self._download_and_extract_deb_package(self.pacakge_popt_devel_name)
+
+    def _is_deb_package_installed(self, package_name):
         if not package_name:
             raise ValueError('package_name required.')
 
         installed = True
         try:
-            Cmd.sh_e('apt show {0}'.format(package_name))
+            Cmd.sh_e('dpkg --status {0}'.format(package_name))
         except InstallError:
             installed = False
         return installed
+
+    def _download_and_extract_deb_package(self, package_name):
+        self._download_deb_package(package_name)
+        self._extract_deb_package(package_name)
+
+    def _download_deb_package(self, package_name):
+        if not package_name:
+            ValueError('package_name required.')
+        cmd = 'apt-get download {0}'.format(package_name)
+        Cmd.sh_e(cmd)
+
+    def _extract_deb_package(self, package_name):
+        if not package_name:
+            ValueError('package_name required.')
+
+        deb_files = glob.glob('{0}*.deb'.format(package_name))
+        if not deb_files:
+            raise InstallError("Can not find deb file.")
+
+        cmd = 'dpkg-deb --raw-extract {0} .'.format(deb_files[0])
+        Cmd.sh_e(cmd)
 
 
 class Linux(object):
