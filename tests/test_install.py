@@ -814,7 +814,7 @@ def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
         return_value=None
     )
     rpm_py.installer.install_from_rpm_py_package = mock.Mock(
-        return_value=None
+        side_effect=InstallError('Install failed from package.')
     )
 
     with pytest.helpers.work_dir():
@@ -824,12 +824,11 @@ def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
             pytest.helpers.touch(os.path.join(python_dir, 'setup.py.in'))
         rpm_py.download_and_install()
 
+        assert rpm_py.installer.install_from_rpm_py_package.called
         if setup_py_in_exists:
             assert rpm_py.installer.run.called
-            assert not rpm_py.installer.install_from_rpm_py_package.called
         else:
             assert not rpm_py.installer.run.called
-            assert rpm_py.installer.install_from_rpm_py_package.called
 
 
 def test_app_init(app):
