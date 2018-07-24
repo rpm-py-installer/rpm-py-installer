@@ -760,12 +760,14 @@ def test_installer_make_dep_lib_file_links_and_copy_include_files(installer):
     with pytest.raises(InstallError) as ei:
         installer._make_dep_lib_file_sym_links_and_copy_include_files()
     expected_message = '''
-Required RPM not installed: [popt-devel],
-when a RPM download plugin not installed.
-'''
+Install a {0} download plugin or
+install the {0} pacakge [{1}].
+'''.format(installer.package_sys_name, installer.pacakge_popt_devel_name)
     assert expected_message == str(ei.value)
 
 
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
 def test_installer_run_raises_error_for_rpm_build_libs(installer):
     installer.rpm.has_composed_rpm_bulid_libs = mock.MagicMock(
         return_value=True
