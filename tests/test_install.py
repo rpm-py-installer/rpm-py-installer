@@ -825,6 +825,7 @@ def test_rpm_py_download_and_install_src(setup_py_in_exists, sys_rpm_path):
             pytest.helpers.touch(os.path.join(python_dir, 'setup.py.in'))
         rpm_py.download_and_install()
 
+        assert rpm_py.installer.install_from_rpm_py_package.called
         if setup_py_in_exists:
             assert rpm_py.installer.run.called
         else:
