@@ -146,12 +146,9 @@ class RpmPy(object):
             self.installer.install_from_rpm_py_package()
         except InstallError as e:
             org_message = str(e)
-            message = '''
-Faild to install from RPM Python binding package.
-{0}
-Try to install from RPM source code.
-'''.format(org_message)
-            Log.warn(message)
+            Log.warn('Faild to install from RPM Python binding package.')
+            Log.warn(org_message)
+            Log.warn('Try to install from RPM source code. ')
 
             self.download_and_install_from_source()
 

@@ -800,7 +800,7 @@ when a RPM download plugin not installed.
 
 
 @pytest.mark.parametrize('setup_py_in_exists', [True, False])
-def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
+def test_rpm_py_download_and_install_src(setup_py_in_exists, sys_rpm_path):
     version_str = '4.13.0'
     python = Python()
     linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
@@ -813,6 +813,7 @@ def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
     rpm_py.installer.run = mock.Mock(
         return_value=None
     )
+    # Fails installation from package to test installation from source.
     rpm_py.installer.install_from_rpm_py_package = mock.Mock(
         side_effect=InstallError('Install failed from package.')
     )
@@ -824,7 +825,6 @@ def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
             pytest.helpers.touch(os.path.join(python_dir, 'setup.py.in'))
         rpm_py.download_and_install()
 
-        assert rpm_py.installer.install_from_rpm_py_package.called
         if setup_py_in_exists:
             assert rpm_py.installer.run.called
         else:
