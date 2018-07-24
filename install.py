@@ -152,7 +152,7 @@ class RpmPy(object):
                 self.installer.run()
 
         if not setup_py_in_found:
-            self.installer.install_from_rpm_py_rpm()
+            self.installer.install_from_rpm_py_package()
 
 
 class RpmPyVersion(object):
@@ -573,67 +573,29 @@ class Installer(object):
         self.setup_py_opts = '-v' if verbose else '-q'
         self.optimized = optimized
 
-        self.package_sys_name = 'RPM'
-        self.pacakge_popt_name = 'popt'
-        self.pacakge_popt_devel_name = 'popt-devel'
+        # Implement these variables on sub class.
+        self.package_sys_name = None
+        self.pacakge_popt_name = None
+        self.pacakge_popt_devel_name = None
 
     def run(self):
         """Run install main logic."""
-        try:
-            if not self._is_rpm_devel_installed():
-                self._make_lib_file_symbolic_links()
-                self._copy_each_include_files_to_include_dir()
-                self._make_dep_lib_file_sym_links_and_copy_include_files()
-                self.setup_py.add_patchs_to_build_without_pkg_config(
-                    self.rpm.lib_dir, self.rpm.include_dir
-                )
-            self.setup_py.apply_and_save()
-            self._build_and_install()
-        except InstallError as e:
-            if not self._is_rpm_devel_installed():
-                org_message = str(e)
-                message = '''
-Install failed without rpm-devel package by below reason.
-Can you install the RPM package, and run this installer again?
-'''
-                message += org_message
-                raise InstallError(message)
-            else:
-                raise e
+        self._make_lib_file_symbolic_links()
+        self._copy_each_include_files_to_include_dir()
+        self._make_dep_lib_file_sym_links_and_copy_include_files()
+        self.setup_py.add_patchs_to_build_without_pkg_config(
+            self.rpm.lib_dir, self.rpm.include_dir
+        )
+        self.setup_py.apply_and_save()
+        self._build_and_install()
 
-    def install_from_rpm_py_rpm(self):
-        """Run install main logic.
+    def install_from_rpm_py_package(self):
+        """Run install from RPM Python binding system package.
 
         It is run when RPM does not have setup.py.in in the source
         such as the RPM source is old.
         """
-        self.rpm.download_and_extract('rpm-python')
-
-        # Find ./usr/lib64/pythonN.N/site-packages/rpm directory.
-        downloaded_rpm_dirs = glob.glob('usr/*/*/site-packages/rpm')
-        if not downloaded_rpm_dirs:
-            raise InstallError('site-packages/rpm directory not found.')
-        src_rpm_dir = downloaded_rpm_dirs[0]
-
-        dst_rpm_dir = self.python.python_lib_rpm_dir
-        if os.path.isdir(dst_rpm_dir):
-            Log.debug("Remove existed rpm directory {0}".format(dst_rpm_dir))
-            shutil.rmtree(dst_rpm_dir)
-        Log.debug("Copy directory from '{0}' to '{1}'".format(
-                  src_rpm_dir, dst_rpm_dir))
-        shutil.copytree(src_rpm_dir, dst_rpm_dir)
-
-    def _is_rpm_build_libs_installed(self):
-        return self.rpm.is_package_installed('rpm-build-libs')
-
-    def _is_rpm_devel_installed(self):
-        return self.rpm.is_package_installed('rpm-devel')
-
-    def _is_popt_installed(self):
-        return self.rpm.is_package_installed(self.pacakge_popt_name)
-
-    def _is_popt_devel_installed(self):
-        return self.rpm.is_package_installed(self.pacakge_popt_devel_name)
+        raise NotImplementedError('Implement this method.')
 
     def _make_lib_file_symbolic_links(self):
         """Make symbolic links for lib files.
@@ -715,33 +677,7 @@ Can you install the RPM package, and run this installer again?
             Cmd.sh_e(cmd)
 
     def _update_sym_src_dirs_conditionally(self, so_file_dict):
-        # RPM is old version that does not have RPM rpm-build-libs.
-        # All the needed so files are installed.
-        if not self.rpm.has_composed_rpm_bulid_libs():
-            return
-        if self._is_rpm_build_libs_installed():
-            return
-
-        if self.rpm.is_downloadable():
-            self.rpm.download_and_extract('rpm-build-libs')
-
-            # rpm-sign-libs was splitted from rpm-build-libs
-            # from rpm-4.14.1-8 on Fedora.
-            try:
-                self.rpm.download_and_extract('rpm-sign-libs')
-            except InstallError:
-                pass
-
-            current_dir = os.getcwd()
-            work_lib_dir = current_dir + self.rpm.lib_dir
-            so_file_dict['rpmbuild']['sym_src_dir'] = work_lib_dir
-            so_file_dict['rpmsign']['sym_src_dir'] = work_lib_dir
-        else:
-            message = '''
-Required RPM not installed: [rpm-build-libs],
-when a RPM download plugin not installed.
-'''
-            raise InstallError(message)
+        pass
 
     def _copy_each_include_files_to_include_dir(self):
         """Copy include header files for each directory to include directory.
@@ -879,10 +815,129 @@ Install the {0} package.
         return found
 
     def _is_package_downloadable(self):
-        return self.rpm.is_downloadable()
+        """Check if the package system is downlodable."""
+        raise NotImplementedError('Implement this method.')
+
+    def _is_popt_installed(self):
+        """Check if the popt package is installed."""
+        raise NotImplementedError('Implement this method.')
+
+    def _is_popt_devel_installed(self):
+        """Check if the popt devel package is installed."""
+        raise NotImplementedError('Implement this method.')
 
     def _download_and_extract_popt_devel(self):
+        """Download and extract popt devel package."""
+        raise NotImplementedError('Implement this method.')
+
+
+class FedoraInstaller(Installer):
+    """A class to install RPM Python binding on Fedora base OS."""
+
+    def __init__(self, rpm_py_version, python, rpm, **kwargs):
+        """Initialize this class."""
+        Installer.__init__(self, rpm_py_version, python, rpm, **kwargs)
+
+        self.package_sys_name = 'RPM'
+        self.pacakge_popt_name = 'popt'
+        self.pacakge_popt_devel_name = 'popt-devel'
+
+    def run(self):
+        """Run install main logic."""
+        try:
+            if not self._is_rpm_all_lib_include_files_installed():
+                self._make_lib_file_symbolic_links()
+                self._copy_each_include_files_to_include_dir()
+                self._make_dep_lib_file_sym_links_and_copy_include_files()
+                self.setup_py.add_patchs_to_build_without_pkg_config(
+                    self.rpm.lib_dir, self.rpm.include_dir
+                )
+            self.setup_py.apply_and_save()
+            self._build_and_install()
+        except InstallError as e:
+            if not self._is_rpm_all_lib_include_files_installed():
+                org_message = str(e)
+                message = '''
+Install failed without rpm-devel package by below reason.
+Can you install the RPM package, and run this installer again?
+'''
+                message += org_message
+                raise InstallError(message)
+            else:
+                raise e
+
+    def install_from_rpm_py_package(self):
+        """Run install from RPM Python binding RPM package."""
+        self.rpm.download_and_extract('rpm-python')
+
+        # Find ./usr/lib64/pythonN.N/site-packages/rpm directory.
+        downloaded_rpm_dirs = glob.glob('usr/*/*/site-packages/rpm')
+        if not downloaded_rpm_dirs:
+            raise InstallError('site-packages/rpm directory not found.')
+        src_rpm_dir = downloaded_rpm_dirs[0]
+
+        dst_rpm_dir = self.python.python_lib_rpm_dir
+        if os.path.isdir(dst_rpm_dir):
+            Log.debug("Remove existed rpm directory {0}".format(dst_rpm_dir))
+            shutil.rmtree(dst_rpm_dir)
+        Log.debug("Copy directory from '{0}' to '{1}'".format(
+                  src_rpm_dir, dst_rpm_dir))
+        shutil.copytree(src_rpm_dir, dst_rpm_dir)
+
+    def _is_rpm_all_lib_include_files_installed(self):
+        """Check if all rpm lib and include files are installed.
+
+        If RPM rpm-devel package is installed, the files are installed.
+        """
+        return self.rpm.is_package_installed('rpm-devel')
+
+    def _update_sym_src_dirs_conditionally(self, so_file_dict):
+        # RPM is old version that does not have RPM rpm-build-libs.
+        # All the needed so files are installed.
+        if not self.rpm.has_composed_rpm_bulid_libs():
+            return
+        if self._is_rpm_build_libs_installed():
+            return
+
+        if self.rpm.is_downloadable():
+            self.rpm.download_and_extract('rpm-build-libs')
+
+            # rpm-sign-libs was splitted from rpm-build-libs
+            # from rpm-4.14.1-8 on Fedora.
+            try:
+                self.rpm.download_and_extract('rpm-sign-libs')
+            except InstallError:
+                pass
+
+            current_dir = os.getcwd()
+            work_lib_dir = current_dir + self.rpm.lib_dir
+            so_file_dict['rpmbuild']['sym_src_dir'] = work_lib_dir
+            so_file_dict['rpmsign']['sym_src_dir'] = work_lib_dir
+        else:
+            message = '''
+Required RPM not installed: [rpm-build-libs],
+when a RPM download plugin not installed.
+'''
+            raise InstallError(message)
+
+    def _is_package_downloadable(self):
+        # overrided method.
+        return self.rpm.is_downloadable()
+
+    def _is_popt_installed(self):
+        # overrided method.
+        return self.rpm.is_package_installed(self.pacakge_popt_name)
+
+    def _is_popt_devel_installed(self):
+        # overrided method.
+        return self.rpm.is_package_installed(self.pacakge_popt_devel_name)
+
+    def _download_and_extract_popt_devel(self):
+        # overrided method.
         self.rpm.download_and_extract('popt-devel')
+
+    def _is_rpm_build_libs_installed(self):
+        return self.rpm.is_package_installed('rpm-build-libs')
 
 
 class DebianInstaller(Installer):
@@ -896,31 +951,37 @@ class DebianInstaller(Installer):
         self.pacakge_popt_name = 'libpopt0'
         self.pacakge_popt_devel_name = 'libpopt-dev'
 
-    def run(self):
-        """Run install main logic."""
-        self._make_lib_file_symbolic_links()
-        self._copy_each_include_files_to_include_dir()
-        self._make_dep_lib_file_sym_links_and_copy_include_files()
-        self.setup_py.add_patchs_to_build_without_pkg_config(
-            self.rpm.lib_dir, self.rpm.include_dir
-        )
-        self.setup_py.apply_and_save()
-        self._build_and_install()
+    def install_from_rpm_py_package(self):
+        """Run install from RPM Python binding RPM package."""
+        message = '''
+Can not install RPM Python binding from package.
+Because there is no RPM Python binding deb package.
+'''
+        raise InstallError(message)
 
-    def _update_sym_src_dirs_conditionally(self, so_file_dict):
-        pass
+    def _is_rpm_all_lib_include_files_installed(self):
+        """Check if all rpm lib and include files are installed.
 
-    def _is_popt_installed(self):
-        return self._is_deb_package_installed(self.pacakge_popt_name)
-
-    def _is_popt_devel_installed(self):
-        return self._is_deb_package_installed(self.pacakge_popt_devel_name)
+        Return always false, because rpm-dev deb package does not
+        exist in Debian base OS.
+        """
+        return False
 
     def _is_package_downloadable(self):
+        # overrided method.
         # Think as "apt-get download" is always available.
         return True
 
+    def _is_popt_installed(self):
+        # overrided method.
+        return self._is_deb_package_installed(self.pacakge_popt_name)
+
+    def _is_popt_devel_installed(self):
+        # overrided method.
+        return self._is_deb_package_installed(self.pacakge_popt_devel_name)
+
     def _download_and_extract_popt_devel(self):
+        # overrided method.
         self._download_and_extract_deb_package(self.pacakge_popt_devel_name)
 
     def _is_deb_package_installed(self, package_name):
@@ -1050,7 +1111,7 @@ Install any of those.
 
     def create_installer(self, rpm_py_version, **kwargs):
         """Create Installer object."""
-        return Installer(rpm_py_version, self.python, self.rpm, **kwargs)
+        return FedoraInstaller(rpm_py_version, self.python, self.rpm, **kwargs)
 
 
 class DebianLinux(Linux):
