@@ -66,7 +66,6 @@ def sys_rpm_path():
     return rpm_path
 
 
-@pytest.helpers.register
 def get_rpm(is_debian, rpm_path, **kwargs):
     rpm = None
     if is_debian:
@@ -78,12 +77,12 @@ def get_rpm(is_debian, rpm_path, **kwargs):
 
 @pytest.fixture
 def sys_rpm(sys_rpm_path, is_debian):
-    return pytest.helpers.get_rpm(is_debian, sys_rpm_path)
+    return get_rpm(is_debian, sys_rpm_path)
 
 
 @pytest.fixture
 def local_rpm(is_debian):
-    return pytest.helpers.get_rpm(is_debian, '/usr/local/bin/rpm', check=False)
+    return get_rpm(is_debian, '/usr/local/bin/rpm', check=False)
 
 
 @pytest.fixture
@@ -355,7 +354,7 @@ def test_rpm_init_is_ok(is_dnf, sys_rpm_path):
 
 def test_rpm_init_raises_error_on_not_existed_rpm(is_debian):
     with pytest.raises(InstallError) as ei:
-        pytest.helpers.get_rpm(is_debian, '/usr/bin/rpm123')
+        get_rpm(is_debian, '/usr/bin/rpm123')
     expected_message = "RPM binary command '/usr/bin/rpm123' not found."
     assert expected_message == str(ei.value)
 
@@ -748,8 +747,8 @@ def test_installer_init_is_ok(installer):
     assert installer.setup_py_opts == '-q'
 
 
-def test_installer_prepare_dependency_raises_error_for_popt_devel(installer):
-    installer._has_dependency_rpm_popt_devel = mock.MagicMock(
+def test_installer_make_dep_lib_file_links_and_copy_include_files(installer):
+    installer._rpm_py_has_popt_devel_dep = mock.MagicMock(
         return_value=True
     )
     installer._is_popt_devel_installed = mock.MagicMock(

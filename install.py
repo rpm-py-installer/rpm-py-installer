@@ -796,7 +796,7 @@ when a RPM download plugin not installed.
            files to downloaded source library files.
         2. Copy include header files to include directory.
         """
-        if self._has_dependency_rpm_popt_devel():
+        if self._rpm_py_has_popt_devel_dep():
             if self._is_popt_devel_installed():
                 pass
             elif self.rpm.is_downloadable():
@@ -848,7 +848,11 @@ when a RPM download plugin not installed.
         Cmd.sh_e('{0} setup.py {1} install'.format(python_path,
                                                    self.setup_py_opts))
 
-    def _has_dependency_rpm_popt_devel(self):
+    def _rpm_py_has_popt_devel_dep(self):
+        """Check if the RPM Python binding has a depndency to popt-devel.
+
+        Search include header files in the source code to check it.
+        """
         found = False
         with open('../include/rpm/rpmlib.h') as f_in:
             for line in f_in:
@@ -875,7 +879,6 @@ class DebianInstaller(Installer):
         )
         self.setup_py.apply_and_save()
         self._build_and_install()
-        # from here
 
     def _update_sym_src_dirs_conditionally(self, so_file_dict):
         pass
