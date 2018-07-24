@@ -14,10 +14,11 @@ import pytest
 from install import (Application,
                      ArchiveNotFoundError,
                      Cmd,
+                     DebianInstaller,
                      DebianRpm,
                      Downloader,
+                     FedoraInstaller,
                      FedoraRpm,
-                     Installer,
                      InstallError,
                      InstallSkipError,
                      Linux,
@@ -101,8 +102,12 @@ def downloader():
 
 
 @pytest.fixture
-def installer(sys_rpm):
-    installer = Installer(RpmPyVersion('4.13.0'), Python(), sys_rpm)
+def installer(sys_rpm, is_debian):
+    installer = None
+    if is_debian:
+        installer = DebianInstaller(RpmPyVersion('4.13.0'), Python(), sys_rpm)
+    else:
+        installer = FedoraInstaller(RpmPyVersion('4.13.0'), Python(), sys_rpm)
     return copy.deepcopy(installer)
 
 
@@ -754,7 +759,7 @@ def test_installer_make_dep_lib_file_links_and_copy_include_files(installer):
     installer._is_popt_devel_installed = mock.MagicMock(
         return_value=False
     )
-    installer.rpm.is_downloadable = mock.MagicMock(
+    installer._is_package_downloadable = mock.MagicMock(
         return_value=False
     )
     with pytest.raises(InstallError) as ei:
@@ -772,7 +777,7 @@ def test_installer_run_raises_error_for_rpm_build_libs(installer):
     installer.rpm.has_composed_rpm_bulid_libs = mock.MagicMock(
         return_value=True
     )
-    installer._is_rpm_devel_installed = mock.MagicMock(
+    installer._is_rpm_all_lib_include_files_installed = mock.MagicMock(
         return_value=False
     )
     installer.rpm.is_downloadable = mock.MagicMock(
@@ -808,7 +813,7 @@ def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
     rpm_py.installer.run = mock.Mock(
         return_value=None
     )
-    rpm_py.installer.install_from_rpm_py_rpm = mock.Mock(
+    rpm_py.installer.install_from_rpm_py_package = mock.Mock(
         return_value=None
     )
 
@@ -821,10 +826,10 @@ def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
 
         if setup_py_in_exists:
             assert rpm_py.installer.run.called
-            assert not rpm_py.installer.install_from_rpm_py_rpm.called
+            assert not rpm_py.installer.install_from_rpm_py_package.called
         else:
             assert not rpm_py.installer.run.called
-            assert rpm_py.installer.install_from_rpm_py_rpm.called
+            assert rpm_py.installer.install_from_rpm_py_package.called
 
 
 def test_app_init(app):
@@ -982,9 +987,10 @@ def test_app_run_is_ok(
     rpm_version_info_min_setup_py_in
 ):
     app.is_work_dir_removed = True
-    app.rpm_py.installer._is_rpm_devel_installed = mock.MagicMock(
-        return_value=is_rpm_devel
-    )
+    app.rpm_py.installer._is_rpm_all_lib_include_files_installed = \
+        mock.MagicMock(
+            return_value=is_rpm_devel
+        )
     app.rpm_py.installer._is_popt_devel_installed = mock.MagicMock(
         return_value=is_popt_devel
     )
@@ -1006,7 +1012,7 @@ def test_app_run_is_ok(
     if app.linux.rpm.version_info < rpm_version_info_min_setup_py_in:
         return
 
-    assert app.rpm_py.installer._is_rpm_devel_installed.called
+    assert app.rpm_py.installer._is_rpm_all_lib_include_files_installed.called
     if not is_rpm_devel:
         assert app.rpm_py.installer.rpm.is_downloadable.called
         if is_downloadable:
