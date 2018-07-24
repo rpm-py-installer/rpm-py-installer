@@ -14,6 +14,7 @@ matrix:
     - env: CONTAINER_IMAGE=centos:7 TOXENV=py34,py27
     - env: CONTAINER_IMAGE=centos:6 TOXENV=py27,py26
     # https://hub.docker.com/_/ubuntu/
+    - env: CONTAINER_IMAGE=ubuntu:bionic TOXENV=py36,py27
     - env: CONTAINER_IMAGE=ubuntu:trusty TOXENV=py34,py27
   allow_failures:
     - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py37,py27
@@ -30,6 +31,8 @@ install:
         DOCKER_FILE=.travis/Dockerfile.centos6
     elif [[ "${CONTAINER_IMAGE}" =~ centos ]]; then
         DOCKER_FILE=.travis/Dockerfile.centos
+    elif [ "${CONTAINER_IMAGE}" = "ubuntu:bionic" ]; then
+        DOCKER_FILE=.travis/Dockerfile.ubuntu.bionic
     elif [[ "${CONTAINER_IMAGE}" =~ ubuntu ]]; then
         DOCKER_FILE=.travis/Dockerfile.ubuntu
     fi

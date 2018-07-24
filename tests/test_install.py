@@ -185,7 +185,7 @@ def test_cmd_pushd_is_ok():
     pass
 
 
-@pytest.mark.parametrize('cmd', ['rpm', 'rpm2cpio', 'cpio', 'git'])
+@pytest.mark.parametrize('cmd', ['rpm', 'git'])
 def test_cmd_which_is_ok(cmd):
     abs_path = Cmd.which(cmd)
     assert re.match('^/.*{0}$'.format(cmd), abs_path)
