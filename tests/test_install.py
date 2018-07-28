@@ -6,6 +6,7 @@ import copy
 import os
 import re
 import shutil
+import sys
 import tempfile
 from unittest import mock
 
@@ -13,6 +14,7 @@ import pytest
 
 from install import (Application,
                      Cmd,
+                     CmdError,
                      DebianInstaller,
                      DebianRpm,
                      Downloader,
@@ -26,6 +28,7 @@ from install import (Application,
                      RemoteFileNotFoundError,
                      Rpm,
                      RpmPy,
+                     RpmPyPackageNotFoundError,
                      RpmPyVersion,
                      SetupPy,
                      Utils)
@@ -109,6 +112,14 @@ def installer(sys_rpm, is_debian):
     else:
         installer = FedoraInstaller(RpmPyVersion('4.13.0'), Python(), sys_rpm)
     return copy.deepcopy(installer)
+
+
+@pytest.fixture
+def rpm_py(sys_rpm_path):
+    version_str = '4.13.0'
+    python = Python()
+    linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
+    return RpmPy(version_str, python, linux)
 
 
 @pytest.fixture
@@ -463,6 +474,25 @@ def test_rpm_download_is_ok(sys_rpm, is_dnf):
             assert mock_sh_e.called
 
 
+@pytest.mark.parametrize('is_dnf,stdout,stderr', [
+    (True, '', 'foo\nNo package dummy.x86_64 available.\nbar\n'),
+    (False, 'foo\nNo Match for argument dummy.x86_64\nbar\n', ''),
+])
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
+def test_rpm_download_raise_not_found_error(sys_rpm, is_dnf, stdout, stderr):
+    sys_rpm.is_dnf = is_dnf
+    with mock.patch.object(Cmd, 'sh_e') as mock_sh_e:
+        ce = CmdError('test.')
+        ce.stdout = stdout
+        ce.stderr = stderr
+        mock_sh_e.side_effect = ce
+        with pytest.raises(RemoteFileNotFoundError) as e:
+            sys_rpm.download('dummy')
+        assert mock_sh_e.called
+        assert 'Package dummy not found on remote' == str(e.value)
+
+
 @pytest.mark.skipif(pytest.helpers.is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_extract_is_ok(sys_rpm, rpm_files):
@@ -752,6 +782,142 @@ def test_installer_init_is_ok(installer):
     assert installer.setup_py_opts == '-q'
 
 
+@pytest.mark.parametrize(
+    'rpm_version_info,package_names_py3,package_names_py2',
+    [
+        (
+            (4, 14, 0),
+            ['python3-rpm'],
+            ['python2-rpm'],
+        ),
+        (
+            (4, 13, 0),
+            ['python3-rpm', 'rpm-python3'],
+            ['python2-rpm', 'rpm-python'],
+        ),
+        (
+            (4, 12, 0),
+            ['rpm-python3'],
+            ['rpm-python'],
+        ),
+        (
+            (4, 11, 1),
+            ['rpm-python3'],
+            ['rpm-python'],
+        ),
+        (
+            (4, 11, 0),
+            [],
+            ['rpm-python'],
+        ),
+    ]
+)
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
+def test_installer_predict_rpm_py_package_names(
+    installer, rpm_version_info, package_names_py3, package_names_py2,
+    monkeypatch
+):
+    monkeypatch.setattr(type(installer.rpm), 'version_info',
+                        mock.PropertyMock(return_value=rpm_version_info))
+    expected_package_names = None
+    if sys.version_info.major >= 3:
+        expected_package_names = package_names_py3
+    else:
+        expected_package_names = package_names_py2
+
+    if expected_package_names:
+        dst_package_names = installer._predict_rpm_py_package_names()
+        assert dst_package_names == expected_package_names
+    else:
+        with pytest.raises(InstallError) as ie:
+            installer._predict_rpm_py_package_names()
+            assert 'No predicted pacakge' in str(ie.value)
+
+
+@pytest.mark.parametrize('statuses', [
+    [
+        {'name': 'python3-rpm', 'side_effect': None},
+    ],
+    [
+        {'name': 'rpm-python3', 'side_effect': None},
+        {'name': 'rpm-python', 'side_effect': None},
+    ],
+    [
+        {'name': 'rpm-python3', 'side_effect': RemoteFileNotFoundError},
+        {'name': 'rpm-python', 'side_effect': None},
+    ],
+    [],
+])
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
+def test_installer_download_and_extract_rpm_py_package(installer, statuses):
+    package_names = list(map(lambda status: status['name'], statuses))
+    side_effects = list(map(lambda status: status['side_effect'], statuses))
+    installer._predict_rpm_py_package_names = mock.Mock(
+            return_value=package_names)
+    installer.rpm.download_and_extract = mock.Mock(
+        # Describe each side_effect called one by one.
+        side_effect=side_effects
+    )
+
+    if statuses and side_effects[-1] is None:
+        installer._download_and_extract_rpm_py_package()
+        assert installer.rpm.download_and_extract.called
+    else:
+        with pytest.raises(RpmPyPackageNotFoundError):
+            installer._download_and_extract_rpm_py_package()
+
+
+@pytest.mark.skipif(pytest.helpers.is_debian(),
+                    reason='Only Linux Fedora.')
+def test_fedora_installer_install_from_rpm_py_package(installer, monkeypatch):
+    dst_rpm_dir = 'dummy/dst/site-packages/rpm'
+
+    def download_and_extract_side_effect(*args):
+        downloaded_rpm_dir = 'usr/lib64/python3.6/site-packages/rpm'
+        os.makedirs(downloaded_rpm_dir)
+        pytest.helpers.touch(os.path.join(downloaded_rpm_dir, '__init__.py'))
+        os.makedirs(dst_rpm_dir)
+
+    installer._download_and_extract_rpm_py_package = mock.Mock(
+            side_effect=download_and_extract_side_effect)
+    monkeypatch.setattr(type(installer.python), 'python_lib_rpm_dir',
+                        mock.PropertyMock(return_value=dst_rpm_dir))
+
+    with pytest.helpers.work_dir():
+        assert not os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
+
+        installer.install_from_rpm_py_package()
+
+        assert os.path.isdir(dst_rpm_dir)
+        assert os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
+
+
+def test_installer_install_from_rpm_py_package(
+    installer, is_debian, is_centos, monkeypatch
+):
+    with pytest.helpers.work_dir():
+        # The RPM Python binding for python3 is not provided on CentOS.
+        # rpm-python3 does not exist on CentOS.
+        # http://mirror.centos.org/centos/7/os/x86_64/Packages/
+        if is_debian or \
+           not installer._predict_rpm_py_package_names() or \
+           (is_centos and sys.version_info.major >= 3):
+            with pytest.raises(RpmPyPackageNotFoundError):
+                installer.install_from_rpm_py_package()
+        else:
+            dst_rpm_dir = 'dummy/dst/site-packages/rpm'
+            monkeypatch.setattr(type(installer.python), 'python_lib_rpm_dir',
+                                mock.PropertyMock(return_value=dst_rpm_dir))
+            assert not os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
+
+            installer.install_from_rpm_py_package()
+
+            assert os.path.isdir(dst_rpm_dir)
+            assert os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
+
+
 def test_installer_make_dep_lib_file_links_and_copy_include_files(installer):
     installer._rpm_py_has_popt_devel_dep = mock.MagicMock(
         return_value=True
@@ -799,37 +965,53 @@ when a RPM download plugin not installed.
     assert expected_message == str(ei.value)
 
 
-@pytest.mark.parametrize('setup_py_in_exists', [True, False])
-def test_rpm_py_download_and_install(setup_py_in_exists, sys_rpm_path):
-    version_str = '4.13.0'
-    python = Python()
-    linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
-    rpm_py = RpmPy(version_str, python, linux)
-
-    top_dir_name = 'rpm-{0}'.format(version_str)
+@pytest.mark.parametrize(
+    'is_installed_from_bin,install_from_bin_ok,setup_py_in_exists',
+    [
+        (True,  True,  True),
+        (True,  False, True),
+        (False, True,  True),
+        (True,  True,  False),
+        (False, True,  False),
+    ]
+)
+def test_rpm_py_download_and_install(
+    is_installed_from_bin, install_from_bin_ok, setup_py_in_exists, rpm_py
+):
+    rpm_py.is_installed_from_bin = is_installed_from_bin
+    top_dir_name = 'rpm-{0}'.format(rpm_py.version.version)
     rpm_py.downloader.download_and_expand = mock.Mock(
-        return_value=top_dir_name
-    )
+        return_value=top_dir_name)
     rpm_py.installer.run = mock.Mock(
-        return_value=None
-    )
-    rpm_py.installer.install_from_rpm_py_package = mock.Mock(
-        return_value=None
-    )
+        return_value=None)
+    if install_from_bin_ok:
+        rpm_py.installer.install_from_rpm_py_package = mock.Mock(
+            return_value=None)
+    else:
+        rpm_py.installer.install_from_rpm_py_package = mock.Mock(
+            side_effect=RpmPyPackageNotFoundError('test.'))
 
     with pytest.helpers.work_dir():
         python_dir = os.path.join(top_dir_name, 'python')
         os.makedirs(python_dir)
         if setup_py_in_exists:
             pytest.helpers.touch(os.path.join(python_dir, 'setup.py.in'))
+
         rpm_py.download_and_install()
 
-        if setup_py_in_exists:
-            assert rpm_py.installer.run.called
-            assert not rpm_py.installer.install_from_rpm_py_package.called
-        else:
-            assert not rpm_py.installer.run.called
+        if is_installed_from_bin:
             assert rpm_py.installer.install_from_rpm_py_package.called
+            if install_from_bin_ok:
+                assert not rpm_py.installer.run.called
+            else:
+                assert rpm_py.installer.run.called
+        else:
+            if setup_py_in_exists:
+                assert rpm_py.installer.run.called
+                assert not rpm_py.installer.install_from_rpm_py_package.called
+            else:
+                assert not rpm_py.installer.run.called
+                assert rpm_py.installer.install_from_rpm_py_package.called
 
 
 def test_app_init(app):

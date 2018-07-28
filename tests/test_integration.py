@@ -42,8 +42,25 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
 # This integration test is run as a unit test.
 # Because it works on user's environment. And not so costy.
 # @pytest.mark.integration
-def test_install_and_uninstall_are_ok_on_non_sys_python(install_script_path):
-    _assert_install_and_uninstall(install_script_path)
+@pytest.mark.parametrize('env', [
+    {},
+    {'RPM_PY_INSTALL_BIN': 'true'},
+], ids=[
+    'No env variables',
+    'RPM_PY_INSTALL_BIN: true',
+])
+def test_install_and_uninstall_are_ok_on_non_sys_python(
+    install_script_path, env
+):
+    if 'RPM_PY_INSTALL_BIN' in env and env['RPM_PY_INSTALL_BIN'] == 'true' \
+       and sys.version_info >= (3, 0) and sys.version_info < (3, 6):
+        message = (
+            'Installation from RPM Python binding binary package '
+            'does not work on Python 3 <= 3.5.'
+        )
+        pytest.skip(message)
+
+    _assert_install_and_uninstall(install_script_path, **env)
 
 
 # This integration test is run as a unit test.
@@ -97,16 +114,19 @@ def test_install_and_uninstall_are_ok_on_sys_status(
     assert True
 
 
-def _assert_install_and_uninstall(install_script_path):
+def _assert_install_and_uninstall(install_script_path, **env):
     python_path = sys.executable
 
     # Initilize environment.
     _uninstall_rpm_py(python_path)
 
     # Run the install script.
-    is_ok = _run_install_script(python_path, install_script_path,
-                                RPM_PY_VERBOSE='true',
-                                RPM_PY_WORK_DIR_REMOVED='true')
+    script_env = {
+        'RPM_PY_VERBOSE': 'true',
+        'RPM_PY_WORK_DIR_REMOVED': 'true',
+    }
+    script_env.update(env)
+    is_ok = _run_install_script(python_path, install_script_path, **script_env)
     assert is_ok
 
     # Installed successfully?
