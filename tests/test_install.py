@@ -12,7 +12,6 @@ from unittest import mock
 import pytest
 
 from install import (Application,
-                     ArchiveNotFoundError,
                      Cmd,
                      DebianInstaller,
                      DebianRpm,
@@ -24,6 +23,7 @@ from install import (Application,
                      Linux,
                      Log,
                      Python,
+                     RemoteFileNotFoundError,
                      Rpm,
                      RpmPy,
                      RpmPyVersion,
@@ -204,7 +204,7 @@ def test_cmd_curl_is_ok(file_url):
 def test_cmd_curl_is_failed(file_url):
     not_existed_file_url = file_url + '.dummy'
     with pytest.helpers.work_dir():
-        with pytest.raises(ArchiveNotFoundError) as ei:
+        with pytest.raises(RemoteFileNotFoundError) as ei:
             Cmd.curl_remote_name(not_existed_file_url)
     assert re.match('^Download failed: .* HTTP Error 404: Not Found$',
                     str(ei.value))
@@ -544,7 +544,7 @@ def test_downloader_download_and_expand_is_ok_on_git(downloader):
 def test_downloader_download_and_expand_is_ng_on_archive_ok_on_git(downloader):
     downloader.git_branch = None
     downloader._download_and_expand_from_archive_url = mock.Mock(
-        side_effect=ArchiveNotFoundError('test.')
+        side_effect=RemoteFileNotFoundError('test.')
     )
     target_top_dir_name = 'bar'
     downloader._download_and_expand_by_git = mock.Mock(
@@ -591,7 +591,7 @@ def test_downloader_download_and_expand_from_archive_url(
             assert top_dir_name
             assert os.path.isdir(top_dir_name)
         else:
-            with pytest.raises(ArchiveNotFoundError):
+            with pytest.raises(RemoteFileNotFoundError):
                 downloader._download_and_expand_from_archive_url()
 
 

@@ -393,7 +393,7 @@ class Downloader(object):
             # If download failed due to URL not found, try "git clone".
             try:
                 top_dir_name = self._download_and_expand_from_archive_url()
-            except ArchiveNotFoundError:
+            except RemoteFileNotFoundError:
                 Log.info('Try to download by git clone.')
                 top_dir_name = self._download_and_expand_by_git()
         return top_dir_name
@@ -407,7 +407,7 @@ class Downloader(object):
             Log.info("Downloading archive. '{0}'.".format(url))
             try:
                 Cmd.curl_remote_name(url)
-            except ArchiveNotFoundError as e:
+            except RemoteFileNotFoundError as e:
                 Log.info('Archive not found. URL: {0}'.format(url))
                 if index + 1 < max_num:
                     Log.info('Try to download next candidate URL.')
@@ -1476,14 +1476,18 @@ class InstallError(Exception):
     pass
 
 
-class InstallSkipError(Exception):
+class InstallSkipError(InstallError):
     """A exception class for skipping the install process."""
 
     pass
 
 
-class ArchiveNotFoundError(Exception):
-    """A exception class RPM archive not found on the server."""
+class RemoteFileNotFoundError(InstallError):
+    """A exception class for remote file not found on the server.
+
+    Is it used when a remote file for URL or system package file
+    from a remote server.
+    """
 
     pass
 
@@ -1612,7 +1616,7 @@ class Cmd(object):
             message = 'Download failed: URL: {0}, reason: {1}'.format(
                       file_url, e)
             if 'HTTP Error 404' in str(e):
-                raise ArchiveNotFoundError(message)
+                raise RemoteFileNotFoundError(message)
             else:
                 raise InstallError(message)
 
