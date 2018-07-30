@@ -142,17 +142,24 @@ class RpmPy(object):
 
     def download_and_install(self):
         """Download and install RPM Python binding."""
+        try:
+            self.installer.install_from_rpm_py_package()
+        except InstallError as e:
+            org_message = str(e)
+            Log.warn('Faild to install from RPM Python binding package.')
+            Log.warn(org_message)
+            Log.warn('Try to install from RPM source code. ')
+
+            self.download_and_install_from_source()
+
+    def download_and_install_from_source(self):
+        """Download and install RPM Python binding from source."""
         top_dir_name = self.downloader.download_and_expand()
         rpm_py_dir = os.path.join(top_dir_name, 'python')
 
-        setup_py_in_found = False
         with Cmd.pushd(rpm_py_dir):
             if self.installer.setup_py.exists_in_path():
-                setup_py_in_found = True
                 self.installer.run()
-
-        if not setup_py_in_found:
-            self.installer.install_from_rpm_py_package()
 
 
 class RpmPyVersion(object):
