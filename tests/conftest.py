@@ -11,12 +11,32 @@ from contextlib import contextmanager
 
 import pytest
 
+OS_RELEASE_FILE = '/etc/os-release'
+
 install_path = os.path.abspath('install.py')
 sys.path.insert(0, install_path)
 
 pytest_plugins = ['helpers_namespace']
 
 running_user = getpass.getuser()
+
+
+def _get_os_id():
+    os_id = None
+    if not os.path.isfile(OS_RELEASE_FILE):
+        return os_id
+
+    with open(OS_RELEASE_FILE) as f_in:
+        for line in f_in:
+            match = re.search(r'^ID=[\'"]?(\w+)?[\'"]?$', line)
+            if match:
+                os_id = match.group(1)
+                break
+
+    return os_id
+
+
+_os_id = _get_os_id()
 _is_dnf = True if os.system('dnf --version') == 0 else False
 _is_debian = True if os.system('apt-get --version') == 0 else False
 
@@ -34,9 +54,22 @@ def install_script_path():
     return install_path
 
 
+@pytest.fixture
+def is_fedora():
+    """Return if it is Fedora Linux."""
+    return _os_id == 'fedora'
+
+
+@pytest.fixture
+def is_centos():
+    """Return if it is CentOS Linux."""
+    return _os_id == 'centos'
+
+
 @pytest.helpers.register
 @pytest.fixture
 def is_debian():
+    """Return if it is Debian base Linux."""
     return _is_debian
 
 

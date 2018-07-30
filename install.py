@@ -59,6 +59,11 @@ class Application(object):
         self.verbose = verbose
         Log.verbose = verbose
 
+        # Install RPM Python binding from binary package?
+        is_installed_from_bin = False
+        if os.environ.get('RPM_PY_INSTALL_BIN') == 'true':
+            is_installed_from_bin = True
+
         # Python's path that the module is installed on.
         python = Python()
 
@@ -104,6 +109,7 @@ class Application(object):
         self.python = python
         self.linux = linux
         self.rpm_py = RpmPy(rpm_py_version_str, python, linux,
+                            is_installed_from_bin=is_installed_from_bin,
                             git_branch=git_branch,
                             optimized=optimized,
                             verbose=verbose)
@@ -128,6 +134,7 @@ class RpmPy(object):
         if not isinstance(linux, Linux):
             ValueError('linux invalid instance.')
 
+        is_installed_from_bin = kwargs.get('is_installed_from_bin', False)
         git_branch = kwargs.get('git_branch')
         optimized = kwargs.get('optimized', True)
         verbose = kwargs.get('verbose', False)
@@ -135,6 +142,7 @@ class RpmPy(object):
         rpm_py_version = RpmPyVersion(version)
 
         self.version = rpm_py_version
+        self.is_installed_from_bin = is_installed_from_bin
         self.downloader = Downloader(rpm_py_version, git_branch=git_branch)
         self.installer = linux.create_installer(rpm_py_version,
                                                 optimized=optimized,
@@ -142,6 +150,15 @@ class RpmPy(object):
 
     def download_and_install(self):
         """Download and install RPM Python binding."""
+        if self.is_installed_from_bin:
+            try:
+                self.installer.install_from_rpm_py_package()
+                return
+            except RpmPyPackageNotFoundError:
+                # Pass to try to install from the source.
+                pass
+
+        # Download and install from the source.
         top_dir_name = self.downloader.download_and_expand()
         rpm_py_dir = os.path.join(top_dir_name, 'python')
 
@@ -868,7 +885,7 @@ Can you install the RPM package, and run this installer again?
 
     def install_from_rpm_py_package(self):
         """Run install from RPM Python binding RPM package."""
-        self.rpm.download_and_extract('rpm-python')
+        self._download_and_extract_rpm_py_package()
 
         # Find ./usr/lib64/pythonN.N/site-packages/rpm directory.
         downloaded_rpm_dirs = glob.glob('usr/*/*/site-packages/rpm')
@@ -906,7 +923,7 @@ Can you install the RPM package, and run this installer again?
             # from rpm-4.14.1-8 on Fedora.
             try:
                 self.rpm.download_and_extract('rpm-sign-libs')
-            except InstallError:
+            except RemoteFileNotFoundError:
                 pass
 
             current_dir = os.getcwd()
@@ -936,6 +953,78 @@ when a RPM download plugin not installed.
         # overrided method.
         self.rpm.download_and_extract('popt-devel')
 
+    def _predict_rpm_py_package_names(self):
+        # Refer the rpm Fedora pacakge
+        # https://src.fedoraproject.org/rpms/rpm/
+        package_info_list = [
+            # 4.13.0-0.rc1.41 <= version
+            {
+                'version': {'from': (4, 13, 0)},
+                'py3': 'python3-rpm',
+                'py2': 'python2-rpm',
+            },
+            # 4.11.1-6 <= version < 4.13.0-0.rc1.41
+            {
+                'version': {'from': (4, 11, 1), 'to': (4, 13, 0)},
+                'py3': 'rpm-python3',
+                'py2': 'rpm-python',
+            },
+            # version < 4.11.1-6
+            {
+                'version': {'to': (4, 11, 1)},
+                'py2': 'rpm-python',
+            },
+        ]
+
+        dst_package_names = []
+        for package_info in package_info_list:
+            condition_from = True
+            if 'from' in package_info['version']:
+                condition_from = (
+                    self.rpm.version_info >= package_info['version']['from']
+                )
+            condition_to = True
+            if 'to' in package_info['version']:
+                condition_to = (
+                    self.rpm.version_info <= package_info['version']['to']
+                )
+            if condition_from and condition_to:
+                package_name = None
+                if sys.version_info.major >= 3:
+                    package_name = package_info.get('py3')
+                else:
+                    package_name = package_info.get('py2')
+                if package_name:
+                    if package_name not in dst_package_names:
+                        dst_package_names.append(package_name)
+        if not dst_package_names:
+            message = 'No predicted pacakge for RPM version info: {0}'.format(
+                      str(self.rpm.version_info))
+            raise InstallError(message)
+        return dst_package_names
+
+    def _download_and_extract_rpm_py_package(self):
+        package_names = self._predict_rpm_py_package_names()
+        downloaded = False
+        for package_name in package_names:
+            try:
+                self.rpm.download_and_extract(package_name)
+                downloaded = True
+            except RemoteFileNotFoundError as e:
+                org_message = str(e)
+                Log.warn('Continue as the remote file not found. {0}'.format(
+                    org_message))
+                continue
+            else:
+                break
+
+        if not downloaded:
+            message = '''
+Remote packages: {0} not found.
+Failed to download from RPM Python binding package.
+'''.format(', '.join(package_names))
+            raise RpmPyPackageNotFoundError(message)
+
     def _is_rpm_build_libs_installed(self):
         return self.rpm.is_package_installed('rpm-build-libs')
 
@@ -957,7 +1046,7 @@ class DebianInstaller(Installer):
 Can not install RPM Python binding from package.
 Because there is no RPM Python binding deb package.
 '''
-        raise InstallError(message)
+        raise RpmPyPackageNotFoundError(message)
 
     def _is_rpm_all_lib_include_files_installed(self):
         """Check if all rpm lib and include files are installed.
@@ -1417,7 +1506,19 @@ class FedoraRpm(Rpm):
             cmd = 'dnf download {0}.{1}'.format(package_name, self.arch)
         else:
             cmd = 'yumdownloader {0}.{1}'.format(package_name, self.arch)
-        Cmd.sh_e(cmd)
+        try:
+            Cmd.sh_e(cmd, stdout=subprocess.PIPE)
+        except CmdError as e:
+            for out in (e.stdout, e.stderr):
+                for line in out.split('\n'):
+                    if re.match(r'^No package [^ ]+ available', line) or \
+                       re.match(r'^No Match for argument', line):
+                        raise RemoteFileNotFoundError(
+                            'Package {0} not found on remote'.format(
+                                package_name
+                            )
+                        )
+            raise e
 
     def extract(self, package_name):
         """Extract given package."""
@@ -1482,12 +1583,32 @@ class InstallSkipError(InstallError):
     pass
 
 
+class CmdError(InstallError):
+    """A exception class for remote file not found on the server.
+
+    Is it used when a remote file for URL or system package file
+    from a remote server.
+    """
+
+    def __init__(self, message):
+        """Initialize this class."""
+        InstallError.__init__(self, message)
+        self.stdout = None
+        self.sterr = None
+
+
 class RemoteFileNotFoundError(InstallError):
     """A exception class for remote file not found on the server.
 
     Is it used when a remote file for URL or system package file
     from a remote server.
     """
+
+    pass
+
+
+class RpmPyPackageNotFoundError(InstallError):
+    """A exception class for RPM Python binding package not found."""
 
     pass
 
@@ -1525,17 +1646,21 @@ class Cmd(object):
                 'CMD Return Code: [{0}], Stdout: [{1}], Stderr: [{2}]'
             )
             Log.debug(message_format.format(returncode, stdout, stderr))
-            if returncode != 0:
-                message = 'CMD: [{0}], Return Code: [{1}] at [{2}]'.format(
-                    cmd, returncode, os.getcwd())
-                if stderr is not None:
-                    message += ' Stderr: [{0}]'.format(stderr)
-                raise InstallError(message)
 
             if stdout is not None:
                 stdout = stdout.decode('utf-8')
             if stderr is not None:
                 stderr = stderr.decode('utf-8')
+
+            if returncode != 0:
+                message = 'CMD: [{0}], Return Code: [{1}] at [{2}]'.format(
+                    cmd, returncode, os.getcwd())
+                if stderr is not None:
+                    message += ' Stderr: [{0}]'.format(stderr)
+                ie = CmdError(message)
+                ie.stdout = stdout
+                ie.stderr = stderr
+                raise ie
 
             return (stdout, stderr)
         except Exception as e:
