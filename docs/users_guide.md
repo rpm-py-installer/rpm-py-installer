@@ -15,6 +15,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 
 | NAME | Description | Value | Default |
 | ---- | ----------- | ----- | ------- |
+| RPM_PY_INSTALL_BIN | Install RPM Python binding from binary package? | true/false | false |
 | RPM_PY_RPM_BIN | Path to rpm | /path/to/rpm | rpm |
 | RPM_PY_VERSION | Installed python module's version | N.N.N.N |  Same version with rpm |
 | RPM_PY_GIT_BRANCH | Branch name for [RPM git repo](https://github.com/rpm-software-management/rpm). If this option is set, `rpm-py-installer` downloads the RPM source by `git clone` rather than downloading the archive file to get the Python binding. | ex. master, rpm-4.14.x | None |
