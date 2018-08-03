@@ -674,7 +674,7 @@ class Installer(object):
                 if not is_required:
                     message_format = (
                         "Skip creating symbolic link of "
-                        "not existed so file '{0}'"
+                        "not existing so file '{0}'"
                     )
                     Log.debug(message_format.format(name))
                     continue
@@ -723,8 +723,8 @@ class Installer(object):
             src_include_dir = os.path.abspath('./include')
             for header_dir in src_header_dirs:
                 if not os.path.isdir(header_dir):
-                    Log.debug("Skip not existed header directory '{0}'".format(
-                              header_dir))
+                    message_format = "Skip not existing header directory '{0}'"
+                    Log.debug(message_format.format(header_dir))
                     continue
                 header_files = Cmd.find(header_dir, '*.h')
                 for header_file in header_files:
@@ -888,18 +888,39 @@ Can you install the RPM package, and run this installer again?
         self._download_and_extract_rpm_py_package()
 
         # Find ./usr/lib64/pythonN.N/site-packages/rpm directory.
-        downloaded_rpm_dirs = glob.glob('usr/*/*/site-packages/rpm')
+        python_lib_dir_pattern = os.path.join(
+                                'usr', '*', '*', 'site-packages')
+        rpm_dir_pattern = os.path.join(python_lib_dir_pattern, 'rpm')
+        downloaded_rpm_dirs = glob.glob(rpm_dir_pattern)
         if not downloaded_rpm_dirs:
             raise InstallError('site-packages/rpm directory not found.')
         src_rpm_dir = downloaded_rpm_dirs[0]
 
         dst_rpm_dir = self.python.python_lib_rpm_dir
         if os.path.isdir(dst_rpm_dir):
-            Log.debug("Remove existed rpm directory {0}".format(dst_rpm_dir))
+            Log.debug("Remove existing rpm directory {0}".format(dst_rpm_dir))
             shutil.rmtree(dst_rpm_dir)
         Log.debug("Copy directory from '{0}' to '{1}'".format(
                   src_rpm_dir, dst_rpm_dir))
         shutil.copytree(src_rpm_dir, dst_rpm_dir)
+
+        file_name_pattern = 'rpm-*.egg-info'
+        rpm_egg_info_pattern = os.path.join(
+                               python_lib_dir_pattern, file_name_pattern)
+        downloaded_rpm_egg_infos = glob.glob(rpm_egg_info_pattern)
+        if downloaded_rpm_egg_infos:
+            existing_rpm_egg_info_pattern = os.path.join(
+                self.python.python_lib_dir, file_name_pattern)
+            existing_rpm_egg_infos = glob.glob(existing_rpm_egg_info_pattern)
+            for existing_rpm_egg_info in existing_rpm_egg_infos:
+                Log.debug("Remove existing rpm egg info file '{0}'".format(
+                          existing_rpm_egg_info))
+                os.remove(existing_rpm_egg_info)
+
+            Log.debug("Copy file from '{0}' to '{1}'".format(
+                      downloaded_rpm_egg_infos[0], self.python.python_lib_dir))
+            shutil.copy2(downloaded_rpm_egg_infos[0],
+                         self.python.python_lib_dir)
 
     def _is_rpm_all_lib_include_files_installed(self):
         """Check if all rpm lib and include files are installed.
