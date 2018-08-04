@@ -95,8 +95,8 @@ setuptools.setup(
     license='MIT',
     description='RPM Python binding Installer',
     long_description='''
-An installer for RPM Python binding module.
-See "Home Page" on GitHub for detail.
+An installer to enable the RPM Python binding in any environment.
+See "Homepage" on GitHub for detail.
 ''',
     author='Jun Aruga',
     author_email='jaruga@redhat.com',

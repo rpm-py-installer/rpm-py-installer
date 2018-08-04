@@ -40,7 +40,7 @@ class Application(object):
             self.rpm_py.download_and_install()
             if not self.python.is_python_binding_installed():
                 message = (
-                    'RPM Python binding module failed to install '
+                    'RPM Python binding failed to install '
                     'with unknown reason.'
                 )
                 raise InstallError(message)
@@ -1272,7 +1272,7 @@ class Python(object):
         return os.path.join(self.python_lib_dir, 'rpm')
 
     def is_python_binding_installed(self):
-        """Check if the Python binding module has already installed.
+        """Check if the Python binding has already installed.
 
         Consider below cases.
         - pip command is not installed.
@@ -1295,7 +1295,7 @@ class Python(object):
         return is_installed
 
     def is_python_binding_installed_on_pip(self):
-        """Check if the Python binding module has already installed."""
+        """Check if the Python binding has already installed."""
         pip_version = self._get_pip_version()
         Log.debug('Pip version: {0}'.format(pip_version))
         pip_major_version = int(pip_version.split('.')[0])

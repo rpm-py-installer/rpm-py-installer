@@ -61,7 +61,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   See also installed packages in [Dockerfile for testing](../.travis/Dockerfile).
 
 
-- Q3. Does this installer install the Python binding module on system Python (`/usr/bin/python*`)?
+- Q3. Does this installer install the Python binding on system Python (`/usr/bin/python*`)?
 - A3. No. The installer skips installing it on system Python.
   It is recommended that you would install it manually from the RPM package(`python{,2,3}-rpm`).
 
@@ -69,7 +69,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 - Q4. How is `rpm-py-installer` version mapped to `python[23]-rpm` version?
 - A4. The version mapping's default behavior is to use same version with the system RPM's version on local. See [#94](https://github.com/junaruga/rpm-py-installer/issues/94) for detail.
 
-- Q5. Is it possible to install the Python binding module's specifying the version.
+- Q5. Is it possible to install the Python binding of specific version?
 - A5. Yes. Possible. But it may be failed to install. Set version number seeing [RPM release page](https://github.com/rpm-software-management/rpm/releases).
 
   ```
@@ -89,7 +89,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 
 ## Tutorial
 
-For example, in case of that you want to install the Python binding module on virtualenv environment.
+For example, in case of that you want to install the Python binding on virtualenv environment.
 
 ```
 $ which rpm
@@ -107,7 +107,7 @@ $ python3 --version
 Python 3.6.1
 ```
 
-Move to a project that you want to install the Python binding module.
+Move to a project that you want to install the Python binding.
 
 ```
 $ cd $PROJECT_DIR
