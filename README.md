@@ -2,11 +2,13 @@
 [![PyPI](https://img.shields.io/pypi/v/rpm-py-installer.svg)](https://pypi.python.org/pypi/rpm-py-installer)
 [![Build Status](https://travis-ci.org/junaruga/rpm-py-installer.svg?branch=master)](https://travis-ci.org/junaruga/rpm-py-installer)
 
-`rpm-py-installer` installs [a RPM Python binding module](https://github.com/rpm-software-management/rpm/tree/master/python) (`rpm-python` or `rpm` for new version) on non-system Python, such as a source compiled Python, a Python on virtualenv and pyenv environment, considering installed RPM itself.
+`rpm-py-installer` is to enable [the RPM Python binding](https://github.com/rpm-software-management/rpm/tree/master/python) in any Python environment.
+
+The environment is non-system Python, a source compiled Python, a Python on virtualenv, pyenv environment and etc.
 
 It installs same version's Python binding with the system RPM safely.
 
-## Install the RPM Python binding module by rpm-py-installer
+## Install the RPM Python binding by rpm-py-installer
 
 `rpm-py-installer` provides several ways to install.
 
@@ -29,7 +31,11 @@ pip        9.0.1
 setuptools 28.8.0
 
 $ pip install rpm-py-installer
+```
 
+`rpm-python` or `rpm` package for new version is installed with `rpm-py-installer` package.
+
+```
 $ pip list
 Package          Version
 ---------------- --------
@@ -77,7 +83,7 @@ Note that if you would provide your project as a RPM package, please consider to
 
 ### Install directly without rpm-py-installer package
 
-If you want to install the Python binding module without `rpm-py-installer` package.
+If you want to install the Python binding without `rpm-py-installer` package.
 
 ```
 $ pip list
