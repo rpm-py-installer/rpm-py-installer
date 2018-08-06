@@ -36,8 +36,7 @@ RUN dnf -y --allowerasing install \
 RUN ./.travis/dnf_install_lint_pkgs.sh
 RUN dnf clean all
 RUN python3 -m ensurepip
-RUN python3 -m pip install --upgrade pip setuptools
-RUN python3 -m pip install tox
+RUN python3 -m pip install --upgrade -rtox-requirements.txt
 
 # fedora:25, 26 tox is installed to /usr/bin/tox
 # fedora:rawhide tox is installed to /usr/local/bin/tox

@@ -821,7 +821,7 @@ def test_installer_predict_rpm_py_package_names(
     monkeypatch.setattr(type(installer.rpm), 'version_info',
                         mock.PropertyMock(return_value=rpm_version_info))
     expected_package_names = None
-    if sys.version_info.major >= 3:
+    if sys.version_info >= (3, 0):
         expected_package_names = package_names_py3
     else:
         expected_package_names = package_names_py2
@@ -903,7 +903,7 @@ def test_installer_install_from_rpm_py_package(
         # http://mirror.centos.org/centos/7/os/x86_64/Packages/
         if is_debian or \
            not installer._predict_rpm_py_package_names() or \
-           (is_centos and sys.version_info.major >= 3):
+           (is_centos and sys.version_info >= (3, 0)):
             with pytest.raises(RpmPyPackageNotFoundError):
                 installer.install_from_rpm_py_package()
         else:

@@ -1,0 +1,6 @@
+pip
+setuptools
+# For Python 2.6.
+# https://github.com/pypa/virtualenv/commit/73404cb
+virtualenv<16.0.0
+tox
