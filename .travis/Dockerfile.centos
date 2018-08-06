@@ -24,7 +24,6 @@ RUN yum -y install \
   /usr/bin/cpio \
   && yum clean all
 RUN python3 -m ensurepip
-RUN python3 -m pip install --upgrade pip setuptools
-RUN python3 -m pip install tox
+RUN python3 -m pip install --upgrade -rtox-requirements.txt
 
 CMD ["/usr/bin/tox"]

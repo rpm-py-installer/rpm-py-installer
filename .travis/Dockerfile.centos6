@@ -29,7 +29,6 @@ RUN ./.travis/install_python.sh 2.7.14
 ENV PATH "/usr/local/python-2.7.14/bin:${PATH}"
 
 RUN python2.7 -m ensurepip
-RUN python2.7 -m pip install --upgrade pip setuptools
-RUN python2.7 -m pip install tox
+RUN python2.7 -m pip install --upgrade -rtox-requirements.txt
 
 CMD ["/usr/local/python-2.7.14/bin/tox"]

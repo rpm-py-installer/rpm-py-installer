@@ -1011,7 +1011,7 @@ when a RPM download plugin not installed.
                 )
             if condition_from and condition_to:
                 package_name = None
-                if sys.version_info.major >= 3:
+                if sys.version_info >= (3, 0):
                     package_name = package_info.get('py3')
                 else:
                     package_name = package_info.get('py2')
