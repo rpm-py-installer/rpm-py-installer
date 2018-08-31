@@ -7,6 +7,8 @@ COPY . .
 
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf
 
+# Update GPG keys first in case some of them are missing.
+RUN dnf -y --nogpgcheck update fedora-gpg-keys || true
 RUN dnf -y update
 RUN dnf -y --allowerasing install \
   # -- RPM packages required for installing --
