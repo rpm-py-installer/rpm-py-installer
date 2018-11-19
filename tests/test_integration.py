@@ -75,7 +75,7 @@ def test_install_and_uninstall_are_ok_on_non_sys_python(
 ])
 @pytest.mark.skipif(not pytest.helpers.is_root_user(),
                     reason='needs root authority.')
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_install_and_uninstall_are_ok_on_sys_status(
     install_script_path, is_dnf, pkg_cmd,
