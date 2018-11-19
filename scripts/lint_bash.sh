@@ -8,11 +8,11 @@ pushd "$(dirname "${0}")/.." > /dev/null
 ROOT_DIR=$(pwd)
 popd > /dev/null
 
-if ! which bashate > /dev/null; then
+if ! command -v bashate > /dev/null; then
     echo "ERROR: Install bashate." 1>&2
     exit 1
 fi
-if ! which shellcheck > /dev/null; then
+if ! command -v shellcheck > /dev/null; then
     echo "ERROR: Install shellcheck." 1>&2
     exit 1
 fi
