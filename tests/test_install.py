@@ -356,7 +356,7 @@ def test_python_is_python_binding_installed_on_pip_less_than_9(rpm_py_name):
 
 
 @pytest.mark.parametrize('is_dnf', [True, False])
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_init_is_ok(is_dnf, sys_rpm_path):
     with mock.patch.object(Cmd, 'which') as mock_which:
@@ -406,7 +406,7 @@ def test_rpm_is_system_rpm_returns_false(local_rpm):
     ((4, 9, 0),          True),
     ((4, 10, 0),         True),
 ])
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_has_composed_rpm_bulid_libs_is_ok(
     local_rpm, version_info, has_rpm_bulid_libs, monkeypatch
@@ -446,7 +446,7 @@ def test_rpm_lib_dir_is_ok(sys_rpm, is_debian):
         'cmd': 'yum',
     },
 ])
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_package_cmd_is_ok(sys_rpm, value_dict):
     sys_rpm.is_dnf = value_dict['is_dnf']
@@ -455,7 +455,7 @@ def test_rpm_package_cmd_is_ok(sys_rpm, value_dict):
 
 @pytest.mark.parametrize('is_dnf', [True, False])
 @pytest.mark.parametrize('installed', [True, False])
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_is_downloadable_is_ok(sys_rpm, is_dnf, installed):
     sys_rpm.is_dnf = is_dnf
@@ -464,7 +464,7 @@ def test_rpm_is_downloadable_is_ok(sys_rpm, is_dnf, installed):
 
 
 @pytest.mark.parametrize('is_dnf', [True, False])
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_download_is_ok(sys_rpm, is_dnf):
     sys_rpm.is_dnf = is_dnf
@@ -478,7 +478,7 @@ def test_rpm_download_is_ok(sys_rpm, is_dnf):
     (True, '', 'foo\nNo package dummy.x86_64 available.\nbar\n'),
     (False, 'foo\nNo Match for argument dummy.x86_64\nbar\n', ''),
 ])
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_download_raise_not_found_error(sys_rpm, is_dnf, stdout, stderr):
     sys_rpm.is_dnf = is_dnf
@@ -493,7 +493,7 @@ def test_rpm_download_raise_not_found_error(sys_rpm, is_dnf, stdout, stderr):
         assert 'Package dummy not found on remote' == str(e.value)
 
 
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_rpm_extract_is_ok(sys_rpm, rpm_files):
     with pytest.helpers.work_dir():
@@ -812,7 +812,7 @@ def test_installer_init_is_ok(installer):
         ),
     ]
 )
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_installer_predict_rpm_py_package_names(
     installer, rpm_version_info, package_names_py3, package_names_py2,
@@ -849,7 +849,7 @@ def test_installer_predict_rpm_py_package_names(
     ],
     [],
 ])
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_installer_download_and_extract_rpm_py_package(installer, statuses):
     package_names = list(map(lambda status: status['name'], statuses))
@@ -869,7 +869,7 @@ def test_installer_download_and_extract_rpm_py_package(installer, statuses):
             installer._download_and_extract_rpm_py_package()
 
 
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_fedora_installer_install_from_rpm_py_package(installer, monkeypatch):
     dst_rpm_dir = 'dummy/dst/site-packages/rpm'
@@ -937,7 +937,7 @@ install the {0} pacakge [{1}].
     assert expected_message == str(ei.value)
 
 
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_installer_run_raises_error_for_rpm_build_libs(installer):
     installer.rpm.has_composed_rpm_bulid_libs = mock.MagicMock(
@@ -1106,7 +1106,7 @@ Install the proper RPM package of python{,2,3}-rpm.
     assert expected_message == str(ei.value)
 
 
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_app_verify_system_status_is_error_on_sys_rpm_and_missing_pkgs(app):
     app.linux.rpm.is_system_rpm = mock.MagicMock(return_value=True)
@@ -1162,7 +1162,7 @@ def test_app_run_is_ok_on_download_by_rpm_py_version(app, rpm_py_version):
     ]
 )
 @mock.patch.object(Log, 'verbose', new=False)
-@pytest.mark.skipif(pytest.helpers.is_debian(),
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_app_run_is_ok(
     app, is_rpm_devel, is_popt_devel, is_downloadable, is_rpm_build_libs,

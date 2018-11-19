@@ -66,7 +66,6 @@ def is_centos():
     return _os_id == 'centos'
 
 
-@pytest.helpers.register
 @pytest.fixture
 def is_debian():
     """Return if it is Debian base Linux."""
@@ -179,6 +178,13 @@ def is_root_user():
 
 
 @pytest.helpers.register
+def helper_is_debian():
+    """Return if it is Debian base Linux. """
+    # TODO: This method is duplicated with fixture: is_debian.
+    return _is_debian
+
+
+@pytest.helpers.register
 @contextmanager
 def reset_dir():
     current_dir = os.getcwd()
@@ -200,10 +206,15 @@ def work_dir():
             shutil.rmtree(tmp_dir)
 
 
+def helper_setup_py_path():
+    # TODO: This method is duplicated with fixture: is_debian.
+    return os.path.abspath('tests/fixtures/setup.py.in')
+
+
 @pytest.helpers.register
 @contextmanager
 def work_dir_with_setup_py():
-    path = setup_py_path()
+    path = helper_setup_py_path()
     with work_dir():
         shutil.copy(path, '.')
         yield

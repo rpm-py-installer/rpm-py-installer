@@ -1,5 +1,5 @@
 # Test
-pytest
+pytest<4
 pytest-helpers-namespace
 # For Python <= 3.2
 backports.unittest_mock
