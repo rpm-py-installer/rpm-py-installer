@@ -154,7 +154,9 @@ class RpmPy(object):
             try:
                 self.installer.install_from_rpm_py_package()
                 return
-            except RpmPyPackageNotFoundError:
+            except RpmPyPackageNotFoundError as e:
+                Log.warn('RPM Py Package not found. reason: {0}'.format(e))
+
                 # Pass to try to install from the source.
                 pass
 
@@ -888,12 +890,18 @@ Can you install the RPM package, and run this installer again?
         self._download_and_extract_rpm_py_package()
 
         # Find ./usr/lib64/pythonN.N/site-packages/rpm directory.
+        # A binary built by same version Python with used Python is target
+        # for the safe installation.
+        py_dir_name = 'python{0}.{1}'.format(
+                      sys.version_info[0], sys.version_info[1])
         python_lib_dir_pattern = os.path.join(
-                                'usr', '*', '*', 'site-packages')
+                                'usr', '*', py_dir_name, 'site-packages')
         rpm_dir_pattern = os.path.join(python_lib_dir_pattern, 'rpm')
         downloaded_rpm_dirs = glob.glob(rpm_dir_pattern)
         if not downloaded_rpm_dirs:
-            raise InstallError('site-packages/rpm directory not found.')
+            message = 'Directory with a pattern: {0} not found.'.format(
+                    rpm_dir_pattern)
+            raise RpmPyPackageNotFoundError(message)
         src_rpm_dir = downloaded_rpm_dirs[0]
 
         dst_rpm_dir = self.python.python_lib_rpm_dir
