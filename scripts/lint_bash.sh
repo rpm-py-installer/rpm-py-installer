@@ -12,10 +12,10 @@ if ! which bashate > /dev/null; then
     echo "ERROR: Install bashate." 1>&2
     exit 1
 fi
-if ! which shellcheck > /dev/null; then
-    echo "ERROR: Install shellcheck." 1>&2
-    exit 1
-fi
+# if ! which shellcheck > /dev/null; then
+#     echo "ERROR: Install shellcheck." 1>&2
+#     exit 1
+# fi
 
 FILES="$(find "${ROOT_DIR}/.travis" "${ROOT_DIR}/scripts" "${ROOT_DIR}/tests" \
     -name "*.sh")"
@@ -33,11 +33,11 @@ for FILE in ${FILES}; do
         echo "${FILE}: NG at bashate"
         continue
     fi
-    if ! shellcheck "${FILE}"; then
-        STATUS=1
-        echo "${FILE}: NG at shellcheck"
-        continue
-    fi
+    # if ! shellcheck "${FILE}"; then
+    #     STATUS=1
+    #     echo "${FILE}: NG at shellcheck"
+    #     continue
+    # fi
     echo "${FILE}: OK"
 done
 
