@@ -892,8 +892,17 @@ Can you install the RPM package, and run this installer again?
         # Find ./usr/lib64/pythonN.N/site-packages/rpm directory.
         # A binary built by same version Python with used Python is target
         # for the safe installation.
-        py_dir_name = 'python{0}.{1}'.format(
-                      sys.version_info[0], sys.version_info[1])
+
+        if self.rpm.has_set_up_py_in():
+            # If RPM has setup.py.in, this strict check is okay.
+            # Because we can still install from the source.
+            py_dir_name = 'python{0}.{1}'.format(
+                          sys.version_info[0], sys.version_info[1])
+        else:
+            # If RPM does not have setup.py.in such as CentOS6,
+            # Only way to install is by different Python's RPM package.
+            py_dir_name = '*'
+
         python_lib_dir_pattern = os.path.join(
                                 'usr', '*', py_dir_name, 'site-packages')
         rpm_dir_pattern = os.path.join(python_lib_dir_pattern, 'rpm')
@@ -1403,6 +1412,10 @@ class Rpm(object):
                 matched = True
                 break
         return matched
+
+    def has_set_up_py_in(self):
+        """Check if the RPM source has setup.py.in."""
+        return (self.version_info >= (4, 10))
 
     def is_package_installed(self, package_name):
         """Check if the RPM package is installed."""
