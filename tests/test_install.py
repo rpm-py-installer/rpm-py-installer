@@ -875,7 +875,11 @@ def test_fedora_installer_install_from_rpm_py_package(installer, monkeypatch):
     dst_rpm_dir = 'dummy/dst/site-packages/rpm'
 
     def download_and_extract_side_effect(*args):
-        downloaded_rpm_dir = 'usr/lib64/python3.6/site-packages/rpm'
+        py_dir_name = 'python{0}.{1}'.format(
+                      sys.version_info[0], sys.version_info[1])
+        downloaded_rpm_dir = 'usr/lib64/{0}/site-packages/rpm'.format(
+            py_dir_name
+        )
         os.makedirs(downloaded_rpm_dir)
         pytest.helpers.touch(os.path.join(downloaded_rpm_dir, '__init__.py'))
         os.makedirs(dst_rpm_dir)
@@ -912,10 +916,16 @@ def test_installer_install_from_rpm_py_package(
                                 mock.PropertyMock(return_value=dst_rpm_dir))
             assert not os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
 
-            installer.install_from_rpm_py_package()
+            try:
+                installer.install_from_rpm_py_package()
 
-            assert os.path.isdir(dst_rpm_dir)
-            assert os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
+                assert os.path.isdir(dst_rpm_dir)
+                assert os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
+            except RpmPyPackageNotFoundError:
+                message = (
+                    "Cann't test the different Python version's binary case."
+                )
+                pytest.skip(message)
 
 
 def test_installer_make_dep_lib_file_links_and_copy_include_files(installer):
