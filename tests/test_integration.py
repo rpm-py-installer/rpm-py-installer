@@ -44,7 +44,10 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
 # @pytest.mark.integration
 @pytest.mark.parametrize('env', [
     {},
-    {'RPM_PY_INSTALL_BIN': 'true'},
+    {
+        'RPM_PY_INSTALL_BIN': 'true',
+        'RPM_PY_VERBOSE': 'true',
+    },
 ], ids=[
     'No env variables',
     'RPM_PY_INSTALL_BIN: true',
@@ -115,30 +118,40 @@ def test_install_and_uninstall_are_ok_on_sys_status(
 
 
 def _assert_install_and_uninstall(install_script_path, **env):
-    python_path = sys.executable
+    try:
+        python_path = sys.executable
 
-    # Initilize environment.
-    _uninstall_rpm_py(python_path)
+        # Initilize environment.
+        _uninstall_rpm_py(python_path)
 
-    # Run the install script.
-    script_env = {
-        'RPM_PY_VERBOSE': 'true',
-        'RPM_PY_WORK_DIR_REMOVED': 'true',
-    }
-    script_env.update(env)
-    is_ok = _run_install_script(python_path, install_script_path, **script_env)
-    assert is_ok
+        # Run the install script.
+        script_env = {
+            'RPM_PY_VERBOSE': 'true',
+            'RPM_PY_WORK_DIR_REMOVED': 'true',
+        }
+        script_env.update(env)
+        is_ok = _run_install_script(python_path,
+                                    install_script_path, **script_env)
+        assert is_ok
 
-    # Installed successfully?
-    is_installed = _is_rpm_py_installed(python_path)
-    assert is_installed
+        # Installed successfully?
+        is_installed = _is_rpm_py_installed(python_path)
+        assert is_installed
 
-    # Run RPM Python binding.
-    assert _run_rpm_py(python_path)
+        # Run RPM Python binding.
+        assert _run_rpm_py(python_path)
 
-    # Uninstalled successfully?
-    was_uninstalled = _uninstall_rpm_py(python_path)
-    assert was_uninstalled
+        # Uninstalled successfully?
+        was_uninstalled = _uninstall_rpm_py(python_path)
+        assert was_uninstalled
+    except AssertionError as e:
+        # Remove installed RPM Python binding.
+        # That causes next test case's error.
+        try:
+            _uninstall_rpm_py(python_path)
+        except Exception:
+            pass
+        raise e
 
 
 def _run_install_script(python_path, install_script_path, **env):
@@ -202,7 +215,8 @@ from distutils.sysconfig import get_python_lib
 lib_dirs = []
 if sys.version_info >= (3, 2):
     import site
-    lib_dirs = site.getsitepackages()
+    if hasattr(site, 'getsitepackages'):
+        lib_dirs = site.getsitepackages()
 
 lib_dirs.append(get_python_lib())
 for lib_dir in lib_dirs:
