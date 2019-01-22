@@ -1,0 +1,50 @@
+FROM centos:5
+
+WORKDIR /build
+COPY . .
+
+# Use vault.centos.org server as a repository.
+# https://unix.stackexchange.com/questions/359902/yum-update-error-on-centos-5-6
+RUN cp -p .travis/CentOS-Base.repo.centos5 /etc/yum.repos.d/CentOS-Base.repo
+RUN sed -i '/^enabled=/ s/1/0/' /etc/yum.repos.d/libselinux.repo
+
+RUN yum -y update
+RUN yum -y install epel-release
+
+# To prevent below error for "yum install" (rpm-libs and openssl-devel).
+# Transaction Check Error:
+# package libselinux-1.33.4-5.7.el5.centos.x86_64
+# (which is newer than libselinux-1.33.4-5.7.el5.i386) is already installed
+# See https://stackoverflow.com/questions/37648970/yum-install-mysql-devel-x86-64-error-centos5
+RUN yum -y downgrade libselinux
+
+RUN yum -y install \
+  # -- RPM packages required for installing --
+  rpm-libs \
+  redhat-rpm-config \
+  gcc \
+  zlib-devel \
+  openssl-devel \
+  bzip2-devel \
+  # Python 2.4
+  python-devel \
+  /usr/bin/python2.4 \
+  /usr/bin/yumdownloader \
+  cpio \
+  # -- RPM packages required for a specified case --
+  /usr/bin/git \
+  # To install Python 2.7 from the source.
+  make \
+  && yum clean all
+
+# TODO: Install openssl, curl with the openssl, and python with the openssl
+# from the source.
+# RUN ./.travis/install_openssl.sh 1.0.1e
+# RUN ./.travis/install_python.sh 2.7.14
+# ENV PATH "/usr/local/python-2.7.14/bin:${PATH}"
+
+# RUN python2.7 -m ensurepip
+# RUN python2.7 -m pip install --upgrade -rtox-requirements.txt
+# Error: Could not fetch URL https://pypi.python.org/simple/virtualenv/: There was a problem confirming the ssl certificate: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:661) - skipping
+
+CMD ["/usr/local/python-2.7.14/bin/tox"]

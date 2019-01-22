@@ -13,6 +13,7 @@ matrix:
     - env: SERVICE=intg
     - env: SERVICE=centos7
     - env: SERVICE=centos6
+    - env: SERVICE=centos5
     - env: SERVICE=ubuntu_bionic
     - env: SERVICE=ubuntu_trusty
   allow_failures:
