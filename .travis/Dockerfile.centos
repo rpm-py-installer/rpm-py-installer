@@ -13,8 +13,10 @@ RUN yum -y install \
   rpm-libs \
   redhat-rpm-config \
   gcc \
+  python36-devel \
   python34-devel \
   python-devel \
+  /usr/bin/python3.6 \
   /usr/bin/python3.4 \
   /usr/bin/python2.7 \
   # -- RPM packages required for a specified case --
