@@ -178,13 +178,18 @@ import shutil
 import sys
 from distutils.sysconfig import get_python_lib
 
-lib_dir = get_python_lib()
-rpm_dir = os.path.join(lib_dir, 'rpm')
-init_py = os.path.join(rpm_dir, '__init__.py')
-if os.path.isfile(init_py):
-    print('__init__.py {0} exists.'.format(init_py))
-else:
-    sys.exit('__init__.py {0} does not exist.'.format(init_py))
+lib_dirs = []
+lib_dirs.append(get_python_lib())
+lib_dirs.append(get_python_lib(plat_specific=True))
+is_installed = False
+for lib_dir in lib_dirs:
+    init_py = os.path.join(lib_dir, 'rpm', '__init__.py')
+    if os.path.isfile(init_py):
+        is_installed = True
+        print('__init__.py {0} exists.'.format(init_py))
+        break
+if not is_installed:
+    sys.exit('__init__.py does not exist.')
 '''
         cmd = '{0} -c "{1}"'.format(python_path, script)
         is_installed = _run_cmd(cmd)
@@ -219,6 +224,7 @@ if sys.version_info >= (3, 2):
         lib_dirs = site.getsitepackages()
 
 lib_dirs.append(get_python_lib())
+lib_dirs.append(get_python_lib(plat_specific=True))
 for lib_dir in lib_dirs:
     rpm_dir = os.path.join(lib_dir, 'rpm')
     if os.path.isdir(rpm_dir):

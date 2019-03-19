@@ -872,7 +872,11 @@ def test_installer_download_and_extract_rpm_py_package(installer, statuses):
 @pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_fedora_installer_install_from_rpm_py_package(installer, monkeypatch):
-    dst_rpm_dir = 'dummy/dst/site-packages/rpm'
+    dst_rpm_dir = 'dummy/dst/lib64/pythonX.Y/site-packages/rpm'
+    rpm_dirs = [
+        dst_rpm_dir,
+        'dummy/dst/lib/pythonX.Y/site-packages/rpm'
+    ]
 
     def download_and_extract_side_effect(*args):
         py_dir_name = 'python{0}.{1}'.format(
@@ -882,10 +886,11 @@ def test_fedora_installer_install_from_rpm_py_package(installer, monkeypatch):
         )
         os.makedirs(downloaded_rpm_dir)
         pytest.helpers.touch(os.path.join(downloaded_rpm_dir, '__init__.py'))
-        os.makedirs(dst_rpm_dir)
 
     installer._download_and_extract_rpm_py_package = mock.Mock(
             side_effect=download_and_extract_side_effect)
+    monkeypatch.setattr(type(installer.python), 'python_lib_rpm_dirs',
+                        mock.PropertyMock(return_value=rpm_dirs))
     monkeypatch.setattr(type(installer.python), 'python_lib_rpm_dir',
                         mock.PropertyMock(return_value=dst_rpm_dir))
 

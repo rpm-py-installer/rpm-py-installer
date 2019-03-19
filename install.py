@@ -923,10 +923,13 @@ Can you install the RPM package, and run this installer again?
             raise RpmPyPackageNotFoundError(message)
         src_rpm_dir = downloaded_rpm_dirs[0]
 
+        # Remove rpm directory for the possible installed directories.
+        for rpm_dir in self.python.python_lib_rpm_dirs:
+            if os.path.isdir(rpm_dir):
+                Log.debug("Remove existing rpm directory {0}".format(rpm_dir))
+                shutil.rmtree(rpm_dir)
+
         dst_rpm_dir = self.python.python_lib_rpm_dir
-        if os.path.isdir(dst_rpm_dir):
-            Log.debug("Remove existing rpm directory {0}".format(dst_rpm_dir))
-            shutil.rmtree(dst_rpm_dir)
         Log.debug("Copy directory from '{0}' to '{1}'".format(
                   src_rpm_dir, dst_rpm_dir))
         shutil.copytree(src_rpm_dir, dst_rpm_dir)
@@ -1294,13 +1297,39 @@ class Python(object):
 
     @property
     def python_lib_dir(self):
-        """site-packages directory such as /../pythonN.N/site-packages ."""
+        """site-packages directory."""
+        return self.python_lib_arch_dir
+
+    @property
+    def python_lib_arch_dir(self):
+        """Arch site-packages directory.
+
+        lib{64,32}/pythonN.N/site-packages
+        """
+        return get_python_lib(plat_specific=True)
+
+    @property
+    def python_lib_non_arch_dir(self):
+        """Non-arch site-packages directory.
+
+        lib/pythonN.N/site-packages
+        """
         return get_python_lib()
 
     @property
     def python_lib_rpm_dir(self):
         """Installed directory of RPM Python binding."""
         return os.path.join(self.python_lib_dir, 'rpm')
+
+    @property
+    def python_lib_rpm_dirs(self):
+        """Both arch and non-arch site-packages directories."""
+        libs = [self.python_lib_arch_dir, self.python_lib_non_arch_dir]
+
+        def append_rpm(path):
+            return os.path.join(path, 'rpm')
+
+        return map(append_rpm, libs)
 
     def is_python_binding_installed(self):
         """Check if the Python binding has already installed.
@@ -1319,9 +1348,11 @@ class Python(object):
             # Consider a case of pip is not installed in old Python (<= 2.6).
             is_install_error = True
         if not is_installed or is_install_error:
-            init_py = os.path.join(self.python_lib_rpm_dir, '__init__.py')
-            if os.path.isfile(init_py):
-                is_installed = True
+            for rpm_dir in self.python_lib_rpm_dirs:
+                init_py = os.path.join(rpm_dir, '__init__.py')
+                if os.path.isfile(init_py):
+                    is_installed = True
+                    break
 
         return is_installed
 
