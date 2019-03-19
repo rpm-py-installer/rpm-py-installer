@@ -1032,6 +1032,7 @@ def test_app_init(app):
     assert app.linux
     assert isinstance(app.linux, Linux)
     assert app.linux.rpm
+    assert app.linux.sys_installed is False
     assert isinstance(app.linux.rpm, Rpm)
     assert app.rpm_py
     assert isinstance(app.rpm_py, RpmPy)
@@ -1101,6 +1102,12 @@ def test_app_verify_system_status_skipped_on_sys_py_and_installed_rpm_py(app):
     with pytest.raises(InstallSkipError):
         app.linux.verify_system_status()
 
+
+def test_app_verify_system_status_is_ok_on_sys_py_and_sys_installed_true(app):
+    app.python.is_system_python = mock.MagicMock(return_value=True)
+    app.python.is_python_binding_installed = mock.MagicMock(return_value=False)
+    app.linux.sys_installed = mock.MagicMock(return_value=True)
+    app.linux.verify_system_status()
     assert True
 
 
@@ -1111,7 +1118,8 @@ def test_app_verify_system_status_is_error_on_sys_py_and_no_rpm_py(app):
         app.linux.verify_system_status()
     expected_message = '''
 RPM Python binding on system Python should be installed manually.
-Install the proper RPM package of python{,2,3}-rpm.
+Install the proper RPM package of python{,2,3}-rpm,
+or set a environment variable RPM_PY_SYS=true
 '''
     assert expected_message == str(ei.value)
 
