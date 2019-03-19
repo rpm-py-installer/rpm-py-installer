@@ -64,6 +64,15 @@ class Application(object):
         if os.environ.get('RPM_PY_INSTALL_BIN') == 'true':
             is_installed_from_bin = True
 
+        # Install the Python binding on the system Python?
+        # Default: false
+        sys_installed = False
+        if 'RPM_PY_SYS' in os.environ:
+            if os.environ.get('RPM_PY_SYS') == 'true':
+                sys_installed = True
+            else:
+                sys_installed = False
+
         # Python's path that the module is installed on.
         python = Python()
 
@@ -75,7 +84,8 @@ class Application(object):
         if not rpm_path.endswith('rpm'):
             raise InstallError('Invalid rpm_path: {0}'.format(rpm_path))
 
-        linux = Linux.get_instance(python=python, rpm_path=rpm_path)
+        linux = Linux.get_instance(python=python, rpm_path=rpm_path,
+                                   sys_installed=sys_installed)
 
         # Installed RPM Python module's version.
         # Default: Same version with rpm.
@@ -1156,6 +1166,7 @@ class Linux(object):
 
         self.python = python
         self.rpm = self.create_rpm(rpm_path)
+        self.sys_installed = kwargs.get('sys_installed', False)
 
     @classmethod
     def get_instance(cls, python, rpm_path, **kwargs):
@@ -1188,10 +1199,13 @@ Nothing to do.
 '''
                 Log.info(message)
                 raise InstallSkipError(message)
+            elif self.sys_installed:
+                pass
             else:
                 message = '''
 RPM Python binding on system Python should be installed manually.
-Install the proper RPM package of python{,2,3}-rpm.
+Install the proper RPM package of python{,2,3}-rpm,
+or set a environment variable RPM_PY_SYS=true
 '''
                 raise InstallError(message)
 
