@@ -1,7 +1,7 @@
 #!/bin/sh
 # shellcheck disable=SC2039
 
-if [[ "${TOXENV}" = "" || "${TOXENV}" =~ "lint" ]]; then
+if [ "${LINT}" = "true" ]; then
     # Used in scripts/lint_bash.sh
     dnf -y install \
         which \

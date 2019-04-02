@@ -1,4 +1,5 @@
-FROM fedora
+ARG CONTAINER_IMAGE=fedora:latest
+FROM ${CONTAINER_IMAGE}
 
 ARG TOXENV
 
@@ -30,8 +31,9 @@ RUN dnf -y --allowerasing install \
   rpm-build-libs \
   'dnf-command(download)' \
   # Used if downloading and extracting build dependency packages in installing.
-  /usr/bin/cpio
+  /usr/bin/cpio \
   # -- RPM packages for testing --
+  which
 
 RUN ./.travis/dnf_install_lint_pkgs.sh
 RUN dnf clean all
