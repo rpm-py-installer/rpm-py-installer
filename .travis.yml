@@ -1,59 +1,27 @@
-language: generic
-sudo: required
+dist: xenial
+language: bash
 services: docker
+git:
+  quiet: true
 matrix:
   include:
-    # https://hub.docker.com/_/fedora/
-    - env: CONTAINER_IMAGE=fedora:29 TOXENV=lint-py3,lint-py2,py37,py27
-    - env: CONTAINER_IMAGE=fedora:28 TOXENV=py36
-    - env: CONTAINER_IMAGE=fedora:27 TOXENV=py35,py26
-    - env: CONTAINER_IMAGE=fedora:26 TOXENV=py36
-    - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py37,py27
-    # https://hub.docker.com/r/junaruga/rpm-py-installer-docker/
-    - env: CONTAINER_IMAGE=junaruga/rpm-py-installer-docker:26 TOXENV=intg
-    # https://hub.docker.com/_/centos/
-    - env: CONTAINER_IMAGE=centos:7 TOXENV=py36,py34,py27
-    - env: CONTAINER_IMAGE=centos:6 TOXENV=py27,py26
-    # https://hub.docker.com/_/ubuntu/
-    - env: CONTAINER_IMAGE=ubuntu:bionic TOXENV=py36,py27
-    - env: CONTAINER_IMAGE=ubuntu:trusty TOXENV=py34,py27
+    - env: SERVICE=fedora29
+    - env: SERVICE=fedora28
+    - env: SERVICE=fedora27
+    - env: SERVICE=fedora26
+    - env: SERVICE=fedora_rawhide
+    - env: SERVICE=intg
+    - env: SERVICE=centos7
+    - env: SERVICE=centos6
+    - env: SERVICE=ubuntu_bionic
+    - env: SERVICE=ubuntu_trusty
   allow_failures:
-    - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py37,py27
+    - env: SERVICE=fedora_rawhide
   fast_finish: true
-install:
-  - |
-    if [ "${CONTAINER_IMAGE}" = "" ]; then
-        echo "Container image not defined." 1>&2
-        exit 1
-    fi
-  - |
-    DOCKER_FILE=.travis/Dockerfile
-    if [ "${CONTAINER_IMAGE}" = "centos:6"  ]; then
-        DOCKER_FILE=.travis/Dockerfile.centos6
-    elif [[ "${CONTAINER_IMAGE}" =~ centos ]]; then
-        DOCKER_FILE=.travis/Dockerfile.centos
-    elif [ "${CONTAINER_IMAGE}" = "ubuntu:bionic" ]; then
-        DOCKER_FILE=.travis/Dockerfile.ubuntu.bionic
-    elif [[ "${CONTAINER_IMAGE}" =~ ubuntu ]]; then
-        DOCKER_FILE=.travis/Dockerfile.ubuntu
-    fi
-    export DOCKER_FILE
-  - |
-    sed -i "/^FROM / s|FROM .*|FROM ${CONTAINER_IMAGE}|" "${DOCKER_FILE}"
-  - |
-    travis_retry docker build \
-        --rm \
-        -t rpm-py-installer \
-        -f "${DOCKER_FILE}" \
-        --build-arg TOXENV="${TOXENV}" \
-        .
-script:
-  - |
-    docker run \
-        --rm \
-        -e TOXENV="${TOXENV}" \
-        -t \
-        rpm-py-installer
+install: |
+  travis_retry docker-compose build "${SERVICE}"
+script: |
+  docker-compose run "${SERVICE}"
 branches:
   only:
     - master

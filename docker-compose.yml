@@ -1,0 +1,87 @@
+version: "3"
+services:
+  # https://hub.docker.com/_/fedora/
+  fedora29:
+    container_name: fedora29
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile
+      args:
+        CONTAINER_IMAGE: fedora:29
+        LINT: "true"
+    environment:
+      TOXENV: ${TOXENV-lint-py3,lint-py2,py37,py27}
+  fedora28:
+    container_name: fedora28
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile
+      args:
+        CONTAINER_IMAGE: fedora:28
+    environment:
+      TOXENV: ${TOXENV-py36}
+  fedora27:
+    container_name: fedora27
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile
+      args:
+        CONTAINER_IMAGE: fedora:27
+    environment:
+      TOXENV: ${TOXENV-py35,py26}
+  fedora26:
+    container_name: fedora26
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile
+      args:
+        CONTAINER_IMAGE: fedora:26
+    environment:
+      TOXENV: ${TOXENV-py36}
+  fedora_rawhide:
+    container_name: fedora_rawhide
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile
+      args:
+        CONTAINER_IMAGE: fedora:rawhide
+    environment:
+      TOXENV: ${TOXENV-py37,py27}
+  # Integration
+  intg:
+    container_name: intg
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile
+    environment:
+      TOXENV: ${TOXENV-intg}
+  # https://hub.docker.com/_/centos/
+  centos7:
+    container_name: centos7
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile.centos7
+    environment:
+      TOXENV: ${TOXENV-py36,py34,py27}
+  centos6:
+    container_name: centos6
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile.centos6
+    environment:
+      TOXENV: ${TOXENV-py27,py26}
+  # https://hub.docker.com/_/ubuntu/
+  ubuntu_bionic:
+    container_name: ubuntu_bionic
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile.ubuntu_bionic
+    environment:
+      TOXENV: ${TOXENV-py36,py27}
+  ubuntu_trusty:
+    container_name: ubuntu_trusy
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile.ubuntu_trusty
+    environment:
+      TOXENV: ${TOXENV-py34,py27}
