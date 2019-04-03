@@ -19,9 +19,9 @@ matrix:
     - env: SERVICE=fedora_rawhide
   fast_finish: true
 install: |
-  travis_retry docker-compose build "${SERVICE}"
+  travis_retry make build SERVICE=${SERVICE}
 script: |
-  docker-compose run "${SERVICE}"
+  make test SERVICE=${SERVICE}
 branches:
   only:
     - master
