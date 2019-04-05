@@ -28,4 +28,4 @@ RUN yum -y install \
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade -rtox-requirements.txt
 
-CMD ["/usr/bin/tox"]
+CMD ["tox"]
