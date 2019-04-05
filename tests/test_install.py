@@ -207,11 +207,13 @@ def test_cmd_which_is_ok(cmd):
     assert re.match('^/.*{0}$'.format(cmd), abs_path)
 
 
+@pytest.mark.network
 def test_cmd_curl_is_ok(file_url):
     with pytest.helpers.work_dir():
         assert Cmd.curl_remote_name(file_url)
 
 
+@pytest.mark.network
 def test_cmd_curl_is_failed(file_url):
     not_existed_file_url = file_url + '.dummy'
     with pytest.helpers.work_dir():
@@ -586,6 +588,7 @@ def test_downloader_download_and_expand_is_ng_on_archive_ok_on_git(downloader):
         assert top_dir_name == target_top_dir_name
 
 
+@pytest.mark.network
 @pytest.mark.parametrize('archive_dicts,is_ok', [
     (
         [RPM_ORG_VALID_ARCHIVE_URL_DICT],
@@ -674,6 +677,7 @@ def test_downloader_get_candidate_archive_dicts_is_ok(version, archive_dicts):
     assert candidate_archive_dicts == archive_dicts
 
 
+@pytest.mark.network
 def test_downloader_download_and_expand_by_git_is_ok(downloader):
     # Existed branch
     downloader.git_branch = 'rpm-4.14.x'
@@ -682,6 +686,7 @@ def test_downloader_download_and_expand_by_git_is_ok(downloader):
         assert top_dir_name == 'rpm'
 
 
+@pytest.mark.network
 def test_downloader_download_and_expand_by_git_is_failed(downloader):
     # Not existed branch
     downloader.git_branch = 'rpm-4.14.x-dummy'
@@ -708,6 +713,7 @@ def test_downloader_download_and_expand_by_git_is_ok_with_predicted(
         assert top_dir_name == 'rpm'
 
 
+@pytest.mark.network
 @pytest.mark.parametrize('value_dict', [
     {
         # Set version name with the major version and minior version
@@ -903,6 +909,7 @@ def test_fedora_installer_install_from_rpm_py_package(installer, monkeypatch):
         assert os.path.isfile(os.path.join(dst_rpm_dir, '__init__.py'))
 
 
+@pytest.mark.network
 def test_installer_install_from_rpm_py_package(
     installer, is_debian, is_centos, monkeypatch
 ):
@@ -1094,6 +1101,7 @@ def test_app_init_env_work_dir_removed(app, env):
     assert app.is_work_dir_removed is value
 
 
+@pytest.mark.network
 def test_app_verify_system_status_is_ok(app):
     app.linux.rpm.is_package_installed = mock.MagicMock(return_value=True)
     app.linux.verify_system_status()
@@ -1129,6 +1137,7 @@ or set a environment variable RPM_PY_SYS=true
     assert expected_message == str(ei.value)
 
 
+@pytest.mark.network
 @pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
 def test_app_verify_system_status_is_error_on_sys_rpm_and_missing_pkgs(app):
@@ -1143,6 +1152,7 @@ Install the RPM package.
     assert expected_message == str(ei.value)
 
 
+@pytest.mark.network
 @pytest.mark.parametrize('rpm_py_version',
                          ['4.13.0', '4.14.0-rc1'])
 @mock.patch.object(Log, 'verbose', new=False)
@@ -1172,6 +1182,7 @@ def test_app_run_is_ok_on_download_by_rpm_py_version(app, rpm_py_version):
     assert True
 
 
+@pytest.mark.network
 @pytest.mark.parametrize(
     'is_rpm_devel, is_popt_devel, is_downloadable, is_rpm_build_libs', [
         (True,  True, False, False),

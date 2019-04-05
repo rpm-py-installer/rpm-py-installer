@@ -18,6 +18,10 @@ login :
 	docker run -it rpm-py-installer_$(SERVICE) bash
 .PHONY : login
 
+no-network-test :
+	pytest -m 'not network'
+.PHONY : no-network-test
+
 clean :
 	docker system prune -a -f
 .PHONY : clean

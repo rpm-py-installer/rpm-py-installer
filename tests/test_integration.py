@@ -42,6 +42,7 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
 # This integration test is run as a unit test.
 # Because it works on user's environment. And not so costy.
 # @pytest.mark.integration
+@pytest.mark.network
 @pytest.mark.parametrize('env', [
     {},
     {
@@ -66,6 +67,7 @@ def test_install_and_uninstall_are_ok_on_non_sys_python(
     _assert_install_and_uninstall(install_script_path, **env)
 
 
+@pytest.mark.network
 # This integration test is run as a unit test.
 # rpm-build-libs might be always installed,
 # Because when running "dnf remove rpm-build-libs", "dnf" itself was removed.
