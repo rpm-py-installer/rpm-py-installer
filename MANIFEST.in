@@ -1,0 +1,5 @@
+include LICENSE
+include README.md
+
+exclude test-requirements.txt
+prune tests
