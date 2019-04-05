@@ -18,8 +18,10 @@ services:
       dockerfile: .travis/Dockerfile
       args:
         CONTAINER_IMAGE: fedora:28
-    environment:
-      TOXENV: ${TOXENV-py36}
+    # Test on no network environment for the downstream build environment.
+    # https://docs.docker.com/compose/compose-file/#network_mode
+    network_mode: "none"
+    command: make no-network-test
   fedora27:
     container_name: fedora27
     build:

@@ -39,7 +39,10 @@ RUN ./.travis/dnf_install_lint_pkgs.sh
 RUN dnf clean all
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade -rtox-requirements.txt
+# Install testing dependencies at this timing for no netowrk test.
+RUN python3 -m pip install --upgrade -rtest-requirements.txt
 
 # fedora:25, 26 tox is installed to /usr/bin/tox
 # fedora:rawhide tox is installed to /usr/local/bin/tox
+ENTRYPOINT ["./.travis/entrypoint.sh"]
 CMD ["tox"]
