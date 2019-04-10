@@ -72,6 +72,13 @@ services:
       dockerfile: .travis/Dockerfile.centos6
     environment:
       TOXENV: ${TOXENV-py27,py26}
+  centos5:
+    container_name: centos5
+    build:
+      context: .
+      dockerfile: .travis/Dockerfile.centos5
+    environment:
+      TOXENV: ${TOXENV-py27,py24}
   # https://hub.docker.com/_/ubuntu/
   ubuntu_bionic:
     container_name: ubuntu_bionic
