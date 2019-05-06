@@ -1823,7 +1823,7 @@ class Cmd(object):
 
         response = None
         try:
-            response = urlopen(file_url)
+            response = urlopen(file_url, timeout=10)
         except HTTPError as e:
             message = 'Download failed: URL: {0}, reason: {1}'.format(
                       file_url, e)

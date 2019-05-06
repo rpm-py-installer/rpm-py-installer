@@ -5,6 +5,7 @@ git:
   quiet: true
 matrix:
   include:
+    - env: SERVICE=fedora30
     - env: SERVICE=fedora29
     - env: SERVICE=fedora28
     - env: SERVICE=fedora27
