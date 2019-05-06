@@ -133,7 +133,7 @@ def pkg_cmd(is_dnf):
 def file_url():
     url = (
         'https://raw.githubusercontent.com/junaruga/rpm-py-installer'
-        '/master/README.md'
+        '/master/tests/fixtures/remote_file'
     )
     return url
 
