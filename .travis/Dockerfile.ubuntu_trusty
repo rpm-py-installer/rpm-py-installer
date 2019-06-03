@@ -14,6 +14,6 @@ RUN apt-get install -y \
   # -- RPM packages required for a specified case --
   git
 RUN apt-get clean all
-RUN python3 -m pip install tox
+RUN python3 -m pip install --upgrade -rtox-requirements.txt
 
 CMD ["/usr/local/bin/tox"]

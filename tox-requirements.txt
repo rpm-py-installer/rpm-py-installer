@@ -7,3 +7,5 @@ virtualenv<16.0.0
 # Upstream changed to use "python -m pip", but Pytyon 2.6 does not support it.
 # https://github.com/tox-dev/tox/commit/e057755
 tox<3.2
+# tox on Ubuntu trusty Python 3.4 case needs pathlib2 to run.
+pathlib2
