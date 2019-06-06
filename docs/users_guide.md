@@ -59,7 +59,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   # yum install /usr/bin/yumdownloader
   ```
 
-  See also installed packages in [Dockerfile for testing](../.travis/Dockerfile).
+  See also installed packages in [Dockerfiles for testing](../ci/).
 
 
 - Q3. Does this installer install the Python binding on system Python (`/usr/bin/python*`)?
