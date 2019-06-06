@@ -5,7 +5,7 @@ services:
     container_name: fedora30
     build:
       context: .
-      dockerfile: .travis/Dockerfile
+      dockerfile: ci/Dockerfile-fedora
       args:
         CONTAINER_IMAGE: fedora:30
         LINT: "true"
@@ -15,7 +15,7 @@ services:
     container_name: fedora29
     build:
       context: .
-      dockerfile: .travis/Dockerfile
+      dockerfile: ci/Dockerfile-fedora
       args:
         CONTAINER_IMAGE: fedora:29
     # Test on no network environment for the downstream build environment.
@@ -26,7 +26,7 @@ services:
     container_name: fedora28
     build:
       context: .
-      dockerfile: .travis/Dockerfile
+      dockerfile: ci/Dockerfile-fedora
       args:
         CONTAINER_IMAGE: fedora:28
     environment:
@@ -35,7 +35,7 @@ services:
     container_name: fedora27
     build:
       context: .
-      dockerfile: .travis/Dockerfile
+      dockerfile: ci/Dockerfile-fedora
       args:
         CONTAINER_IMAGE: fedora:27
     environment:
@@ -44,7 +44,7 @@ services:
     container_name: fedora26
     build:
       context: .
-      dockerfile: .travis/Dockerfile
+      dockerfile: ci/Dockerfile-fedora
       args:
         CONTAINER_IMAGE: fedora:26
     environment:
@@ -53,7 +53,7 @@ services:
     container_name: fedora_rawhide
     build:
       context: .
-      dockerfile: .travis/Dockerfile
+      dockerfile: ci/Dockerfile-fedora
       args:
         CONTAINER_IMAGE: fedora:rawhide
     environment:
@@ -63,7 +63,7 @@ services:
     container_name: intg
     build:
       context: .
-      dockerfile: .travis/Dockerfile
+      dockerfile: ci/Dockerfile-fedora
     environment:
       TOXENV: ${TOXENV-intg}
   # https://hub.docker.com/_/centos/
@@ -71,14 +71,14 @@ services:
     container_name: centos7
     build:
       context: .
-      dockerfile: .travis/Dockerfile.centos7
+      dockerfile: ci/Dockerfile-centos.7
     environment:
       TOXENV: ${TOXENV-py36,py34,py27}
   centos6:
     container_name: centos6
     build:
       context: .
-      dockerfile: .travis/Dockerfile.centos6
+      dockerfile: ci/Dockerfile-centos.6
     environment:
       TOXENV: ${TOXENV-py27,py26}
   # https://hub.docker.com/_/ubuntu/
@@ -86,13 +86,13 @@ services:
     container_name: ubuntu_bionic
     build:
       context: .
-      dockerfile: .travis/Dockerfile.ubuntu_bionic
+      dockerfile: ci/Dockerfile-ubuntu.bionic
     environment:
       TOXENV: ${TOXENV-py36,py27}
   ubuntu_trusty:
     container_name: ubuntu_trusy
     build:
       context: .
-      dockerfile: .travis/Dockerfile.ubuntu_trusty
+      dockerfile: ci/Dockerfile-ubuntu.trusty
     environment:
       TOXENV: ${TOXENV-py34,py27}

@@ -17,7 +17,7 @@ fi
 #     exit 1
 # fi
 
-FILES="$(find "${ROOT_DIR}/.travis" "${ROOT_DIR}/scripts" "${ROOT_DIR}/tests" \
+FILES="$(find "${ROOT_DIR}/ci" "${ROOT_DIR}/scripts" "${ROOT_DIR}/tests" \
     -name "*.sh")"
 STATUS=0
 

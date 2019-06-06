@@ -25,7 +25,7 @@ RUN yum -y install \
   /usr/bin/git \
   && yum clean all
 
-RUN ./.travis/install_python.sh 2.7.14
+RUN ./ci/install_python.sh 2.7.14
 ENV PATH "/usr/local/python-2.7.14/bin:${PATH}"
 
 RUN python2.7 -m ensurepip
