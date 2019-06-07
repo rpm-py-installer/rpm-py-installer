@@ -55,6 +55,12 @@ def install_script_path():
 
 
 @pytest.fixture
+def arch():
+    """Return architecture."""
+    return cmd_stdout('uname -m')
+
+
+@pytest.fixture
 def is_fedora():
     """Return if it is Fedora Linux."""
     return _os_id == 'fedora'
@@ -245,3 +251,10 @@ def run_cmd(cmd):
     print('CMD: {0}'.format(cmd))
     exit_status = os.system(cmd)
     return (exit_status == 0)
+
+
+@pytest.helpers.register
+def cmd_stdout(cmd):
+    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+    out, _ = p.communicate()
+    return out.decode().rstrip()

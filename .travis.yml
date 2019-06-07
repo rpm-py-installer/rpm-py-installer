@@ -3,8 +3,14 @@ language: bash
 services: docker
 git:
   quiet: true
+env:
+  global:
+    - TARGETS="build"
 matrix:
   include:
+    # Run multi arch cases on only cron mode at first, as it takes 30+ minutes.
+    - env: SERVICE=fedora30_aarch64 TARGETS="qemu build"
+      if: type = cron
     - env: SERVICE=fedora30
     - env: SERVICE=fedora29
     - env: SERVICE=fedora28
@@ -20,7 +26,7 @@ matrix:
     - env: SERVICE=fedora_rawhide
   fast_finish: true
 install: |
-  travis_retry make build SERVICE=${SERVICE}
+  travis_retry make ${TARGETS} SERVICE=${SERVICE}
 script: |
   make test SERVICE=${SERVICE}
 branches:

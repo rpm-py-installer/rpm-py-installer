@@ -360,14 +360,14 @@ def test_python_is_python_binding_installed_on_pip_less_than_9(rpm_py_name):
 @pytest.mark.parametrize('is_dnf', [True, False])
 @pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
-def test_rpm_init_is_ok(is_dnf, sys_rpm_path):
+def test_rpm_init_is_ok(is_dnf, sys_rpm_path, arch):
     with mock.patch.object(Cmd, 'which') as mock_which:
         mock_which.return_value = is_dnf
         rpm = FedoraRpm(sys_rpm_path)
         assert mock_which.called
         assert rpm.rpm_path == sys_rpm_path
         assert rpm.is_dnf is is_dnf
-        assert rpm.arch == 'x86_64'
+        assert rpm.arch == arch
 
 
 def test_rpm_init_raises_error_on_not_existed_rpm(is_debian):
@@ -497,7 +497,9 @@ def test_rpm_download_raise_not_found_error(sys_rpm, is_dnf, stdout, stderr):
 
 @pytest.mark.skipif(pytest.helpers.helper_is_debian(),
                     reason='Only Linux Fedora.')
-def test_rpm_extract_is_ok(sys_rpm, rpm_files):
+def test_rpm_extract_is_ok(sys_rpm, rpm_files, monkeypatch):
+    # mocking arch object for multi arch test cases.
+    sys_rpm.arch = 'x86_64'
     with pytest.helpers.work_dir():
         for rpm_file in rpm_files:
             shutil.copy(rpm_file, '.')

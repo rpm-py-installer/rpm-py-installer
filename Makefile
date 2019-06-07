@@ -23,6 +23,10 @@ no-network-test :
 	pytest -m 'not network'
 .PHONY : no-network-test
 
+qemu :
+	docker-compose run --rm $@
+.PHONY : qemu
+
 clean :
 	docker system prune -a -f
 .PHONY : clean

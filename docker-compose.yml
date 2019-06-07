@@ -12,6 +12,16 @@ services:
     environment:
       TOXENV: ${TOXENV-lint-py3,lint-py2,py37,py27}
     command: tox
+  fedora30_aarch64:
+    container_name: fedora30_aarch64
+    build:
+      context: .
+      dockerfile: ci/Dockerfile-fedora
+      args:
+        CONTAINER_IMAGE: multiarch/fedora:30-aarch64
+    environment:
+      TOXENV: ${TOXENV-py37}
+    command: tox
   fedora29:
     container_name: fedora29
     build:
@@ -106,3 +116,8 @@ services:
     environment:
       TOXENV: ${TOXENV-py34,py27}
     command: tox
+  qemu:
+    container_name: qemu
+    privileged: true
+    image: multiarch/qemu-user-static:register
+    command: --reset
