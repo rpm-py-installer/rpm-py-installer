@@ -1,7 +1,7 @@
 SERVICE ?= fedora_rawhide
 CWD = $(shell pwd)
 
-default : build test
+default : build
 .PHONY : default
 
 # Ex. make build SERVICE=fedora28
