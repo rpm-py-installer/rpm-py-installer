@@ -4,7 +4,10 @@ FROM ${CONTAINER_IMAGE}
 ARG TOXENV
 
 WORKDIR /build
-COPY . .
+COPY ci/dnf_install_lint_pkgs.sh .
+COPY ci/entrypoint.sh .
+COPY tox-requirements.txt .
+COPY test-requirements.txt .
 
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf
 
@@ -35,7 +38,7 @@ RUN dnf -y --allowerasing install \
   # -- RPM packages for testing --
   which
 
-RUN ./ci/dnf_install_lint_pkgs.sh
+RUN ./dnf_install_lint_pkgs.sh
 RUN dnf clean all
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade -rtox-requirements.txt
@@ -44,4 +47,4 @@ RUN python3 -m pip install --upgrade -rtest-requirements.txt
 
 # fedora:25, 26 tox is installed to /usr/bin/tox
 # fedora:rawhide tox is installed to /usr/local/bin/tox
-ENTRYPOINT ["./ci/entrypoint.sh"]
+ENTRYPOINT ["/build/entrypoint.sh"]

@@ -1,4 +1,5 @@
 SERVICE ?= fedora_rawhide
+CWD = $(shell pwd)
 
 default : build test
 .PHONY : default
@@ -10,7 +11,7 @@ build :
 
 # Ex. make test SERVICE=fedora28
 test :
-	docker-compose run --rm $(SERVICE)
+	docker-compose run --rm -v "$(CWD):/work" -w /work $(SERVICE)
 .PHONY : test
 
 # Ex. make login SERVICE=fedora28
