@@ -15,5 +15,3 @@ RUN apt-get install -y \
   git
 RUN apt-get clean all
 RUN python3 -m pip install --upgrade -rtox-requirements.txt
-
-CMD ["/usr/local/bin/tox"]
