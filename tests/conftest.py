@@ -55,9 +55,12 @@ def install_script_path():
 
 
 @pytest.fixture
-def arch():
+def arch(is_fedora):
     """Return architecture."""
-    return cmd_stdout('uname -m')
+    os_arch = cmd_stdout('uname -m')
+    if is_fedora:
+        os_arch = cmd_stdout('rpm -q rpm --qf %{arch}')
+    return os_arch
 
 
 @pytest.fixture
@@ -131,8 +134,12 @@ def is_dnf():
 
 
 @pytest.fixture
-def pkg_cmd(is_dnf):
-    return 'dnf' if is_dnf else 'yum'
+def pkg_cmd(is_dnf, arch):
+    cmd = 'dnf' if is_dnf else 'yum'
+    cmd = '{0} -y'.format(cmd)
+    if is_dnf:
+        cmd = '{0} --forcearch {1}'.format(cmd, arch)
+    return cmd
 
 
 @pytest.fixture

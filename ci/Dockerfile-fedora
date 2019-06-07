@@ -9,10 +9,14 @@ COPY ci/entrypoint.sh .
 COPY tox-requirements.txt .
 COPY test-requirements.txt .
 
+RUN uname -a
+RUN rpm -q rpm
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf
-
-RUN dnf -y update
-RUN dnf -y --allowerasing install \
+# When kernel and user space architecture is different,
+# Need to use "--forcearch <user space arch>" option.
+RUN ARCH=$(rpm -q rpm --qf "%{arch}") \
+  && dnf -y --forcearch "${ARCH}" upgrade \
+  && dnf -y --forcearch "${ARCH}" install \
   # -- RPM packages required for installing --
   rpm-libs \
   redhat-rpm-config \

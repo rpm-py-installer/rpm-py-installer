@@ -431,11 +431,13 @@ def test_rpm_is_package_installed_returns_false(sys_rpm):
         assert not sys_rpm.is_package_installed('dummy')
 
 
-def test_rpm_lib_dir_is_ok(sys_rpm, is_debian):
+def test_rpm_lib_dir_is_ok(sys_rpm, is_debian, arch):
     if is_debian:
-        assert sys_rpm.lib_dir == '/usr/lib/x86_64-linux-gnu'
+        lib_dir = '/usr/lib/{0}-linux-gnu'.format(arch)
+        assert sys_rpm.lib_dir == lib_dir
     else:
-        assert sys_rpm.lib_dir == '/usr/lib64'
+        # 64-bit: /usr/lib64, 32-bit: /usr/lib
+        assert re.match('^/usr/lib(64)?$', sys_rpm.lib_dir)
 
 
 @pytest.mark.parametrize('value_dict', [
