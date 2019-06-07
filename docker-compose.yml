@@ -11,6 +11,7 @@ services:
         LINT: "true"
     environment:
       TOXENV: ${TOXENV-lint-py3,lint-py2,py37,py27}
+    command: tox
   fedora29:
     container_name: fedora29
     build:
@@ -31,6 +32,7 @@ services:
         CONTAINER_IMAGE: fedora:28
     environment:
       TOXENV: ${TOXENV-py36}
+    command: tox
   fedora27:
     container_name: fedora27
     build:
@@ -40,6 +42,7 @@ services:
         CONTAINER_IMAGE: fedora:27
     environment:
       TOXENV: ${TOXENV-py36}
+    command: tox
   fedora26:
     container_name: fedora26
     build:
@@ -49,6 +52,7 @@ services:
         CONTAINER_IMAGE: fedora:26
     environment:
       TOXENV: ${TOXENV-py35,py26}
+    command: tox
   fedora_rawhide:
     container_name: fedora_rawhide
     build:
@@ -58,6 +62,7 @@ services:
         CONTAINER_IMAGE: fedora:rawhide
     environment:
       TOXENV: ${TOXENV-py37,py27}
+    command: tox
   # Integration
   intg:
     container_name: intg
@@ -66,6 +71,7 @@ services:
       dockerfile: ci/Dockerfile-fedora
     environment:
       TOXENV: ${TOXENV-intg}
+    command: tox
   # https://hub.docker.com/_/centos/
   centos7:
     container_name: centos7
@@ -74,6 +80,7 @@ services:
       dockerfile: ci/Dockerfile-centos.7
     environment:
       TOXENV: ${TOXENV-py36,py34,py27}
+    command: tox
   centos6:
     container_name: centos6
     build:
@@ -81,6 +88,7 @@ services:
       dockerfile: ci/Dockerfile-centos.6
     environment:
       TOXENV: ${TOXENV-py27,py26}
+    command: tox
   # https://hub.docker.com/_/ubuntu/
   ubuntu_bionic:
     container_name: ubuntu_bionic
@@ -89,6 +97,7 @@ services:
       dockerfile: ci/Dockerfile-ubuntu.bionic
     environment:
       TOXENV: ${TOXENV-py36,py27}
+    command: tox
   ubuntu_trusty:
     container_name: ubuntu_trusy
     build:
@@ -96,3 +105,4 @@ services:
       dockerfile: ci/Dockerfile-ubuntu.trusty
     environment:
       TOXENV: ${TOXENV-py34,py27}
+    command: tox
