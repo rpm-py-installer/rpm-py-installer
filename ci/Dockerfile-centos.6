@@ -1,7 +1,8 @@
 FROM centos:6
 
 WORKDIR /build
-COPY . .
+COPY ci/install_python.sh .
+COPY tox-requirements.txt .
 
 RUN yum -y update
 RUN yum -y install epel-release
@@ -25,7 +26,7 @@ RUN yum -y install \
   /usr/bin/git \
   && yum clean all
 
-RUN ./ci/install_python.sh 2.7.14
+RUN ./install_python.sh 2.7.14
 ENV PATH "/usr/local/python-2.7.14/bin:${PATH}"
 
 RUN python2.7 -m ensurepip

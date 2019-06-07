@@ -1,7 +1,7 @@
 FROM ubuntu:trusty
 
 WORKDIR /build
-COPY . .
+COPY tox-requirements.txt .
 
 RUN apt-get update
 RUN apt-get install -y \
