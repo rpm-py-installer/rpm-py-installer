@@ -5,7 +5,7 @@ git:
   quiet: true
 env:
   global:
-    - TARGETS="build"
+    - TARGETS=""
 matrix:
   include:
     # Run multi arch cases on only cron mode at first, as it takes 30+ minutes.
