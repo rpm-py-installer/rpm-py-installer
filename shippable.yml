@@ -1,0 +1,26 @@
+language: none
+matrix:
+  include:
+    - nodePool: shippable_shared_aarch64
+      env: SERVICE="fedora30_aarch64" CONTAINER_IMAGE="multiarch/fedora:30-aarch64" TOXENV=py37
+build:
+  # Setting to add volume mounts.
+  # https://github.com/Shippable/support/issues/4824#issuecomment-491332199
+  # But below does not work with an error:
+  # "Docker options in pre_ci_boot section are not allowed on restricted shared node pools."
+  # pre_ci_boot:
+  #   options: "-v $SHIPPABLE_BUILD_DIR:$SHIPPABLE_BUILD_DIR"
+  ci:
+    # Show environment.
+    - uname -a
+    - id
+    - pwd
+    - echo "SERVICE=$SERVICE CONTAINER_IMAGE=$CONTAINER_IMAGE TOXENV=$TOXENV"
+    # Test.
+    - |
+      make build-no-volume SERVICE=${SERVICE} CONTAINER_IMAGE=${CONTAINER_IMAGE}
+    - |
+      make test-no-volume SERVICE=${SERVICE} TOXENV=${TOXENV}
+branches:
+  only:
+    - master

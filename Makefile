@@ -19,6 +19,27 @@ login :
 	docker run -it rpm-py-installer_$(SERVICE) bash
 .PHONY : login
 
+build-no-volume :
+	docker build --rm \
+		-t rpm-py-installer_$(SERVICE) \
+		-f ci/Dockerfile-fedora \
+		--build-arg CONTAINER_IMAGE=$(CONTAINER_IMAGE) \
+		.
+	docker build --rm \
+		-t rpm-py-installer_$(SERVICE)_test \
+		-f ci/Dockerfile-test \
+		--build-arg CONTAINER_IMAGE=rpm-py-installer_$(SERVICE) \
+		.
+.PHONY : build-no-volume
+
+test-no-volume :
+	docker run --rm \
+		-t \
+		-e TOXENV=$(TOXENV) \
+		rpm-py-installer_$(SERVICE)_test \
+		tox
+.PHONY : test-no-volume
+
 no-network-test :
 	pytest -m 'not network'
 .PHONY : no-network-test
