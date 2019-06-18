@@ -1,7 +1,7 @@
 ARG CONTAINER_IMAGE=fedora:latest
 FROM ${CONTAINER_IMAGE}
 
-ARG TOXENV
+ARG LINT=false
 
 WORKDIR /build
 COPY ci/dnf_install_lint_pkgs.sh .
