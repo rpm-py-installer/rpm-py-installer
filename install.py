@@ -1522,6 +1522,9 @@ class FedoraRpm(Rpm):
         Rpm.__init__(self, rpm_path, **kwargs)
         is_dnf = True if Cmd.which('dnf') else False
         self.is_dnf = is_dnf
+        # Overide arch with user space architecture, considering
+        # a case of that kernel and user space arhitecture are different.
+        self.arch = Cmd.sh_e_out('rpm -q rpm --qf "%{arch}"')
 
     @property
     def lib_dir(self):
@@ -1590,7 +1593,9 @@ class FedoraRpm(Rpm):
         if not package_name:
             ValueError('package_name required.')
         if self.is_dnf:
-            cmd = 'dnf download {0}.{1}'.format(package_name, self.arch)
+            # Set forcearch for case of aarch64 kernel with armv7hl user space.
+            cmd = 'dnf --forcearch {1} download {0}.{1}'.format(
+                  package_name, self.arch)
         else:
             cmd = 'yumdownloader {0}.{1}'.format(package_name, self.arch)
         try:
@@ -1628,9 +1633,6 @@ class DebianRpm(Rpm):
     def __init__(self, rpm_path, **kwargs):
         """Initialize this class."""
         Rpm.__init__(self, rpm_path, **kwargs)
-        # self.rpm_path = rpm_path
-        # self.arch = Cmd.sh_e_out('uname -m').rstrip()
-        # self._lib_dir = None
 
     @property
     def lib_dir(self):

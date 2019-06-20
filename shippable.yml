@@ -3,6 +3,8 @@ matrix:
   include:
     - nodePool: shippable_shared_aarch64
       env: SERVICE="fedora30_aarch64" CONTAINER_IMAGE="multiarch/fedora:30-aarch64" TOXENV=py37
+    - nodePool: shippable_shared_aarch32
+      env: SERVICE="fedora28_arm32" CONTAINER_IMAGE="arm32v7/fedora:28" TOXENV=py36
 build:
   # Setting to add volume mounts.
   # https://github.com/Shippable/support/issues/4824#issuecomment-491332199

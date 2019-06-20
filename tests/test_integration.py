@@ -91,28 +91,22 @@ def test_install_and_uninstall_are_ok_on_sys_status(
         pytest.skip('install without setup.py.in should be downlodable.')
 
     if is_rpm_devel:
-        _run_cmd('{0} -y install rpm-devel'.format(pkg_cmd))
+        _run_cmd('{0} install rpm-devel'.format(pkg_cmd))
     else:
-        _run_cmd('{0} -y remove rpm-devel popt-devel'.format(pkg_cmd))
+        _run_cmd('{0} remove rpm-devel popt-devel'.format(pkg_cmd))
 
     if is_downloadable:
-        _install_rpm_download_utility(is_dnf)
+        _install_rpm_download_utility(is_dnf, pkg_cmd)
     else:
-        _uninstall_rpm_download_utility(is_dnf)
-
-    # if is_rpm_build_libs:
-    #     _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
-    # else:
-    #     _run_cmd('{0} -y remove rpm-build-libs'.format(pkg_cmd))
+        _uninstall_rpm_download_utility(is_dnf, pkg_cmd)
 
     try:
         _assert_install_and_uninstall(install_script_path)
     finally:
         try:
             # Reset as default system status.
-            _run_cmd('{0} -y remove rpm-devel popt-devel'.format(pkg_cmd))
-            _install_rpm_download_utility(is_dnf)
-            # _run_cmd('{0} -y install rpm-build-libs'.format(pkg_cmd))
+            _run_cmd('{0} remove rpm-devel popt-devel'.format(pkg_cmd))
+            _install_rpm_download_utility(is_dnf, pkg_cmd)
         except Exception:
             pass
 
@@ -270,19 +264,19 @@ except AttributeError as e:
     return _run_cmd(cmd)
 
 
-def _install_rpm_download_utility(is_dnf):
+def _install_rpm_download_utility(is_dnf, pkg_cmd):
     if is_dnf:
-        _run_cmd("dnf -y install 'dnf-command(download)'")
+        _run_cmd("{0} install 'dnf-command(download)'".format(pkg_cmd))
     else:
         # Install yumdownloader
-        _run_cmd('yum -y install /usr/bin/yumdownloader')
+        _run_cmd('{0} install /usr/bin/yumdownloader'.format(pkg_cmd))
 
 
-def _uninstall_rpm_download_utility(is_dnf):
+def _uninstall_rpm_download_utility(is_dnf, pkg_cmd):
     if is_dnf:
-        _run_cmd('dnf -y remove dnf-plugins-core')
+        _run_cmd('{0} remove dnf-plugins-core'.format(pkg_cmd))
     else:
-        _run_cmd('yum -y remove /usr/bin/yumdownloader')
+        _run_cmd('{0} remove /usr/bin/yumdownloader'.format(pkg_cmd))
 
 
 def _run_cmd(cmd):
