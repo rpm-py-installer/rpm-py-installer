@@ -40,6 +40,7 @@ RUN ARCH=$(rpm -q rpm --qf "%{arch}") \
   # Used if downloading and extracting build dependency packages in installing.
   /usr/bin/cpio \
   # -- RPM packages for testing --
+  apt \
   which
 
 RUN ./dnf_install_lint_pkgs.sh

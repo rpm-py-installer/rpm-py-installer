@@ -38,7 +38,7 @@ def _get_os_id():
 
 _os_id = _get_os_id()
 _is_dnf = True if os.system('dnf --version') == 0 else False
-_is_debian = True if os.system('apt-get --version') == 0 else False
+_is_debian = True if _os_id in ['debian', 'ubuntu'] else False
 
 
 def pytest_collection_modifyitems(items):
@@ -183,6 +183,11 @@ def rpm_files():
 @pytest.fixture
 def setup_py_path():
     return os.path.abspath('tests/fixtures/setup.py.in')
+
+
+@pytest.fixture
+def os_release_dir():
+    return os.path.abspath('tests/fixtures/os_release')
 
 
 @pytest.helpers.register

@@ -1160,6 +1160,9 @@ Because there is no RPM Python binding deb package.
 class Linux(object):
     """A factory class for Linux OS."""
 
+    OS_RELEASE_FILE = '/etc/os-release'
+    REDHAT_RELEASE_FILE = '/etc/redhat-release'
+
     def __init__(self, python, rpm_path, **kwargs):
         """Initialize this class."""
         if not python:
@@ -1172,13 +1175,61 @@ class Linux(object):
         self.sys_installed = kwargs.get('sys_installed', False)
 
     @classmethod
+    def os_release_items(cls):
+        """Return OS release items."""
+        item_dict = {}
+        if not os.path.isfile(cls.OS_RELEASE_FILE):
+            return item_dict
+
+        searched_items = ['ID', 'ID_LIKE']
+        with open(cls.OS_RELEASE_FILE) as f_in:
+            for line in f_in:
+                for item in searched_items:
+                    pattern = r'^{0}=[\'"]?([\w ]+)?[\'"]?$'.format(item)
+                    match = re.search(pattern, line)
+                    if match:
+                        item_dict[item] = match.group(1)
+        return item_dict
+
+    @classmethod
+    def is_fedora(cls):
+        """Check if the Linux is Fedora (RPM) or Debian base OS."""
+        items = cls.os_release_items()
+        is_fedora_os = None
+        # Check base OS by item ID.
+        if 'ID' in items:
+            if items['ID'] in ['fedora', 'opensuse']:
+                is_fedora_os = True
+            elif items['ID'] in ['debian']:
+                is_fedora_os = False
+        # Check derived OS by item ID_LIKE.
+        if is_fedora_os is None and 'ID_LIKE' in items:
+            if 'fedora' in items['ID_LIKE']:
+                is_fedora_os = True
+            elif 'opensuse' in items['ID_LIKE']:
+                is_fedora_os = True
+            elif 'debian' in items['ID_LIKE']:
+                is_fedora_os = False
+        # If the base os is still not detected, assume from installed files
+        # and commands.
+        if is_fedora_os is None:
+            if os.path.isfile(cls.REDHAT_RELEASE_FILE):
+                is_fedora_os = True
+            elif Cmd.which('apt-get'):
+                is_fedora_os = False
+            else:
+                is_fedora_os = True
+
+        return is_fedora_os
+
+    @classmethod
     def get_instance(cls, python, rpm_path, **kwargs):
         """Get OS object."""
         linux = None
-        if Cmd.which('apt-get'):
-            linux = DebianLinux(python, rpm_path, **kwargs)
-        else:
+        if cls.is_fedora():
             linux = FedoraLinux(python, rpm_path, **kwargs)
+        else:
+            linux = DebianLinux(python, rpm_path, **kwargs)
         return linux
 
     def create_rpm(self, rpm_path):
