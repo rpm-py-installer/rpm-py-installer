@@ -540,6 +540,93 @@ def test_rpm_py_version_is_ok(version, info, is_release, git_branch):
     assert rpm_py_version.git_branch == git_branch
 
 
+@pytest.mark.parametrize(
+    'file_name,os_id,id_like',
+    [
+        ('fedora-30', 'fedora', None),
+        ('centos-7', 'centos', 'rhel fedora'),
+        ('ubuntu-bionic', 'ubuntu', 'debian'),
+    ]
+)
+def test_linux_os_release_items_are_ok_with_mock(
+    os_release_dir, file_name, os_id, id_like
+):
+    os_release_file = os.path.join(os_release_dir, file_name)
+    with mock.patch.object(Linux, 'OS_RELEASE_FILE', new=os_release_file):
+        item_dict = Linux.os_release_items()
+        assert item_dict['ID'] == os_id
+        if id_like is not None:
+            assert item_dict['ID_LIKE'] == id_like
+        else:
+            assert 'ID_LIKE' not in item_dict
+
+
+def test_linux_os_release_items_are_ok():
+    item_dict = Linux.os_release_items()
+    # CentOS6 does not have /etc/os-release file.
+    if 'ID' in item_dict:
+        assert item_dict['ID']
+        if item_dict['ID'] == 'fedora':
+            assert 'ID_LIKE' not in item_dict
+        elif item_dict['ID'] == 'centos':
+            assert 'ID_LIKE' in item_dict
+            assert item_dict['ID_LIKE'] == 'rhel fedora'
+        elif item_dict['ID'] == 'ubuntu':
+            assert 'ID_LIKE' in item_dict
+            assert item_dict['ID_LIKE'] == 'debian'
+        else:
+            assert False, 'Unsupported ID {} for tests'.format(item_dict['ID'])
+
+
+@pytest.mark.parametrize(
+    'file_name,is_fedora',
+    [
+        ('fedora-30', True),
+        ('centos-7', True),
+        ('ubuntu-bionic', False),
+    ]
+)
+def test_linux_is_fedora_ok_with_mock(os_release_dir, file_name, is_fedora):
+    os_release_file = os.path.join(os_release_dir, file_name)
+    with mock.patch.object(Linux, 'OS_RELEASE_FILE', new=os_release_file):
+        assert Linux.is_fedora() is is_fedora
+
+
+def test_linux_is_fedora_ok():
+    item_dict = Linux.os_release_items()
+    if 'ID' in item_dict:
+        if item_dict['ID'] in ['fedora', 'centos']:
+            assert Linux.is_fedora() is True
+        elif item_dict['ID'] in ['ubuntu']:
+            assert Linux.is_fedora() is False
+        else:
+            assert False, 'Unsupported ID {} for tests'.format(item_dict['ID'])
+    else:
+        if os.path.isfile(Linux.REDHAT_RELEASE_FILE):
+            assert Linux.is_fedora() is True
+        else:
+            assert Linux.is_fedora() is False
+
+
+@pytest.mark.parametrize(
+    'file_name,class_name',
+    [
+        ('centos-7', 'FedoraLinux'),
+        ('ubuntu-bionic', 'DebianLinux'),
+    ]
+)
+@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
+                    reason='Only Linux Fedora.')
+def test_linux_get_instance_is_ok_with_mock(
+    os_release_dir, file_name, class_name, sys_rpm_path
+):
+    os_release_file = os.path.join(os_release_dir, file_name)
+    python = Python()
+    with mock.patch.object(Linux, 'OS_RELEASE_FILE', new=os_release_file):
+        linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
+        assert linux.__class__.__name__ == class_name
+
+
 @pytest.mark.parametrize('version,tag_names', [
     (
         '4.13.0',
