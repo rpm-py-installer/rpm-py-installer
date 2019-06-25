@@ -1,31 +1,36 @@
 SERVICE ?= fedora_rawhide
-CWD = $(shell pwd)
+DOCKER = docker
+QEMU_SUDO =
+
+ifeq ($(DOCKER), podman)
+	QEMU_SUDO = sudo
+endif
 
 default : build
 .PHONY : default
 
 # Ex. make build SERVICE=fedora28
 build :
-	docker-compose build --force-rm $(SERVICE)
+	scripts/container-compose.py $@ $(SERVICE)
 .PHONY : build
 
 # Ex. make test SERVICE=fedora28
 test :
-	docker-compose run --rm -v "$(CWD):/work" -w /work $(SERVICE)
+	scripts/container-compose.py $@ $(SERVICE)
 .PHONY : test
 
 # Ex. make login SERVICE=fedora28
 login :
-	docker run -it rpm-py-installer_$(SERVICE) bash
+	scripts/container-compose.py $@ $(SERVICE)
 .PHONY : login
 
 build-no-volume :
-	docker build --rm \
+	"$(DOCKER)" build --rm \
 		-t rpm-py-installer_$(SERVICE) \
 		-f ci/Dockerfile-fedora \
 		--build-arg CONTAINER_IMAGE=$(CONTAINER_IMAGE) \
 		.
-	docker build --rm \
+	"$(DOCKER)" build --rm \
 		-t rpm-py-installer_$(SERVICE)_test \
 		-f ci/Dockerfile-test \
 		--build-arg CONTAINER_IMAGE=rpm-py-installer_$(SERVICE) \
@@ -33,7 +38,7 @@ build-no-volume :
 .PHONY : build-no-volume
 
 test-no-volume :
-	docker run --rm \
+	"$(DOCKER)" run --rm \
 		-t \
 		-e TOXENV=$(TOXENV) \
 		rpm-py-installer_$(SERVICE)_test \
@@ -45,9 +50,9 @@ no-network-test :
 .PHONY : no-network-test
 
 qemu :
-	docker-compose run --rm $@
+	$(QEMU_SUDO) "$(DOCKER)" run --rm --privileged multiarch/qemu-user-static:register --reset
 .PHONY : qemu
 
 clean :
-	docker system prune -a -f
+	"$(DOCKER)" system prune -a -f
 .PHONY : clean
