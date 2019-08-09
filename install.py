@@ -54,7 +54,7 @@ class Application(object):
             Log.info("Saved working directory '{0}'".format(work_dir))
 
     def _load_options_from_env(self):
-        verbose = True if os.environ.get('RPM_PY_VERBOSE') == 'true' else False
+        verbose = os.environ.get('RPM_PY_VERBOSE') == 'true'
         # Set it as early as possible for other functions.
         self.verbose = verbose
         Log.verbose = verbose
@@ -68,10 +68,7 @@ class Application(object):
         # Default: false
         sys_installed = False
         if 'RPM_PY_SYS' in os.environ:
-            if os.environ.get('RPM_PY_SYS') == 'true':
-                sys_installed = True
-            else:
-                sys_installed = False
+            sys_installed = os.environ.get('RPM_PY_SYS') == 'true'
 
         # Python's path that the module is installed on.
         python = Python()
@@ -104,17 +101,12 @@ class Application(object):
         # Default: true
         optimized = True
         if 'RPM_PY_OPTM' in os.environ:
-            if os.environ.get('RPM_PY_OPTM') == 'true':
-                optimized = True
-            else:
-                optimized = False
+            optimized = os.environ.get('RPM_PY_OPTM') == 'true'
 
         is_work_dir_removed = True
         if 'RPM_PY_WORK_DIR_REMOVED' in os.environ:
-            if os.environ.get('RPM_PY_WORK_DIR_REMOVED') == 'true':
-                is_work_dir_removed = True
-            else:
-                is_work_dir_removed = False
+            is_work_dir_removed = \
+                os.environ.get('RPM_PY_WORK_DIR_REMOVED') == 'true'
 
         self.python = python
         self.linux = linux
@@ -209,7 +201,7 @@ class RpmPyVersion(object):
     def is_release(self):
         """Release version or not."""
         # version string: N.N.N.N is for release.
-        return True if re.match(r'^[\d.]+$', self.version) else False
+        return bool(re.match(r'^[\d.]+$', self.version))
 
     @property
     def git_branch(self):
