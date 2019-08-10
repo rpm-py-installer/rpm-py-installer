@@ -1770,7 +1770,10 @@ class Cmd(object):
 
         env = os.environ.copy()
         # Better to parse English output
-        env['LC_ALL'] = 'en_US.utf-8'
+        # * LC_ALL=C.UTF-8 shows a warning
+        #   "cannot change locale (*) No such file or directory" on CentOS7.
+        # * LC_ALL=en_US.UTF-8 shows the warning on Fedora 30.
+        env['LC_ALL'] = ''
         if 'env' in kwargs:
             env.update(kwargs['env'])
         cmd_kwargs['env'] = env
