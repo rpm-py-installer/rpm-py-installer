@@ -10,7 +10,7 @@ services:
         CONTAINER_IMAGE: fedora:30
         LINT: "true"
     environment:
-      TOXENV: ${TOXENV-lint-py3,lint-py2,py37,py27}
+      TOXENV: ${TOXENV-lint-py3,lint-py2,py37-cov,py27-cov}
     command: tox
   fedora30_aarch64:
     container_name: fedora30_aarch64
@@ -89,7 +89,7 @@ services:
       context: .
       dockerfile: ci/Dockerfile-centos.7
     environment:
-      TOXENV: ${TOXENV-py36,py34,py27}
+      TOXENV: ${TOXENV-py36-cov,py34-cov,py27-cov}
     command: tox
   centos6:
     container_name: centos6
@@ -106,7 +106,7 @@ services:
       context: .
       dockerfile: ci/Dockerfile-ubuntu.bionic
     environment:
-      TOXENV: ${TOXENV-py36,py27}
+      TOXENV: ${TOXENV-py36-cov,py27-cov}
     command: tox
   ubuntu_trusty:
     container_name: ubuntu_trusy
