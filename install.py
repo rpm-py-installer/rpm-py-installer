@@ -834,12 +834,27 @@ Install the {0} package.
         """Check if the RPM Python binding has a depndency to popt-devel.
 
         Search include header files in the source code to check it.
+
+        popt.h in rpmlib.h was dropped from rpm-4.15.0-alpha in rpmlib.h.
+        https://github.com/rpm-software-management/rpm/commit/74033a3
+
+        popt.h in rpmcli.h was still available from rpm-4.6.0-rc1.
+        https://github.com/rpm-software-management/rpm/commit/99faa27
         """
         found = False
-        with open('../include/rpm/rpmlib.h') as f_in:
-            for line in f_in:
-                if re.match(r'^#include .*popt.h.*$', line):
-                    found = True
+        header_files = [
+            '../include/rpm/rpmcli.h',
+            '../include/rpm/rpmlib.h',
+        ]
+        for header_file in header_files:
+            if not os.path.isfile(header_file):
+                continue
+            with open(header_file) as f_in:
+                for line in f_in:
+                    if re.match(r'^#include .*popt.h.*$', line):
+                        found = True
+                        break
+                if found:
                     break
         return found
 
