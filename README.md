@@ -9,9 +9,9 @@ The environment is non-system Python, a source compiled Python, a Python on virt
 
 It installs same version's Python binding with the system RPM safely.
 
-## Install the RPM Python binding by rpm-py-installer
+## Getting started
 
-`rpm-py-installer` provides several ways to install.
+`rpm-py-installer` provides several ways to install RPM Python binding.
 
 ### Install by pip
 
@@ -105,7 +105,26 @@ setuptools       28.8.0
 
 ## Usage
 
-See [Users Guide](docs/users_guide.md).
+See [Users guide](docs/users_guide.md).
+
+## Contributing
+
+We encourage you to contribute to `rpm-py-installer`! Please check out the [Contributing guide](CONTRIBUTING.md) for guidelines about how to proceed.
+
+See [Developers guide](docs/developers_guide.md) for detail.
+
+## Supported environments
+
+`.travis.yml` shows current supported environments.
+
+* Fedora
+* CentOS (>= 6)
+* Ubuntu (>= trusty)
+
+Below are currently not supported. To be supported, we need to add the CI cases.
+
+* SUSE (ticket [#173](https://github.com/junaruga/rpm-py-installer/issues/173))
+* Mac OSX (ticket [#155](https://github.com/junaruga/rpm-py-installer/issues/155))
 
 ## Communities using rpm-py-installer
 
