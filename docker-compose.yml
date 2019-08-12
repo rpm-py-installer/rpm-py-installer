@@ -89,7 +89,15 @@ services:
       context: .
       dockerfile: ci/Dockerfile-centos.7
     environment:
-      TOXENV: ${TOXENV-py36-cov,py34-cov,py27-cov}
+      TOXENV: ${TOXENV-py36-cov,py27-cov}
+    command: tox
+  centos7_py34:
+    container_name: centos7
+    build:
+      context: .
+      dockerfile: ci/Dockerfile-centos.7
+    environment:
+      TOXENV: ${TOXENV-py34-cov}
     command: tox
   centos6:
     container_name: centos6

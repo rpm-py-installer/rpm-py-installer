@@ -19,11 +19,15 @@ matrix:
     - env: SERVICE=fedora_rawhide
     - env: SERVICE=intg
     - env: SERVICE=centos7
+    - env: SERVICE=centos7_py34
     - env: SERVICE=centos6
     - env: SERVICE=ubuntu_bionic
     - env: SERVICE=ubuntu_trusty
   allow_failures:
     - env: SERVICE=fedora_rawhide
+    # python34-devel RPM package is failed to install.
+    # https://github.com/junaruga/rpm-py-installer/issues/199
+    - env: SERVICE=centos7_py34
   fast_finish: true
 install: |
   travis_retry make ${TARGETS} SERVICE=${SERVICE}
