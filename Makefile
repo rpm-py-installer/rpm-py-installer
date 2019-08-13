@@ -16,7 +16,7 @@ test :
 
 # Ex. make login SERVICE=fedora28
 login :
-	docker run -it rpm-py-installer_$(SERVICE) bash
+	docker run -v "$(CWD):/work" -w /work -it rpm-py-installer_$(SERVICE) bash
 .PHONY : login
 
 build-no-volume :
