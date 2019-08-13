@@ -11,7 +11,6 @@ import tempfile
 from unittest import mock
 
 import pytest
-
 from install import (Application,
                      Cmd,
                      CmdError,
