@@ -1,0 +1,12 @@
+# Code Analysis for Python
+flake8==3.5.0
+flake8-colors
+flake8-isort
+# Restrict version to test on Python 2.6.
+# https://github.com/timothycrosley/isort/blob/develop/CHANGELOG.md
+isort<4.3
+pydocstyle
+# The pep8-naming is used as a plugin for flake8
+pep8-naming
+# Code Analysis for Bash
+bashate
