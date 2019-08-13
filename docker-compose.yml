@@ -18,7 +18,7 @@ services:
       context: .
       dockerfile: ci/Dockerfile-fedora
       args:
-        CONTAINER_IMAGE: multiarch/fedora:30-aarch64
+        CONTAINER_IMAGE: arm64v8/fedora:30
     environment:
       TOXENV: ${TOXENV-py37}
     command: tox
@@ -119,5 +119,5 @@ services:
   qemu:
     container_name: qemu
     privileged: true
-    image: multiarch/qemu-user-static:register
-    command: --reset
+    image: multiarch/qemu-user-static
+    command: --reset -p yes
