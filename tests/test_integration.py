@@ -140,14 +140,14 @@ def _assert_install_and_uninstall(install_script_path, **env):
         # Uninstalled successfully?
         was_uninstalled = _uninstall_rpm_py(python_path)
         assert was_uninstalled
-    except AssertionError as e:
+    except AssertionError as exc:
         # Remove installed RPM Python binding.
         # That causes next test case's error.
         try:
             _uninstall_rpm_py(python_path)
         except Exception:
             pass
-        raise e
+        raise exc
 
 
 def _run_install_script(python_path, install_script_path, **env):
@@ -255,9 +255,9 @@ import rpm
 try:
     rpm.spec('tests/fixtures/hello.spec')
     print(rpm.expandMacro('%name'))
-except AttributeError as e:
+except AttributeError as exc:
     # Observed the error on rpm-python 4.11.1 and Python 3.4.
-    print('WARN: error at checking script: ' + str(e))
+    print('WARN: error at checking script: ' + str(exc))
     print(rpm.__version__)
 '''
     cmd = '{0} -c "{1}"'.format(python_path, script)
