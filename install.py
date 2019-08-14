@@ -366,7 +366,7 @@ if os.access('Makefile.am', os.F_OK):
         with open(self.OUT_PATH, 'w') as f_out:
             f_out.write(content)
 
-        self.pathces = out_patches
+        self.patches = out_patches
         # Release content data to make it released by GC quickly.
         content = None
 
