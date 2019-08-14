@@ -116,6 +116,28 @@ services:
     environment:
       TOXENV: ${TOXENV-py34,py27}
     command: tox
+  # https://hub.docker.com/r/opensuse/tumbleweed
+  opensuse_tumbleweed:
+    container_name: opensuse_tumbleweed
+    build:
+      context: .
+      dockerfile: ci/Dockerfile-opensuse
+      args:
+        CONTAINER_IMAGE: opensuse/tumbleweed
+    environment:
+      TOXENV: ${TOXENV-py37-cov,py27-cov}
+    command: tox
+  # https://hub.docker.com/r/opensuse/leap
+  opensuse_leap_15:
+    container_name: opensuse_leap_15
+    build:
+      context: .
+      dockerfile: ci/Dockerfile-opensuse
+      args:
+        CONTAINER_IMAGE: opensuse/leap:15
+    environment:
+      TOXENV: ${TOXENV-py36-cov,py27-cov}
+    command: tox
   qemu:
     container_name: qemu
     privileged: true

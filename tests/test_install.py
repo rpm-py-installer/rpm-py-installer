@@ -4,6 +4,7 @@ Tests for install.py
 """
 import os
 import re
+import subprocess
 import sys
 import tempfile
 from unittest import mock
@@ -22,6 +23,7 @@ from install import (Cmd,
                      RpmPyPackageNotFoundError,
                      RpmPyVersion,
                      SetupPy,
+                     SuseRpm,
                      Utils)
 
 from .conftest import get_rpm
@@ -272,9 +274,9 @@ def test_python_is_python_binding_installed_on_pip_less_than_9(rpm_py_name):
         assert python.is_python_binding_installed_on_pip() is installed
 
 
-def test_rpm_init_raises_error_on_not_existed_rpm(is_debian):
+def test_rpm_init_raises_error_on_not_existed_rpm(is_debian, is_suse):
     with pytest.raises(InstallError) as ei:
-        get_rpm(is_debian, '/usr/bin/rpm123')
+        get_rpm(is_debian, is_suse, '/usr/bin/rpm123')
     expected_message = "RPM binary command '/usr/bin/rpm123' not found."
     assert expected_message == str(ei.value)
 
@@ -390,12 +392,15 @@ def test_linux_os_release_items_are_ok():
         ('fedora-30', True),
         ('centos-7', True),
         ('ubuntu-bionic', False),
+        ('opensuse-tumbleweed', False),
     ]
 )
 def test_linux_is_fedora_ok_with_mock(os_release_dir, file_name, is_fedora):
     os_release_file = os.path.join(os_release_dir, file_name)
     with mock.patch.object(Linux, 'OS_RELEASE_FILE', new=os_release_file):
-        assert Linux.is_fedora() is is_fedora
+        with mock.patch.object(
+                Linux, 'REDHAT_RELEASE_FILE', new="/this/file/does/not/exist"):
+            assert Linux.is_fedora() is is_fedora
 
 
 def test_linux_is_fedora_ok():
@@ -419,18 +424,26 @@ def test_linux_is_fedora_ok():
     [
         ('centos-7', 'FedoraLinux'),
         ('ubuntu-bionic', 'DebianLinux'),
+        ('opensuse-tumbleweed', 'SuseLinux')
     ]
 )
-@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
-                    reason='Only Linux Fedora.')
 def test_linux_get_instance_is_ok_with_mock(
     os_release_dir, file_name, class_name, sys_rpm_path
 ):
     os_release_file = os.path.join(os_release_dir, file_name)
     python = Python()
-    with mock.patch.object(Linux, 'OS_RELEASE_FILE', new=os_release_file):
-        linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
-        assert linux.__class__.__name__ == class_name
+    with mock.patch.object(Cmd, 'sh_e_out') as mock_sh_e_out:
+        mock_sh_e_out.return_value = "x86_64"
+        with mock.patch.object(Cmd, 'which') as mock_which:
+            mock_which.return_value = None
+            with mock.patch.object(Linux, 'OS_RELEASE_FILE',
+                                   new=os_release_file):
+                with mock.patch.object(
+                        Linux, 'REDHAT_RELEASE_FILE',
+                        new="/this/file/does/not/exist"):
+                    linux = Linux.get_instance(python=python,
+                                               rpm_path=sys_rpm_path)
+                    assert linux.__class__.__name__ == class_name
 
 
 @pytest.mark.parametrize('version,tag_names', [
@@ -686,6 +699,9 @@ def test_installer_init_is_ok(installer):
 
 
 @pytest.mark.network
+@pytest.mark.skipif(pytest.helpers.helper_is_suse() and
+                    not pytest.helpers.is_root_user(),
+                    reason="Can only run zypper as root.")
 def test_installer_install_from_rpm_py_package(
     installer, is_debian, is_centos, monkeypatch
 ):
@@ -883,6 +899,159 @@ Install the proper RPM package of python{,2,3}-rpm,
 or set a environment variable RPM_PY_SYS=true
 '''
     assert expected_message == str(ei.value)
+
+
+@mock.patch('install.Cmd.sh_e')
+@mock.patch('os.walk')
+@mock.patch('os.rename')
+def test_suse_rpm_download_tumbleweed(
+        mock_os_rename, mock_os_walk, mock_sh_e, sys_rpm_path):
+    mock_os_walk.return_value = (
+        ("/var/cache/zypp/packages/", ['repo-oss'], []),
+        ("/var/cache/zypp/packages/repo-oss", ['x86_64', 'noarch'], []),
+        ("/var/cache/zypp/packages/repo-oss/x86_64", [],
+         ['rpm-4.14.2.1-6.1.x86_64.rpm',
+          'python3-3.7.3-1.2.x86_64.rpm',
+          'python3-rpm-4.14.2.1-6.1.x86_64.rpm']),
+        ("/var/cache/zypp/packages/repo-oss/noarch", [],
+         ['python3-tox-3.12.1-1.4.noarch.rpm'])
+    )
+    suse_rpm = SuseRpm(sys_rpm_path)
+    suse_rpm.download("rpm")
+
+    assert mock_sh_e.call_args_list[-1] == \
+        mock.call(
+            "zypper --non-interactive -v install -f --download-only rpm",
+            stderr=subprocess.PIPE)
+    assert mock_os_rename.call_args_list[0] == \
+        mock.call(
+            "/var/cache/zypp/packages/repo-oss/x86_64/"
+            "rpm-4.14.2.1-6.1.x86_64.rpm",
+            "./rpm-4.14.2.1-6.1.x86_64.rpm")
+
+
+@mock.patch('install.Cmd.sh_e')
+@mock.patch('os.walk')
+@mock.patch('os.rename')
+def test_suse_rpm_download_leap(
+        mock_os_rename, mock_os_walk, mock_sh_e, sys_rpm_path):
+    mock_os_walk.return_value = (
+        ("/var/cache/zypp/packages/", ['repo-oss'], []),
+        ("/var/cache/zypp/packages/repo-oss", ['x86_64', 'noarch'], []),
+        ("/var/cache/zypp/packages/repo-oss/x86_64", [],
+         ['rpm-4.14.1-lp151.13.10.x86_64.rpm',
+          'python3-3.6.3-lp151.2.x86_64.rpm',
+          'python3-rpm-4.14.2.1-lp151.1.x86_64.rpm']),
+        ("/var/cache/zypp/packages/repo-oss/noarch", [],
+         ['python3-tox-3.12.1-1.4.noarch.rpm'])
+    )
+    suse_rpm = SuseRpm(sys_rpm_path)
+    suse_rpm.download("rpm")
+
+    assert mock_sh_e.call_args_list[-1] == \
+        mock.call(
+            "zypper --non-interactive -v install -f --download-only rpm",
+            stderr=subprocess.PIPE)
+    assert mock_os_rename.call_args_list[0] == \
+        mock.call(
+            "/var/cache/zypp/packages/repo-oss/x86_64/"
+            "rpm-4.14.1-lp151.13.10.x86_64.rpm",
+            "./rpm-4.14.1-lp151.13.10.x86_64.rpm")
+
+
+@mock.patch('install.Cmd.sh_e')
+@mock.patch('os.walk')
+@mock.patch('os.rename')
+def test_suse_rpm_download_rpm_missing(
+        mock_os_rename, mock_os_walk, mock_sh_e, sys_rpm_path):
+    mock_os_walk.return_value = ()
+    suse_rpm = SuseRpm(sys_rpm_path)
+    with pytest.raises(InstallError) as inst_err:
+        suse_rpm.download("rpm")
+
+    assert mock_sh_e.call_args_list[-1] == \
+        mock.call(
+            "zypper --non-interactive -v install -f --download-only rpm",
+            stderr=subprocess.PIPE)
+    assert not mock_os_rename.called
+    assert "Could not find downloaded package rpm in " \
+        "/var/cache/zypp/packages" in str(inst_err)
+
+
+@pytest.mark.parametrize('os_walk_retval', [
+    (
+        ("/var/cache/zypp/packages/", ['repo-oss'], []),
+        ("/var/cache/zypp/packages/repo-oss", ['x86_64', 'noarch'], []),
+        ("/var/cache/zypp/packages/repo-oss/x86_64", [],
+         ['rpm-4.12.2.1-6.1.x86_64.rpm', 'rpm-4.13.1.1-6.1.x86_64.rpm',
+          'rpm-4.14.2.1-6.1.x86_64.rpm', 'python3-3.7.3-1.2.x86_64.rpm',
+          'python3-rpm-4.14.2.1-6.1.x86_64.rpm'])),
+    (
+        ("/var/cache/zypp/packages/", ['repo-oss'], []),
+        ("/var/cache/zypp/packages/repo-oss", ['x86_64', 'noarch'], []),
+        ("/var/cache/zypp/packages/repo-oss/x86_64", [],
+         ['rpm-4.14.2.1-5.1.x86_64.rpm', 'rpm-4.14.2.1-6.0.x86_64.rpm',
+          'rpm-4.14.2.1-6.1.x86_64.rpm', 'python3-3.7.3-1.2.x86_64.rpm',
+          'python3-rpm-4.14.2.1-6.1.x86_64.rpm'])
+    )
+])
+@mock.patch('install.Cmd.sh_e')
+@mock.patch('os.walk')
+@mock.patch('os.rename')
+def test_suse_rpm_download_multiple_cached_files_tumbleweed(
+        mock_os_rename, mock_os_walk, mock_sh_e, os_walk_retval, sys_rpm_path):
+    mock_os_walk.return_value = os_walk_retval
+    suse_rpm = SuseRpm(sys_rpm_path)
+    suse_rpm.download("rpm")
+
+    assert mock_sh_e.call_args_list[-1] == \
+        mock.call(
+            "zypper --non-interactive -v install -f --download-only rpm",
+            stderr=subprocess.PIPE)
+    assert mock_os_rename.call_args_list[0] == \
+        mock.call(
+            "/var/cache/zypp/packages/repo-oss/"
+            "x86_64/rpm-4.14.2.1-6.1.x86_64.rpm",
+            "./rpm-4.14.2.1-6.1.x86_64.rpm")
+
+
+@pytest.mark.parametrize('os_walk_retval', [
+    (
+        ("/var/cache/zypp/packages/", ['repo-oss'], []),
+        ("/var/cache/zypp/packages/repo-oss", ['x86_64', 'noarch'], []),
+        ("/var/cache/zypp/packages/repo-oss/x86_64", [],
+         ['rpm-4.12.2.1-lp151.1.x86_64.rpm', 'rpm-4.13.1.1-lp151.1.x86_64.rpm',
+          'rpm-4.14.2.1-lp151.1.x86_64.rpm',
+          'python3-3.7.3-lp151.2.x86_64.rpm',
+          'python3-rpm-4.14.2.1-lp151.1.x86_64.rpm'])),
+    (
+        ("/var/cache/zypp/packages/", ['repo-oss'], []),
+        ("/var/cache/zypp/packages/repo-oss", ['x86_64', 'noarch'], []),
+        ("/var/cache/zypp/packages/repo-oss/x86_64", [],
+         ['rpm-4.14.2.1-lp151.0.1.x86_64.rpm',
+          'rpm-4.14.2.1-lp151.0.x86_64.rpm', 'rpm-4.14.2.1-lp151.1.x86_64.rpm',
+          'python3-3.7.3-lp151.2.x86_64.rpm',
+          'python3-rpm-4.14.2.1-lp151.1.x86_64.rpm'])
+    )
+])
+@mock.patch('install.Cmd.sh_e')
+@mock.patch('os.walk')
+@mock.patch('os.rename')
+def test_suse_rpm_download_multiple_cached_files_leap(
+        mock_os_rename, mock_os_walk, mock_sh_e, os_walk_retval, sys_rpm_path):
+    mock_os_walk.return_value = os_walk_retval
+    suse_rpm = SuseRpm(sys_rpm_path)
+    suse_rpm.download("rpm")
+
+    assert mock_sh_e.call_args_list[-1] == \
+        mock.call(
+            "zypper --non-interactive -v install -f --download-only rpm",
+            stderr=subprocess.PIPE)
+    assert mock_os_rename.call_args_list[0] == \
+        mock.call(
+            "/var/cache/zypp/packages/repo-oss/"
+            "x86_64/rpm-4.14.2.1-lp151.1.x86_64.rpm",
+            "./rpm-4.14.2.1-lp151.1.x86_64.rpm")
 
 
 @pytest.mark.network

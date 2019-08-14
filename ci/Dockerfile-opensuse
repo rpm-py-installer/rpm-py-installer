@@ -1,0 +1,8 @@
+ARG CONTAINER_IMAGE=opensuse/tumbleweed
+FROM ${CONTAINER_IMAGE}
+
+WORKDIR /build
+COPY tox-requirements.txt .
+
+RUN zypper --non-interactive dup
+RUN zypper --non-interactive in python3-tox python2-tox git gcc python3-devel python-devel python2-setuptools python3-setuptools
