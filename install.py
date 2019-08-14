@@ -159,9 +159,6 @@ class RpmPy(object):
             except RpmPyPackageNotFoundError as e:
                 Log.warn('RPM Py Package not found. reason: {0}'.format(e))
 
-                # Pass to try to install from the source.
-                pass
-
         # Download and install from the source.
         top_dir_name = self.downloader.download_and_expand()
         rpm_py_dir = os.path.join(top_dir_name, 'python')
@@ -899,8 +896,6 @@ Can you install the RPM package, and run this installer again?
 '''
                 message += org_message
                 raise InstallError(message)
-            else:
-                raise e
 
     def install_from_rpm_py_package(self):
         """Run install from RPM Python binding RPM package."""
