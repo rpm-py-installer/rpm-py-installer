@@ -156,8 +156,8 @@ class RpmPy(object):
             try:
                 self.installer.install_from_rpm_py_package()
                 return
-            except RpmPyPackageNotFoundError as e:
-                Log.warn('RPM Py Package not found. reason: {0}'.format(e))
+            except RpmPyPackageNotFoundError as exc:
+                Log.warn('RPM Py Package not found. reason: {0}'.format(exc))
 
         # Download and install from the source.
         top_dir_name = self.downloader.download_and_expand()
@@ -425,12 +425,12 @@ class Downloader(object):
             Log.info("Downloading archive. '{0}'.".format(url))
             try:
                 Cmd.curl_remote_name(url)
-            except RemoteFileNotFoundError as e:
+            except RemoteFileNotFoundError as exc:
                 Log.info('Archive not found. URL: {0}'.format(url))
                 if index + 1 < max_num:
                     Log.info('Try to download next candidate URL.')
                 else:
-                    raise e
+                    raise exc
             else:
                 found_index = index
                 break
@@ -887,9 +887,9 @@ class FedoraInstaller(Installer):
                 )
             self.setup_py.apply_and_save()
             self._build_and_install()
-        except InstallError as e:
+        except InstallError as exc:
             if not self._is_rpm_all_lib_include_files_installed():
-                org_message = str(e)
+                org_message = str(exc)
                 message = '''
 Install failed without rpm-devel package by below reason.
 Can you install the RPM package, and run this installer again?
@@ -1063,8 +1063,8 @@ when a RPM download plugin not installed.
             try:
                 self.rpm.download_and_extract(package_name)
                 downloaded = True
-            except RemoteFileNotFoundError as e:
-                org_message = str(e)
+            except RemoteFileNotFoundError as exc:
+                org_message = str(exc)
                 Log.warn('Continue as the remote file not found. {0}'.format(
                     org_message))
                 continue
@@ -1653,8 +1653,8 @@ class FedoraRpm(Rpm):
             cmd = 'yumdownloader {0}.{1}'.format(package_name, self.arch)
         try:
             Cmd.sh_e(cmd, stdout=subprocess.PIPE)
-        except CmdError as e:
-            for out in (e.stdout, e.stderr):
+        except CmdError as exc:
+            for out in (exc.stdout, exc.stderr):
                 for line in out.split('\n'):
                     if re.match(r'^No package [^ ]+ available', line) or \
                        re.match(r'^No Match for argument', line):
@@ -1663,7 +1663,7 @@ class FedoraRpm(Rpm):
                                 package_name
                             )
                         )
-            raise e
+            raise exc
 
     def extract(self, package_name):
         """Extract given package."""
@@ -1808,12 +1808,12 @@ class Cmd(object):
                 raise ie
 
             return (stdout, stderr)
-        except Exception as e:
+        except Exception as exc:
             try:
                 proc.kill()
             except Exception:
                 pass
-            raise e
+            raise exc
 
     @classmethod
     def sh_e_out(cls, cmd, **kwargs):
@@ -1882,10 +1882,10 @@ class Cmd(object):
         response = None
         try:
             response = urlopen(file_url, timeout=10)
-        except HTTPError as e:
+        except HTTPError as exc:
             message = 'Download failed: URL: {0}, reason: {1}'.format(
-                      file_url, e)
-            if 'HTTP Error 404' in str(e):
+                      file_url, exc)
+            if 'HTTP Error 404' in str(exc):
                 raise RemoteFileNotFoundError(message)
             else:
                 raise InstallError(message)
@@ -1907,12 +1907,12 @@ class Cmd(object):
         try:
             with contextlib.closing(tarfile.open(tar_comp_file_path)) as tar:
                 tar.extractall()
-        except tarfile.ReadError as e:
+        except tarfile.ReadError as exc:
             message_format = (
                 'Extract failed: '
                 'tar_comp_file_path: {0}, reason: {1}'
             )
-            raise InstallError(message_format.format(tar_comp_file_path, e))
+            raise InstallError(message_format.format(tar_comp_file_path, exc))
 
     @classmethod
     def find(cls, searched_dir, pattern):
