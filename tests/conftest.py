@@ -1,5 +1,6 @@
 """Common functions and a list of pytest.fixture here."""
 
+import copy
 import getpass
 import os
 import re
@@ -10,6 +11,17 @@ import tempfile
 from contextlib import contextmanager
 
 import pytest
+from install import (Application,
+                     DebianInstaller,
+                     DebianRpm,
+                     Downloader,
+                     FedoraInstaller,
+                     FedoraRpm,
+                     Linux,
+                     Python,
+                     RpmPy,
+                     RpmPyVersion,
+                     SetupPy)
 
 OS_RELEASE_FILE = '/etc/os-release'
 
@@ -270,3 +282,79 @@ def cmd_stdout(cmd):
     p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
     out, _ = p.communicate()
     return out.decode().rstrip()
+
+
+def get_rpm(is_debian, rpm_path, **kwargs):
+    rpm = None
+    if is_debian:
+        rpm = DebianRpm(rpm_path, **kwargs)
+    else:
+        rpm = FedoraRpm(rpm_path, **kwargs)
+    return rpm
+
+
+@pytest.fixture
+def sys_rpm_path():
+    if os.path.isfile('/usr/bin/rpm'):
+        return '/usr/bin/rpm'
+    else:
+        return '/bin/rpm'
+
+
+@pytest.fixture
+def sys_rpm(sys_rpm_path, is_debian):
+    return get_rpm(is_debian, sys_rpm_path)
+
+
+@pytest.fixture
+def local_rpm(is_debian):
+    return get_rpm(is_debian, '/usr/local/bin/rpm', check=False)
+
+
+@pytest.fixture
+def setup_py():
+    rpm_py_version = RpmPyVersion('4.14.0-rc1')
+    setup_py = SetupPy(rpm_py_version)
+    # To update attribute.
+    return copy.deepcopy(setup_py)
+
+
+@pytest.fixture
+def downloader():
+    rpm_py_version = RpmPyVersion('4.14.0-rc1')
+    downloader = Downloader(rpm_py_version)
+    return downloader
+
+
+@pytest.fixture
+def installer(sys_rpm, is_debian):
+    installer = None
+    if is_debian:
+        installer = DebianInstaller(RpmPyVersion('4.13.0'), Python(), sys_rpm)
+    else:
+        installer = FedoraInstaller(RpmPyVersion('4.13.0'), Python(), sys_rpm)
+    return copy.deepcopy(installer)
+
+
+@pytest.fixture
+def rpm_py(sys_rpm_path):
+    version_str = '4.13.0'
+    python = Python()
+    linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
+    return RpmPy(version_str, python, linux)
+
+
+@pytest.fixture
+def env():
+    pass
+
+
+@pytest.fixture
+def app(env, monkeypatch):
+    if env:
+        if not isinstance(env, dict):
+            raise ValueError('env: Invalid type: {0}'.format(type(env)))
+        for key in env:
+            monkeypatch.setenv(key, env[key])
+
+    return copy.deepcopy(Application())

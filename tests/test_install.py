@@ -2,7 +2,6 @@
 Tests for install.py
 
 """
-import copy
 import os
 import re
 import shutil
@@ -11,13 +10,9 @@ import tempfile
 from unittest import mock
 
 import pytest
-from install import (Application,
-                     Cmd,
+from install import (Cmd,
                      CmdError,
-                     DebianInstaller,
-                     DebianRpm,
                      Downloader,
-                     FedoraInstaller,
                      FedoraRpm,
                      InstallError,
                      InstallSkipError,
@@ -31,6 +26,8 @@ from install import (Application,
                      RpmPyVersion,
                      SetupPy,
                      Utils)
+
+from .conftest import get_rpm
 
 RPM_ORG_VALID_ARCHIVE_URL_DICT = {
     'site': 'rpm.org',
@@ -57,84 +54,6 @@ GIT_HUB_INVALID_ARCHIVE_URL_DICT = {
            '/rpm-4.13.0.2-release-dummy.tar.gz',
     'top_dir_name': 'rpm-rpm-4.13.0.2-release',
 }
-
-
-@pytest.fixture
-def sys_rpm_path():
-    rpm_path = None
-    if os.path.isfile('/usr/bin/rpm'):
-        rpm_path = '/usr/bin/rpm'
-    else:
-        rpm_path = '/bin/rpm'
-    return rpm_path
-
-
-def get_rpm(is_debian, rpm_path, **kwargs):
-    rpm = None
-    if is_debian:
-        rpm = DebianRpm(rpm_path, **kwargs)
-    else:
-        rpm = FedoraRpm(rpm_path, **kwargs)
-    return rpm
-
-
-@pytest.fixture
-def sys_rpm(sys_rpm_path, is_debian):
-    return get_rpm(is_debian, sys_rpm_path)
-
-
-@pytest.fixture
-def local_rpm(is_debian):
-    return get_rpm(is_debian, '/usr/local/bin/rpm', check=False)
-
-
-@pytest.fixture
-def setup_py():
-    rpm_py_version = RpmPyVersion('4.14.0-rc1')
-    setup_py = SetupPy(rpm_py_version)
-    # To update attribute.
-    return copy.deepcopy(setup_py)
-
-
-@pytest.fixture
-def downloader():
-    rpm_py_version = RpmPyVersion('4.14.0-rc1')
-    downloader = Downloader(rpm_py_version)
-    return downloader
-
-
-@pytest.fixture
-def installer(sys_rpm, is_debian):
-    installer = None
-    if is_debian:
-        installer = DebianInstaller(RpmPyVersion('4.13.0'), Python(), sys_rpm)
-    else:
-        installer = FedoraInstaller(RpmPyVersion('4.13.0'), Python(), sys_rpm)
-    return copy.deepcopy(installer)
-
-
-@pytest.fixture
-def rpm_py(sys_rpm_path):
-    version_str = '4.13.0'
-    python = Python()
-    linux = Linux.get_instance(python=python, rpm_path=sys_rpm_path)
-    return RpmPy(version_str, python, linux)
-
-
-@pytest.fixture
-def env():
-    pass
-
-
-@pytest.fixture
-def app(env, monkeypatch):
-    if env:
-        if not isinstance(env, dict):
-            raise ValueError('env: Invalid type: {0}'.format(type(env)))
-        for key in env:
-            monkeypatch.setenv(key, env[key])
-
-    return copy.deepcopy(Application())
 
 
 @pytest.mark.parametrize('version_str,version_info', [
