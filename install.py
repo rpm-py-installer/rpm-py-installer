@@ -1675,7 +1675,7 @@ class FedoraRpm(Rpm):
         pattern = '{0}*{1}.rpm'.format(package_name, self.arch)
         rpm_files = Cmd.find('.', pattern)
         if not rpm_files:
-            raise InstallError('PRM file not found.')
+            raise InstallError('RPM file not found.')
         cmd = 'rpm2cpio {0} | cpio -idmv'.format(rpm_files[0])
         Cmd.sh_e(cmd)
 
