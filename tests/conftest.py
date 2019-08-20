@@ -51,6 +51,8 @@ def _get_os_id():
 _os_id = _get_os_id()
 _is_dnf = True if os.system('dnf --version') == 0 else False
 _is_debian = True if _os_id in ['debian', 'ubuntu'] else False
+_is_fedora = _os_id == 'fedora'
+_is_centos = _os_id == 'centos'
 
 
 def pytest_collection_modifyitems(items):
@@ -78,13 +80,13 @@ def arch(is_fedora):
 @pytest.fixture
 def is_fedora():
     """Return if it is Fedora Linux."""
-    return _os_id == 'fedora'
+    return _is_fedora
 
 
 @pytest.fixture
 def is_centos():
     """Return if it is CentOS Linux."""
-    return _os_id == 'centos'
+    return _is_centos
 
 
 @pytest.fixture
@@ -212,6 +214,12 @@ def helper_is_debian():
     """Return if it is Debian base Linux. """
     # TODO: This method is duplicated with fixture: is_debian.
     return _is_debian
+
+
+@pytest.helpers.register
+def helper_is_fedora_based():
+    """Returns whether this is a Fedora/RHEL based Linux. """
+    return _is_fedora or _is_centos
 
 
 @pytest.helpers.register
