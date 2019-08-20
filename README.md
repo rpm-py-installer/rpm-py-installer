@@ -49,7 +49,7 @@ $ python -c "import rpm; print(rpm.__version__)"
 4.13.0.1
 ```
 
-### Install as a required dependency for your pacakge
+### Install as a required dependency for your package
 
 Add `rpm-py-installer` to your package's `setup.py` `install_requires`.
 
