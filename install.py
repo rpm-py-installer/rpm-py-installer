@@ -593,8 +593,8 @@ class Installer(object):
 
         # Implement these variables on sub class.
         self.package_sys_name = None
-        self.pacakge_popt_name = None
-        self.pacakge_popt_devel_name = None
+        self.package_popt_name = None
+        self.package_popt_devel_name = None
 
     def run(self):
         """Run install main logic."""
@@ -765,20 +765,20 @@ class Installer(object):
             return
         if self._is_popt_devel_installed():
             message = '{0} package is installed.'.format(
-                self.pacakge_popt_devel_name)
+                self.package_popt_devel_name)
             Log.debug(message)
             return
         if not self._is_package_downloadable():
             message = '''
 Install a {0} download plugin or
-install the {0} pacakge [{1}].
-'''.format(self.package_sys_name, self.pacakge_popt_devel_name)
+install the {0} package [{1}].
+'''.format(self.package_sys_name, self.package_popt_devel_name)
             raise InstallError(message)
         if not self._is_popt_installed():
             message = '''
 Required {0} not installed: [{1}],
 Install the {0} package.
-'''.format(self.package_sys_name, self.pacakge_popt_name)
+'''.format(self.package_sys_name, self.package_popt_name)
             raise InstallError(message)
 
         self._download_and_extract_popt_devel()
@@ -872,8 +872,8 @@ class FedoraInstaller(Installer):
         Installer.__init__(self, rpm_py_version, python, rpm, **kwargs)
 
         self.package_sys_name = 'RPM'
-        self.pacakge_popt_name = 'popt'
-        self.pacakge_popt_devel_name = 'popt-devel'
+        self.package_popt_name = 'popt'
+        self.package_popt_devel_name = 'popt-devel'
 
     def run(self):
         """Run install main logic."""
@@ -996,18 +996,18 @@ when a RPM download plugin not installed.
 
     def _is_popt_installed(self):
         # overrided method.
-        return self.rpm.is_package_installed(self.pacakge_popt_name)
+        return self.rpm.is_package_installed(self.package_popt_name)
 
     def _is_popt_devel_installed(self):
         # overrided method.
-        return self.rpm.is_package_installed(self.pacakge_popt_devel_name)
+        return self.rpm.is_package_installed(self.package_popt_devel_name)
 
     def _download_and_extract_popt_devel(self):
         # overrided method.
         self.rpm.download_and_extract('popt-devel')
 
     def _predict_rpm_py_package_names(self):
-        # Refer the rpm Fedora pacakge
+        # Refer the rpm Fedora package
         # https://src.fedoraproject.org/rpms/rpm/
         package_info_list = [
             # 4.13.0-0.rc1.41 <= version
@@ -1051,7 +1051,7 @@ when a RPM download plugin not installed.
                     if package_name not in dst_package_names:
                         dst_package_names.append(package_name)
         if not dst_package_names:
-            message = 'No predicted pacakge for RPM version info: {0}'.format(
+            message = 'No predicted package for RPM version info: {0}'.format(
                       str(self.rpm.version_info))
             raise InstallError(message)
         return dst_package_names
@@ -1090,8 +1090,8 @@ class DebianInstaller(Installer):
         Installer.__init__(self, rpm_py_version, python, rpm, **kwargs)
 
         self.package_sys_name = 'Debian Pacakge'
-        self.pacakge_popt_name = 'libpopt0'
-        self.pacakge_popt_devel_name = 'libpopt-dev'
+        self.package_popt_name = 'libpopt0'
+        self.package_popt_devel_name = 'libpopt-dev'
 
     def install_from_rpm_py_package(self):
         """Run install from RPM Python binding RPM package."""
@@ -1116,15 +1116,15 @@ Because there is no RPM Python binding deb package.
 
     def _is_popt_installed(self):
         # overrided method.
-        return self._is_deb_package_installed(self.pacakge_popt_name)
+        return self._is_deb_package_installed(self.package_popt_name)
 
     def _is_popt_devel_installed(self):
         # overrided method.
-        return self._is_deb_package_installed(self.pacakge_popt_devel_name)
+        return self._is_deb_package_installed(self.package_popt_devel_name)
 
     def _download_and_extract_popt_devel(self):
         # overrided method.
-        self._download_and_extract_deb_package(self.pacakge_popt_devel_name)
+        self._download_and_extract_deb_package(self.package_popt_devel_name)
 
     def _is_deb_package_installed(self, package_name):
         if not package_name:

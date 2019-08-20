@@ -928,7 +928,7 @@ def test_installer_predict_rpm_py_package_names(
     else:
         with pytest.raises(InstallError) as ie:
             installer._predict_rpm_py_package_names()
-            assert 'No predicted pacakge' in str(ie.value)
+            assert 'No predicted package' in str(ie.value)
 
 
 @pytest.mark.parametrize('statuses', [
@@ -1044,8 +1044,8 @@ def test_installer_make_dep_lib_file_links_and_copy_include_files(installer):
         installer._make_dep_lib_file_sym_links_and_copy_include_files()
     expected_message = '''
 Install a {0} download plugin or
-install the {0} pacakge [{1}].
-'''.format(installer.package_sys_name, installer.pacakge_popt_devel_name)
+install the {0} package [{1}].
+'''.format(installer.package_sys_name, installer.package_popt_devel_name)
     assert expected_message == str(ei.value)
 
 
