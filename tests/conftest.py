@@ -24,6 +24,7 @@ from install import (Application,
                      SetupPy)
 
 OS_RELEASE_FILE = '/etc/os-release'
+REDHAT_RELEASE_FILE = '/etc/redhat-release'
 
 install_path = os.path.abspath('install.py')
 sys.path.insert(0, install_path)
@@ -52,7 +53,11 @@ _os_id = _get_os_id()
 _is_dnf = True if os.system('dnf --version') == 0 else False
 _is_debian = True if _os_id in ['debian', 'ubuntu'] else False
 _is_fedora = _os_id == 'fedora'
-_is_centos = _os_id == 'centos'
+# CentOS6 does not have /etc/os-release file. only has /etc/redhat-release.
+# When the /etc/redhat-release exists, identify it as centos
+# to run fedora base specific tests in test_install_fedora.py.
+_is_centos = _os_id == 'centos' or \
+  (not _os_id and os.path.isfile(REDHAT_RELEASE_FILE))
 
 
 def pytest_collection_modifyitems(items):
