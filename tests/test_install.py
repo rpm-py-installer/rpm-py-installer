@@ -174,7 +174,7 @@ def test_cmd_sh_e_is_failed():
 def test_cmd_sh_e_out_is_ok():
     stdout = Cmd.sh_e_out('pwd')
     assert stdout
-    assert re.match('^.*\n$', stdout)
+    assert re.match(r'^.*\n$', stdout)
 
 
 def test_cmd_cd_is_ok():
@@ -203,7 +203,7 @@ def test_cmd_pushd_is_ok():
 @pytest.mark.parametrize('cmd', ['rpm', 'git'])
 def test_cmd_which_is_ok(cmd):
     abs_path = Cmd.which(cmd)
-    assert re.match('^/.*{0}$'.format(cmd), abs_path)
+    assert re.match(r'^/.*{0}$'.format(cmd), abs_path)
 
 
 @pytest.mark.network
@@ -218,7 +218,7 @@ def test_cmd_curl_is_failed(file_url):
     with pytest.helpers.work_dir():
         with pytest.raises(RemoteFileNotFoundError) as ei:
             Cmd.curl_remote_name(not_existed_file_url)
-    assert re.match('^Download failed: .* HTTP Error 404: Not Found$',
+    assert re.match(r'^Download failed: .* HTTP Error 404: Not Found$',
                     str(ei.value))
 
 
@@ -241,7 +241,7 @@ def test_cmd_tar_archive_is_failed(archive_file_path_dicts, file_type):
     with pytest.helpers.work_dir():
         with pytest.raises(InstallError) as ei:
             Cmd.tar_extract(archive_file_path)
-    assert re.match('^Extract failed: .* could not be opened successfully$',
+    assert re.match(r'^Extract failed: .* could not be opened successfully$',
                     str(ei.value))
 
 
@@ -378,7 +378,7 @@ def test_rpm_init_raises_error_on_not_existed_rpm(is_debian):
 
 def test_rpm_version_is_ok(sys_rpm):
     assert sys_rpm.version
-    assert re.match('^\d\.\d', sys_rpm.version)
+    assert re.match(r'^\d\.\d', sys_rpm.version)
 
 
 def test_rpm_version_info_is_ok(monkeypatch, local_rpm):
@@ -436,7 +436,7 @@ def test_rpm_lib_dir_is_ok(sys_rpm, is_debian, arch):
         assert sys_rpm.lib_dir == lib_dir
     else:
         # 64-bit: /usr/lib64, 32-bit: /usr/lib
-        assert re.match('^/usr/lib(64)?$', sys_rpm.lib_dir)
+        assert re.match(r'^/usr/lib(64)?$', sys_rpm.lib_dir)
 
 
 @pytest.mark.parametrize('value_dict', [
@@ -1140,7 +1140,7 @@ def test_app_init(app):
     assert isinstance(app.rpm_py, RpmPy)
     # Actual string is N.N.N.N or N.N.N.N-(rc|beta)N
     # Check verstion string roughly right now.
-    assert re.match('^[\d.]+(-[a-z\d]+)?$', app.rpm_py.version.version)
+    assert re.match(r'^[\d.]+(-[a-z\d]+)?$', app.rpm_py.version.version)
     assert app.rpm_py.downloader.git_branch is None
     assert app.rpm_py.installer.optimized is True
     assert app.rpm_py.installer.setup_py_opts == '-q'
@@ -1150,7 +1150,7 @@ def test_app_init(app):
 @pytest.mark.parametrize('env', [{'RPM_PY_RPM_BIN': 'rpm'}])
 def test_app_init_env_rpm(app):
     assert app
-    assert re.match('^/.+/rpm$', app.linux.rpm.rpm_path)
+    assert re.match(r'^/.+/rpm$', app.linux.rpm.rpm_path)
 
 
 @pytest.mark.parametrize('env', [{'RPM_PY_VERSION': '1.2.3'}])
