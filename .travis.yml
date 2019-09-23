@@ -11,7 +11,7 @@ matrix:
     # Run multi arch cases on only cron mode at first, as it takes 30+ minutes.
     - name: fedora30_aarch64
       env: SERVICE=fedora30_aarch64 TARGETS="qemu build"
-      # if: type = cron
+      if: type = cron
     - env: SERVICE=fedora30
     - env: SERVICE=fedora29
     - env: SERVICE=fedora28
@@ -26,7 +26,6 @@ matrix:
     - env: SERVICE=opensuse_tumbleweed
     - env: SERVICE=opensuse_leap_15
   allow_failures:
-    - name: fedora30_aarch64
     - env: SERVICE=fedora_rawhide
   fast_finish: true
 install: |
