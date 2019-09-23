@@ -23,6 +23,8 @@ matrix:
     - env: SERVICE=centos6
     - env: SERVICE=ubuntu_bionic
     - env: SERVICE=ubuntu_trusty
+    - env: SERVICE=opensuse_tumbleweed
+    - env: SERVICE=opensuse_leap_15
   allow_failures:
     - name: fedora30_aarch64
     - env: SERVICE=fedora_rawhide

@@ -21,7 +21,8 @@ from install import (Application,
                      Python,
                      RpmPy,
                      RpmPyVersion,
-                     SetupPy)
+                     SetupPy,
+                     SuseRpm)
 
 OS_RELEASE_FILE = '/etc/os-release'
 REDHAT_RELEASE_FILE = '/etc/redhat-release'
@@ -41,7 +42,7 @@ def _get_os_id():
 
     with open(OS_RELEASE_FILE) as f_in:
         for line in f_in:
-            match = re.search(r'^ID=[\'"]?(\w+)?[\'"]?$', line)
+            match = re.search(r'^ID=[\'"]?([\w_-]+)?[\'"]?$', line)
             if match:
                 os_id = match.group(1)
                 break
@@ -58,6 +59,9 @@ _is_fedora = _os_id == 'fedora'
 # to run fedora base specific tests in test_install_fedora.py.
 _is_centos = _os_id == 'centos' or \
   (not _os_id and os.path.isfile(REDHAT_RELEASE_FILE))
+_is_suse = bool('opensuse' in _os_id) or bool('sles' in _os_id) \
+    if _os_id is not None \
+    else False
 
 
 def pytest_collection_modifyitems(items):
@@ -98,6 +102,12 @@ def is_centos():
 def is_debian():
     """Return if it is Debian base Linux."""
     return _is_debian
+
+
+@pytest.fixture
+def is_suse():
+    """Return if it is SUSE base Linux."""
+    return _is_suse
 
 
 @pytest.fixture
@@ -222,6 +232,12 @@ def helper_is_debian():
 
 
 @pytest.helpers.register
+def helper_is_suse():
+    """Return if this is a SUSE based Linux. """
+    return _is_suse
+
+
+@pytest.helpers.register
 def helper_is_fedora_based():
     """Returns whether this is a Fedora/RHEL based Linux. """
     return _is_fedora or _is_centos
@@ -297,10 +313,12 @@ def cmd_stdout(cmd):
     return out.decode().rstrip()
 
 
-def get_rpm(is_debian, rpm_path, **kwargs):
+def get_rpm(is_debian, is_suse, rpm_path, **kwargs):
     rpm = None
     if is_debian:
         rpm = DebianRpm(rpm_path, **kwargs)
+    elif is_suse:
+        rpm = SuseRpm(rpm_path, **kwargs)
     else:
         rpm = FedoraRpm(rpm_path, **kwargs)
     return rpm
@@ -315,13 +333,13 @@ def sys_rpm_path():
 
 
 @pytest.fixture
-def sys_rpm(sys_rpm_path, is_debian):
-    return get_rpm(is_debian, sys_rpm_path)
+def sys_rpm(sys_rpm_path, is_debian, is_suse):
+    return get_rpm(is_debian, is_suse, sys_rpm_path)
 
 
 @pytest.fixture
-def local_rpm(is_debian):
-    return get_rpm(is_debian, '/usr/local/bin/rpm', check=False)
+def local_rpm(is_debian, is_suse):
+    return get_rpm(is_debian, is_suse, '/usr/local/bin/rpm', check=False)
 
 
 @pytest.fixture

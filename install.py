@@ -864,8 +864,8 @@ Install the {0} package.
         raise NotImplementedError('Implement this method.')
 
 
-class FedoraInstaller(Installer):
-    """A class to install RPM Python binding on Fedora base OS."""
+class NativeRpmInstaller(Installer):
+    """A class to install RPM python bindings on OS with native RPM."""
 
     def __init__(self, rpm_py_version, python, rpm, **kwargs):
         """Initialize this class."""
@@ -874,6 +874,52 @@ class FedoraInstaller(Installer):
         self.package_sys_name = 'RPM'
         self.package_popt_name = 'popt'
         self.package_popt_devel_name = 'popt-devel'
+
+    def _is_popt_devel_installed(self):
+        # overrided method.
+        return self.rpm.is_package_installed(self.package_popt_devel_name)
+
+    def _download_and_extract_popt_devel(self):
+        # overrided method.
+        self.rpm.download_and_extract(self.package_popt_devel_name)
+
+    def _is_package_downloadable(self):
+        # overrided method.
+        return self.rpm.is_downloadable()
+
+
+class SuseInstaller(NativeRpmInstaller):
+    """A class to install RPM Python bindings on SUSE based OS."""
+
+    def install_from_rpm_py_package(self):
+        """Run install from the RPM Python binding RPM package."""
+        message = '''
+Can not install RPM Python binding from the package,
+because these must be already present on the system.
+'''
+        raise RpmPyPackageNotFoundError(message)
+
+    def _is_popt_installed(self):
+        """Return whether a package provides 'popt'.
+
+        This *should* always return True on SUSE based distributions, as zypper
+        and libsolv depend on popt. Nevertheless, we rather check this via rpm.
+        """
+        try:
+            Cmd.sh_e('{0} --query --whatprovides {1} --quiet'
+                     .format(self.rpm.rpm_path, self.package_popt_name))
+            return True
+        except CmdError:
+            return False
+
+
+class FedoraInstaller(NativeRpmInstaller):
+    """A class to install RPM Python binding on Fedora base OS."""
+
+    def __init__(self, rpm_py_version, python, rpm, **kwargs):
+        """Initialize this class."""
+        NativeRpmInstaller.__init__(
+            self, rpm_py_version, python, rpm, **kwargs)
 
     def run(self):
         """Run install main logic."""
@@ -961,6 +1007,10 @@ Can you install the RPM package, and run this installer again?
         """
         return self.rpm.is_package_installed('rpm-devel')
 
+    def _is_popt_installed(self):
+        # overrided method.
+        return self.rpm.is_package_installed(self.package_popt_name)
+
     def _update_sym_src_dirs_conditionally(self, so_file_dict):
         # RPM is old version that does not have RPM rpm-build-libs.
         # All the needed so files are installed.
@@ -989,22 +1039,6 @@ Required RPM not installed: [rpm-build-libs],
 when a RPM download plugin not installed.
 '''
             raise InstallError(message)
-
-    def _is_package_downloadable(self):
-        # overrided method.
-        return self.rpm.is_downloadable()
-
-    def _is_popt_installed(self):
-        # overrided method.
-        return self.rpm.is_package_installed(self.package_popt_name)
-
-    def _is_popt_devel_installed(self):
-        # overrided method.
-        return self.rpm.is_package_installed(self.package_popt_devel_name)
-
-    def _download_and_extract_popt_devel(self):
-        # overrided method.
-        self.rpm.download_and_extract('popt-devel')
 
     def _predict_rpm_py_package_names(self):
         # Refer the rpm Fedora package
@@ -1197,32 +1231,46 @@ class Linux(object):
     def is_fedora(cls):
         """Check if the Linux is Fedora (RPM) or Debian base OS."""
         items = cls.os_release_items()
-        is_fedora_os = None
+
         # Check base OS by item ID.
         if 'ID' in items:
-            if items['ID'] in ['fedora', 'opensuse']:
-                is_fedora_os = True
-            elif items['ID'] in ['debian']:
-                is_fedora_os = False
+            if 'fedora' in items['ID']:
+                return True
         # Check derived OS by item ID_LIKE.
-        if is_fedora_os is None and 'ID_LIKE' in items:
+        if 'ID_LIKE' in items:
             if 'fedora' in items['ID_LIKE']:
-                is_fedora_os = True
-            elif 'opensuse' in items['ID_LIKE']:
-                is_fedora_os = True
-            elif 'debian' in items['ID_LIKE']:
-                is_fedora_os = False
+                return True
         # If the base os is still not detected, assume from installed files
         # and commands.
-        if is_fedora_os is None:
-            if os.path.isfile(cls.REDHAT_RELEASE_FILE):
-                is_fedora_os = True
-            elif Cmd.which('apt-get'):
-                is_fedora_os = False
-            else:
-                is_fedora_os = True
+        if os.path.isfile(cls.REDHAT_RELEASE_FILE):
+            return True
 
-        return is_fedora_os
+        return False
+
+    @classmethod
+    def is_suse(cls):
+        """Check if the Linux is SUSE based."""
+        items = cls.os_release_items()
+
+        # Check base OS by item ID.
+        if 'ID' in items:
+            for os_id in ('opensuse', 'sles'):
+                if os_id in items['ID']:
+                    return True
+
+        # Check derived OS by item ID_LIKE.
+        if 'ID_LIKE' in items:
+            for os_id in ('opensuse', 'suse'):
+                if os_id in items['ID_LIKE']:
+                    return True
+
+        # If the base os is still not detected, try to find zypper (but zypper
+        # can be also installed on Fedora, so only assume that this is SUSE
+        # based, if dnf is not present)
+        if Cmd.which('zypper') and Cmd.which('dnf') is None:
+            return True
+
+        return False
 
     @classmethod
     def get_instance(cls, python, rpm_path, **kwargs):
@@ -1230,6 +1278,8 @@ class Linux(object):
         linux = None
         if cls.is_fedora():
             linux = FedoraLinux(python, rpm_path, **kwargs)
+        elif cls.is_suse():
+            linux = SuseLinux(python, rpm_path, **kwargs)
         else:
             linux = DebianLinux(python, rpm_path, **kwargs)
         return linux
@@ -1309,6 +1359,33 @@ Install any of those.
     def create_installer(self, rpm_py_version, **kwargs):
         """Create Installer object."""
         return FedoraInstaller(rpm_py_version, self.python, self.rpm, **kwargs)
+
+
+class SuseLinux(Linux):
+    """A class for SUSE based Linux systems.
+
+    This includes openSUSE Tumbleweed, openSUSE Leap and SLE.
+    """
+
+    def __init__(self, python, rpm_path, **kwargs):
+        """Initialize this class."""
+        Linux.__init__(self, python, rpm_path, **kwargs)
+
+    def create_rpm(self, rpm_path):
+        """Return a initialized SuseRpm object."""
+        return SuseRpm(rpm_path)
+
+    def create_installer(self, rpm_py_version, **kwargs):
+        """Return a initialized SuseInstaller object."""
+        return SuseInstaller(rpm_py_version, self.python, self.rpm, **kwargs)
+
+    def verify_package_status(self):
+        """Verify the dependencies for building RPMs.
+
+        Does nothing as having RPM installed *should* be sufficient on SUSE
+        based distributions.
+        """
+        pass
 
 
 class DebianLinux(Linux):
@@ -1566,18 +1643,21 @@ Install the RPM package.
         """Return if rpm is downloadable by the package command."""
         raise NotImplementedError('Implement this method.')
 
+    def download_and_extract(self, package_name):
+        """Download and extract given package."""
+        raise NotImplementedError('Implement this method.')
 
-class FedoraRpm(Rpm):
-    """A class for RPM environment on Fedora base Linux."""
+    def download(self, package_name):
+        """Download given package."""
+        raise NotImplementedError('Implement this method.')
+
+
+class NativeRpm(Rpm):
+    """A class for a RPM environment for RPM based distributions."""
 
     def __init__(self, rpm_path, **kwargs):
         """Initialize this class."""
         Rpm.__init__(self, rpm_path, **kwargs)
-        is_dnf = True if Cmd.which('dnf') else False
-        self.is_dnf = is_dnf
-        # Overide arch with user space architecture, considering
-        # a case of that kernel and user space arhitecture are different.
-        self.arch = Cmd.sh_e_out('rpm -q rpm --qf "%{arch}"')
 
     @property
     def lib_dir(self):
@@ -1587,7 +1667,9 @@ class FedoraRpm(Rpm):
         """
         if not self._lib_dir:
             rpm_lib_dir = None
-            cmd = '{0} -ql rpm-libs'.format(self.rpm_path)
+            cmd = '{rpm_path} -ql {rpm_lib}'.format(
+                rpm_path=self.rpm_path, rpm_lib=self.rpm_lib_pkg_name
+            )
             out = Cmd.sh_e_out(cmd)
             lines = out.split('\n')
             for line in lines:
@@ -1597,8 +1679,40 @@ class FedoraRpm(Rpm):
             self._lib_dir = rpm_lib_dir
         return self._lib_dir
 
+    def download_and_extract(self, package_name):
+        """Download and extract given package."""
+        self.download(package_name)
+        self.extract(package_name)
+
+    def extract(self, package_name):
+        """Extract given package."""
+        for cmd in ['rpm2cpio', 'cpio']:
+            if not Cmd.which(cmd):
+                message = '{0} command not found. Install {0}.'.format(cmd)
+                raise InstallError(message)
+
+        pattern = '{0}*{1}.rpm'.format(package_name, self.arch)
+        rpm_files = Cmd.find('.', pattern)
+        if not rpm_files:
+            raise InstallError('PRM file not found.')
+        cmd = 'rpm2cpio {0} | cpio -idmv'.format(rpm_files[0])
+        Cmd.sh_e(cmd)
+
+
+class FedoraRpm(NativeRpm):
+    """A class for RPM environment on Fedora base Linux."""
+
+    def __init__(self, rpm_path, **kwargs):
+        """Initialize this class."""
+        NativeRpm.__init__(self, rpm_path, **kwargs)
+        self.rpm_lib_pkg_name = 'rpm-libs'
+        self.is_dnf = bool(Cmd.which('dnf'))
+        # Overide arch with user space architecture, considering
+        # a case of that kernel and user space arhitecture are different.
+        self.arch = Cmd.sh_e_out('rpm -q rpm --qf "%{arch}"')
+
     def has_composed_rpm_bulid_libs(self):
-        """Return if the sysmtem RPM has composed rpm-build-libs pacakage.
+        """Return if the system RPM has composed rpm-build-libs package.
 
         rpm-bulid-libs was created from rpm 4.9.0-0.beta1.1 on Fedora.
         https://src.fedoraproject.org/rpms/rpm/blob/master/f/rpm.spec
@@ -1636,11 +1750,6 @@ class FedoraRpm(Rpm):
                                  'yum-utils')
         return is_plugin_avaiable
 
-    def download_and_extract(self, package_name):
-        """Download and extract given package."""
-        self.download(package_name)
-        self.extract(package_name)
-
     def download(self, package_name):
         """Download given package."""
         if not package_name:
@@ -1665,19 +1774,87 @@ class FedoraRpm(Rpm):
                         )
             raise exc
 
-    def extract(self, package_name):
-        """Extract given package."""
-        for cmd in ['rpm2cpio', 'cpio']:
-            if not Cmd.which(cmd):
-                message = '{0} command not found. Install {0}.'.format(cmd)
-                raise InstallError(message)
 
-        pattern = '{0}*{1}.rpm'.format(package_name, self.arch)
-        rpm_files = Cmd.find('.', pattern)
-        if not rpm_files:
-            raise InstallError('RPM file not found.')
-        cmd = 'rpm2cpio {0} | cpio -idmv'.format(rpm_files[0])
-        Cmd.sh_e(cmd)
+class SuseRpm(NativeRpm):
+    """A class for a RPM environment for SUSE based distributions."""
+
+    def __init__(self, rpm_path, **kwargs):
+        """Initialize this class and set the necessary constants."""
+        NativeRpm.__init__(self, rpm_path, **kwargs)
+        self.rpm_lib_pkg_name = 'rpm'
+
+    @property
+    def package_cmd(self):
+        """Return package manager's command name.
+
+        Always returns zypper.
+        """
+        return 'zypper'
+
+    def is_downloadable(self):
+        """Return if rpm is downloadable by the package manager."""
+        return True
+
+    def download(self, package_name):
+        """Download given package."""
+        if not package_name:
+            ValueError('package_name required.')
+
+        try:
+            Cmd.sh_e("zypper --non-interactive -v install -f "
+                     "--download-only {package_name}"
+                     .format(package_name=package_name),
+                     stderr=subprocess.PIPE)
+
+            matches = []
+            for dirpath, _, filenames in os.walk("/var/cache/zypp/packages/"):
+                for filename in filenames:
+                    match = re.match(
+                        r'^' + package_name +
+                        r'-(?P<version>\d+(\.\d+)*)-(?P<release>\S+(\.\d+)*)'
+                        r'\.(?P<arch>\S+)\.rpm',
+                        filename)
+                    if match:
+                        matches.append(
+                            (os.path.join(dirpath, filename), match))
+
+            if not matches:
+                raise InstallError(
+                    "Could not find downloaded package {package_name} in "
+                    "/var/cache/zypp/packages"
+                    .format(package_name=package_name))
+
+            most_recent = matches[0]
+
+            for candidate in matches[1:]:
+                most_recent_version = Utils.version_str2tuple(
+                    most_recent[1].group('version'))
+                candidate_version = Utils.version_str2tuple(
+                    candidate[1].group('version'))
+
+                most_recent_release = Utils.version_str2tuple(
+                    most_recent[1].group('release'))
+                candidate_release = Utils.version_str2tuple(
+                    candidate[1].group('release'))
+                if Utils.version_greater(
+                        candidate_version, most_recent_version) or \
+                   (Utils.version_equal(
+                       candidate_version, most_recent_version) and
+                    Utils.version_greater(
+                        candidate_release, most_recent_release)):
+                    most_recent = candidate
+
+            os.rename(most_recent[0], "./" + os.path.basename(most_recent[0]))
+
+        except CmdError as exc:
+            for line in exc.stderr.split('\n'):
+                if re.match(r'^Package \'[\S]+\' not found', line):
+                    raise RemoteFileNotFoundError(
+                        'Package {0} not found on remote'.format(
+                            package_name
+                        )
+                    )
+            raise exc
 
 
 class DebianRpm(Rpm):
@@ -1700,17 +1877,9 @@ class DebianRpm(Rpm):
     def is_downloadable(self):
         """Return if rpm is downloadable by the package command.
 
-        Always return false.
+        Always returns false.
         """
         return False
-
-    def download_and_extract(self, package_name):
-        """Download and extract given package."""
-        raise NotImplementedError('Not supported method.')
-
-    def download(self, package_name):
-        """Download given package."""
-        raise NotImplementedError('Not supported method.')
 
 
 class InstallError(Exception):
@@ -1944,14 +2113,14 @@ class Cmd(object):
 class Utils(object):
     """A general utility class."""
 
-    @classmethod
-    def version_str2tuple(cls, version_str):
-        """Version info.
+    @staticmethod
+    def version_str2tuple(version_str):
+        """Convert a version string to a tuple.
 
         tuple object. ex. ('4', '14', '0', 'rc1')
         """
         if not isinstance(version_str, str):
-            ValueError('version_str invalid instance.')
+            TypeError('version_str must be a string.')
         version_info_list = re.findall(r'[0-9a-zA-Z]+', version_str)
 
         def convert_to_int(string):
@@ -1962,9 +2131,29 @@ class Utils(object):
                 value = string
             return value
 
-        version_info_list = [convert_to_int(s) for s in version_info_list]
+        version_info_list = (convert_to_int(s) for s in version_info_list)
 
         return tuple(version_info_list)
+
+    @staticmethod
+    def version_greater(version_1, version_2):
+        """Compare whether version_1 is greater than version_2."""
+        return Utils._version_cmp(lambda v1, v2: v1 > v2)(version_1, version_2)
+
+    @staticmethod
+    def version_equal(version_1, version_2):
+        """Compare whether version_1 is equal to version_2."""
+        return \
+            Utils._version_cmp(lambda v1, v2: v1 == v2)(version_1, version_2)
+
+    @staticmethod
+    def _version_cmp(operation):
+        def cmp_method(version_1, version_2):
+            for ver_comp_1, ver_comp_2 in zip(version_1, version_2):
+                if operation(ver_comp_1, ver_comp_2):
+                    return True
+            return False
+        return cmp_method
 
 
 class Log(object):

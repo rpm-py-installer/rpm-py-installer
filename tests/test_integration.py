@@ -53,6 +53,9 @@ def test_install_failed_on_sys_python(install_script_path, python_path):
     'No env variables',
     'RPM_PY_INSTALL_BIN: true',
 ])
+@pytest.mark.skipif(pytest.helpers.helper_is_suse() and
+                    not pytest.helpers.is_root_user(),
+                    reason="Can only run zypper as root.")
 def test_install_and_uninstall_are_ok_on_non_sys_python(
     install_script_path, env
 ):
@@ -80,7 +83,7 @@ def test_install_and_uninstall_are_ok_on_non_sys_python(
 ])
 @pytest.mark.skipif(not pytest.helpers.is_root_user(),
                     reason='needs root authority.')
-@pytest.mark.skipif(pytest.helpers.helper_is_debian(),
+@pytest.mark.skipif(not pytest.helpers.helper_is_fedora_based(),
                     reason='Only Linux Fedora.')
 def test_install_and_uninstall_are_ok_on_sys_status(
     install_script_path, is_dnf, pkg_cmd,
