@@ -36,3 +36,5 @@ script: |
 branches:
   only:
     - master
+    # Enable "pull/*" branches to run Travis CI on forked repository.
+    - /^pull\//
