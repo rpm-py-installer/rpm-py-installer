@@ -2,11 +2,10 @@
 
 We do not manage release notes.
 
-However you can see a kind of release notes by below `git` command on master branch.
+As a workaround, you can create a simple substitute for a changelog via `git`
+from the master branch:
 
-For example.
-
-```
+``` ShellSession
 $ git clone REPO_URL
 
 $ cd rpm-py-installer

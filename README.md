@@ -5,17 +5,17 @@
 
 `rpm-py-installer` is to enable [the RPM Python binding](https://github.com/rpm-software-management/rpm/tree/master/python) in any Python environment.
 
-The environment is non-system Python, a source compiled Python, a Python on virtualenv, pyenv environment and etc.
+The environment can be a non-system Python, a source compiled Python, a Python in a virtualenv, pyenv environment, etc.
 
-It installs same version's Python binding with the system RPM safely.
+It installs the Python binding matching the version of the system RPM in a safe manner.
 
 ## Getting started
 
-`rpm-py-installer` provides several ways to install RPM Python binding.
+`rpm-py-installer` provides several ways to install the RPM Python binding.
 
-### Install by pip
+### Install via pip
 
-```
+``` ShellSession
 $ rpm --version
 RPM version 4.13.0.1
 
@@ -34,9 +34,9 @@ setuptools 28.8.0
 $ pip install rpm-py-installer
 ```
 
-`rpm-python` or `rpm` package for new version is installed with `rpm-py-installer` package.
+`rpm-python` or the `rpm` package for the new version is installed via the `rpm-py-installer` package.
 
-```
+``` ShellSession
 $ pip list
 Package          Version
 ---------------- --------
@@ -49,11 +49,11 @@ $ python -c "import rpm; print(rpm.__version__)"
 4.13.0.1
 ```
 
-### Install as a required dependency for your package
+### Install as a required dependency of your package
 
 Add `rpm-py-installer` to your package's `setup.py` `install_requires`.
 
-```
+``` ShellSession
 $ pwd
 /path/to/your_project
 
@@ -75,18 +75,18 @@ setup(
 Upload your package to PyPI.
 And run `pip install`.
 
-```
+``` ShellSession
 $ pip install your_package
 ```
 
-Note that if you would provide your project as a RPM package, please consider to apply a conditional import to your `setup.py` not to provide `rpm-py-installer` in the environment. Refer [the setup.py sample](/tests/sample/setup.py) and Users Guide FAQ Q6.
+Note that if you would provide your project as a RPM package, please consider to apply a conditional import to your `setup.py` not to provide `rpm-py-installer` in the environment. Refer to [the setup.py sample](/tests/sample/setup.py) and the User's Guide FAQ Q6.
 
 
-### Install directly without rpm-py-installer package
+### Install the rpm Python binding directly
 
-If you want to install the Python binding without `rpm-py-installer` package.
+If you want to install the Python binding without explicitly installing the `rpm-py-installer` package, proceed as follows:
 
-```
+``` ShellSession
 $ pip list
 Package    Version
 ---------- -------
@@ -105,25 +105,25 @@ setuptools       28.8.0
 
 ## Usage
 
-See [Users guide](docs/users_guide.md).
+See [User's guide](docs/users_guide.md).
 
 ## Contributing
 
-We encourage you to contribute to `rpm-py-installer`! Please check out the [Contributing guide](CONTRIBUTING.md) for guidelines about how to proceed.
+We encourage you to contribute to `rpm-py-installer`! Please check out the [Contributing guide](CONTRIBUTING.md) for guidelines how to proceed.
 
-See [Developers guide](docs/developers_guide.md) for detail.
+See the [Developer's guide](docs/developers_guide.md) for further details.
 
 ## Supported environments
 
-`.travis.yml` shows current supported environments.
+`.travis.yml` shows the currently supported environments.
 
 * Fedora
 * CentOS (>= 6)
 * Ubuntu (>= trusty)
+* openSUSE Leap (>= 15.0) and Tumbleweed
 
-Below are currently not supported. To be supported, we need to add the CI cases.
+The following environments are currently unsupported. To be supported, we need to add tests to the CI.
 
-* SUSE (ticket [#173](https://github.com/junaruga/rpm-py-installer/issues/173))
 * Mac OSX (ticket [#155](https://github.com/junaruga/rpm-py-installer/issues/155))
 
 ## Communities using rpm-py-installer
