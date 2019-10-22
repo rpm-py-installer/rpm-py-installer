@@ -1,11 +1,37 @@
 dist: xenial
 language: bash
-services: docker
 git:
   quiet: true
 env:
   global:
     - TARGETS=""
+    - DOCKER=podman
+
+# Definitions using YAML's anchor (&) and reference (*).
+.com.github.junaruga.rpm-py-installer.definitions:
+  - &podman
+    language: python
+    python: 3.6
+    addons:
+      apt:
+        update: true
+        sources:
+          - sourceline: "ppa:projectatomic/ppa"
+        packages:
+          - podman
+    before_install:
+      # Create /etc/containers/registries.conf, as podman does not install it.
+      # https://github.com/containers/libpod/issues/3679
+      - sudo mkdir -p /etc/containers
+      - echo -e "[registries.search]\nregistries = ['docker.io']" | sudo tee /etc/containers/registries.conf
+      # Install podman-compose
+      - sudo pip3 install podman-compose
+      - command -v podman-compose
+  - &docker
+    addons:
+    services: docker
+    before_install:
+
 matrix:
   include:
     # Run multi arch cases on only cron mode at first, as it takes 30+ minutes.
@@ -13,7 +39,8 @@ matrix:
       env: SERVICE=fedora30_aarch64 TARGETS="qemu build"
       if: type = cron
     - env: SERVICE=fedora30
-    - env: SERVICE=fedora29
+    - env: SERVICE=fedora29 DOCKER=docker
+      <<: *docker
     - env: SERVICE=fedora28
     - env: SERVICE=fedora27
     - env: SERVICE=fedora26
@@ -28,10 +55,11 @@ matrix:
   allow_failures:
     - env: SERVICE=fedora_rawhide
   fast_finish: true
+<<: *podman
 install: |
-  travis_retry make ${TARGETS} SERVICE=${SERVICE}
+  travis_retry make ${TARGETS} SERVICE=${SERVICE} DOCKER=${DOCKER}
 script: |
-  make test SERVICE=${SERVICE}
+  make test SERVICE=${SERVICE} DOCKER=${DOCKER}
 branches:
   only:
     - master
