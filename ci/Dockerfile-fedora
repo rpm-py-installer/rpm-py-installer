@@ -12,6 +12,10 @@ COPY test-requirements.txt .
 RUN uname -a
 RUN rpm -q rpm
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf
+# Disable modular repositories to save a running time of "dnf upgrade"
+# if they exists.
+RUN ls -1 /etc/yum.repos.d/*.repo
+RUN sed -i '/^enabled=1$/ s/1/0/' /etc/yum.repos.d/*-modular.repo || true
 # When kernel and user space architecture is different,
 # Need to use "--forcearch <user space arch>" option.
 RUN ARCH=$(rpm -q rpm --qf "%{arch}") \
