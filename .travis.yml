@@ -9,9 +9,9 @@ env:
 matrix:
   include:
     # Run multi arch cases on only cron mode at first, as it takes 30+ minutes.
-    - name: fedora30_aarch64
-      env: SERVICE=fedora30_aarch64 TARGETS="qemu build"
-      if: type = cron
+    - name: fedora30_s390x
+      env: SERVICE=fedora30_s390x TARGETS="qemu build"
+      # if: type = cron
     - env: SERVICE=fedora30
     - env: SERVICE=fedora29
     - env: SERVICE=fedora28
