@@ -12,13 +12,13 @@ services:
     environment:
       TOXENV: ${TOXENV-lint-py3,lint-py2,py37-cov,py27-cov}
     command: tox
-  fedora30_aarch64:
-    container_name: fedora30_aarch64
+  fedora30_s390x:
+    container_name: fedora30_s390x
     build:
       context: .
       dockerfile: ci/Dockerfile-fedora
       args:
-        CONTAINER_IMAGE: arm64v8/fedora:30
+        CONTAINER_IMAGE: s390x/fedora:30
     environment:
       TOXENV: ${TOXENV-py37}
     command: tox
