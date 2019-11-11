@@ -11,7 +11,7 @@ services:
         LINT: "true"
     environment:
       TOXENV: ${TOXENV-lint-py3,lint-py2,py37-cov,py27-cov}
-    command: tox
+    command: ci/run_tests.sh
   fedora30_s390x:
     container_name: fedora30_s390x
     build:
@@ -21,7 +21,7 @@ services:
         CONTAINER_IMAGE: s390x/fedora:30
     environment:
       TOXENV: ${TOXENV-py37}
-    command: tox
+    command: ci/run_tests.sh
   fedora29:
     container_name: fedora29
     build:
@@ -42,7 +42,7 @@ services:
         CONTAINER_IMAGE: fedora:28
     environment:
       TOXENV: ${TOXENV-py36}
-    command: tox
+    command: ci/run_tests.sh
   fedora27:
     container_name: fedora27
     build:
@@ -52,7 +52,7 @@ services:
         CONTAINER_IMAGE: fedora:27
     environment:
       TOXENV: ${TOXENV-py36}
-    command: tox
+    command: ci/run_tests.sh
   fedora26:
     container_name: fedora26
     build:
@@ -62,7 +62,7 @@ services:
         CONTAINER_IMAGE: fedora:26
     environment:
       TOXENV: ${TOXENV-py35,py26}
-    command: tox
+    command: ci/run_tests.sh
   fedora_rawhide:
     container_name: fedora_rawhide
     build:
@@ -72,7 +72,7 @@ services:
         CONTAINER_IMAGE: fedora:rawhide
     environment:
       TOXENV: ${TOXENV-py37,py27}
-    command: tox
+    command: ci/run_tests.sh
   # Integration
   intg:
     container_name: intg
@@ -81,7 +81,7 @@ services:
       dockerfile: ci/Dockerfile-fedora
     environment:
       TOXENV: ${TOXENV-intg}
-    command: tox
+    command: ci/run_tests.sh
   # https://hub.docker.com/_/centos/
   centos7:
     container_name: centos7
@@ -90,7 +90,7 @@ services:
       dockerfile: ci/Dockerfile-centos.7
     environment:
       TOXENV: ${TOXENV-py36-cov,py34-cov,py27-cov}
-    command: tox
+    command: ci/run_tests.sh
   centos6:
     container_name: centos6
     build:
@@ -98,7 +98,7 @@ services:
       dockerfile: ci/Dockerfile-centos.6
     environment:
       TOXENV: ${TOXENV-py27,py26}
-    command: tox
+    command: ci/run_tests.sh
   # https://hub.docker.com/_/ubuntu/
   ubuntu_bionic:
     container_name: ubuntu_bionic
@@ -107,7 +107,7 @@ services:
       dockerfile: ci/Dockerfile-ubuntu.bionic
     environment:
       TOXENV: ${TOXENV-py36-cov,py27-cov}
-    command: tox
+    command: ci/run_tests.sh
   ubuntu_trusty:
     container_name: ubuntu_trusy
     build:
@@ -115,7 +115,7 @@ services:
       dockerfile: ci/Dockerfile-ubuntu.trusty
     environment:
       TOXENV: ${TOXENV-py34,py27}
-    command: tox
+    command: ci/run_tests.sh
   # https://hub.docker.com/r/opensuse/tumbleweed
   opensuse_tumbleweed:
     container_name: opensuse_tumbleweed
@@ -126,7 +126,7 @@ services:
         CONTAINER_IMAGE: opensuse/tumbleweed
     environment:
       TOXENV: ${TOXENV-py37-cov,py27-cov}
-    command: tox
+    command: ci/run_tests.sh
   # https://hub.docker.com/r/opensuse/leap
   opensuse_leap_15:
     container_name: opensuse_leap_15
@@ -137,7 +137,7 @@ services:
         CONTAINER_IMAGE: opensuse/leap:15
     environment:
       TOXENV: ${TOXENV-py36-cov,py27-cov}
-    command: tox
+    command: ci/run_tests.sh
   qemu:
     container_name: qemu
     privileged: true
