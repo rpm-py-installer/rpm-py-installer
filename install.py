@@ -1944,7 +1944,9 @@ class Cmd(object):
         # * LC_ALL=C.UTF-8 shows a warning
         #   "cannot change locale (*) No such file or directory" on CentOS7.
         # * LC_ALL=en_US.UTF-8 shows the warning on Fedora 30.
-        env['LC_ALL'] = ''
+        env['LC_ALL'] = 'C'
+        if 'LANGUAGE' in env:
+            del env['LANGUAGE']
         if 'env' in kwargs:
             env.update(kwargs['env'])
         cmd_kwargs['env'] = env
