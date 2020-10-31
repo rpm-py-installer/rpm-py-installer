@@ -14,8 +14,11 @@ matrix:
       if: type = cron
     - env: SERVICE=fedora30
     - env: SERVICE=fedora29
+      if: type = cron
     - env: SERVICE=fedora28
+      if: type = cron
     - env: SERVICE=fedora27
+      if: type = cron
     - env: SERVICE=fedora26
     - env: SERVICE=fedora_rawhide
     - env: SERVICE=intg
