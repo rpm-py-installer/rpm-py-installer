@@ -125,7 +125,7 @@ services:
       args:
         CONTAINER_IMAGE: opensuse/tumbleweed
     environment:
-      TOXENV: ${TOXENV-py37-cov,py27-cov}
+      TOXENV: ${TOXENV-py3-cov}
     command: tox
   # https://hub.docker.com/r/opensuse/leap
   opensuse_leap_15:
