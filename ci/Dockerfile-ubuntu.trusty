@@ -1,7 +1,7 @@
 FROM ubuntu:trusty
 
 WORKDIR /build
-COPY tox-requirements.txt .
+COPY tox-py34-requirements.txt .
 
 RUN apt-get update
 RUN apt-get install -y \
@@ -14,4 +14,4 @@ RUN apt-get install -y \
   # -- RPM packages required for a specified case --
   git
 RUN apt-get clean all
-RUN python3 -m pip install --upgrade -rtox-requirements.txt
+RUN python3 -m pip install --upgrade -rtox-py34-requirements.txt
