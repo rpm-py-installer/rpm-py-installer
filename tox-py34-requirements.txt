@@ -1,0 +1,15 @@
+# pip 19.2 dropped Python 3.4 support.
+# https://discuss.python.org/t/pip-19-2-is-now-available/2022
+pip<19.2
+# setuptools 44.0.0 dropped Python 3.4 support.
+# https://github.com/pypa/setuptools/blob/master/CHANGES.rst#v4400
+setuptools<44.0.0
+# For Python 2.6.
+# https://github.com/pypa/virtualenv/commit/73404cb
+virtualenv<16.0.0
+# For Python 2.6.
+# Upstream changed to use "python -m pip", but Pytyon 2.6 does not support it.
+# https://github.com/tox-dev/tox/commit/e057755
+tox<3.2
+# tox on Ubuntu trusty Python 3.4 case needs pathlib2 to run.
+pathlib2
