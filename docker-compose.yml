@@ -71,7 +71,7 @@ services:
       args:
         CONTAINER_IMAGE: fedora:rawhide
     environment:
-      TOXENV: ${TOXENV-py37,py27}
+      TOXENV: ${TOXENV-py37}
     command: tox
   # Integration
   intg:
