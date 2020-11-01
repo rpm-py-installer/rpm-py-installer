@@ -53,41 +53,47 @@ This allows you to verify that your changes pass the CI, before submitting a pul
 
 ### Working in a local environment with containers for testing
 
-You can also run the test on your local machine without Travis CI. See `.travis.yml`, `Makefile` and `docker-compose.yml`.
+You can also run the test on your local machine without Travis CI. The main `make` argument is `DOCKERFILE`, `IMAGE` and `TOXENV`. See `.travis.yml` and `Makefile` for detail.
 
-Run the following command to build the service's environment (it downloads and builds the container environments):
+Run the following command to build the container environment:
 
 ``` ShellSession
-$ make SERVICE=<SERVICE>
+$ make DOCKERFILE=<DOCKERFILE> IMAGE=<IMAGE> TOXENV=<TOXENV>
 ```
 
-For example to build Fedora Rawhide case:
+For example to build Fedora rawhide case:
 
 ``` ShellSession
-$ make SERVICE=fedora_rawhide
+$ make DOCKERFILE="ci/Dockerfile-fedora" IMAGE="fedora:rawhide" TOXENV="py3"
+```
+
+As the above values are the default values of the `Makefile`, the following command is equivalent.
+
+```
+$ make
 ```
 
 Run the tests in the container via:
 
 ``` ShellSession
-$ make test SERVICE=<SERVICE>
+$ make test IMAGE=<IMAGE>
 ```
 
 Please note that the source directory is volume mounted inside the container.
 When running `make test`, it updates the working files with root permission.
 Sorry for inconveniences, the simplest way to clean the files is to run `sudo git clean -fdx` in the host's directory.
 
-Use the commands below to login into the service's container environment:
+Use the commands below to login into the case's container environment:
 
 ``` ShellSession
-$ make login SERVICE=<SERVICE>
+$ make login IMAGE=<IMAGE>
 ```
 
 ``` ShellSession
-$ make login SERVICE=fedora_rawhide
+$ make login IMAGE=fedora:rawhide
 docker run -it rpm-py-installer_fedora_rawhide bash
 TOXENV:
-[root@a1e651c7b69b build]#
+[root@a1e651c7b69b work]#
 ```
 
 ### Working in a local environment without containers for testing
