@@ -8,32 +8,51 @@ env:
     - TARGETS=""
 matrix:
   include:
+    # https://hub.docker.com/_/fedora/
     # Run multi arch cases on only cron mode at first, as it takes 30+ minutes.
     - name: fedora30_s390x
-      env: SERVICE=fedora30_s390x TARGETS="qemu build"
+      env: IMAGE="s390x/fedora:30" TOXENV="py37" TARGETS="qemu build"
       if: type = cron
-    - env: SERVICE=fedora30
-    - env: SERVICE=fedora29
+    - name: fedora30
+      env: IMAGE="fedora:30" TOXENV="lint-py3,lint-py2,py37-cov,py27-cov" TEST_LINT="true"
+    - name: fedora29
+      env: IMAGE="fedora:29"
       if: type = cron
-    - env: SERVICE=fedora28
-    - env: SERVICE=fedora27
+    - name: fedora28
+      env: IMAGE="fedora:28" TOXENV="py36"
+      script: make no-network-test
+    - name: fedora27
+      env: IMAGE="fedora:27" TOXENV="py36"
       if: type = cron
-    - env: SERVICE=fedora26
-    - env: SERVICE=fedora_rawhide
-    - env: SERVICE=intg
-    - env: SERVICE=centos7
-    - env: SERVICE=centos6
-    - env: SERVICE=ubuntu_bionic
-    - env: SERVICE=ubuntu_trusty
-    - env: SERVICE=opensuse_tumbleweed
-    - env: SERVICE=opensuse_leap_15
+    - name: fedora26
+      env: IMAGE="fedora:26" TOXENV="py35,py26"
+    - name: fedora_rawhide
+      env: TOXENV="py37"
+    - name: intg
+      env: TOXENV="intg"
+    # https://hub.docker.com/_/centos/
+    - name: centos7
+      env: DOCKERFILE="ci/Dockerfile-centos.7" TOXENV="py36-cov,py34-cov,py27-cov"
+    - name: centos6
+      env: DOCKERFILE="ci/Dockerfile-centos.6" TOXENV="py27,py26"
+    # https://hub.docker.com/_/ubuntu/
+    - name: ubuntu_bionic
+      env: DOCKERFILE="ci/Dockerfile-ubuntu.bionic" TOXENV="py36-cov,py27-cov"
+    - name: ubuntu_trusty
+      env: DOCKERFILE="ci/Dockerfile-ubuntu.trusty" TOXENV="py34,py27"
+    # https://hub.docker.com/r/opensuse/tumbleweed
+    - name: opensuse_tumbleweed
+      env: DOCKERFILE="ci/Dockerfile-opensuse" IMAGE="opensuse/tumbleweed" TOXENV="py3-cov"
+    # https://hub.docker.com/r/opensuse/leap
+    - name: opensuse_leap_15
+      env: DOCKERFILE="ci/Dockerfile-opensuse" IMAGE="opensuse/leap:15" TOXENV="py36-cov,py27-cov"
   allow_failures:
-    - env: SERVICE=fedora_rawhide
+    - name: fedora_rawhide
   fast_finish: true
 install: |
-  travis_retry make ${TARGETS} SERVICE=${SERVICE}
+  travis_retry make ${TARGETS}
 script: |
-  make test SERVICE=${SERVICE}
+  make test
 branches:
   only:
     - master
