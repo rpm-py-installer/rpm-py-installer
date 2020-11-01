@@ -1,7 +1,6 @@
 # RPM Python binding Installer
 [![PyPI](https://img.shields.io/pypi/v/rpm-py-installer.svg)](https://pypi.python.org/pypi/rpm-py-installer)
 [![Travis Build Status](https://travis-ci.org/junaruga/rpm-py-installer.svg?branch=master)](https://travis-ci.org/junaruga/rpm-py-installer)
-[![Shippable Build Status](https://api.shippable.com/projects/5bb13c0997da11060049f4ad/badge?branch=master)](https://app.shippable.com/github/junaruga/rpm-py-installer/runs?branchName=master)
 
 `rpm-py-installer` is to enable [the RPM Python binding](https://github.com/rpm-software-management/rpm/tree/master/python) in any Python environment.
 
