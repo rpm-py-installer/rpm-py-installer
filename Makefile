@@ -22,13 +22,13 @@ build :
 
 # Ex. make test IMAGE=fedora:28 TOXENV=py3
 test :
-	docker run --rm -v "$(CWD):/work" -w /work -e TOXENV="${TOXENV}" \
+	docker run --rm -t -v "$(CWD):/work" -w /work -e TOXENV="${TOXENV}" \
 		"$(TAG)" "$(TEST_CMD)"
 .PHONY : test
 
 # Ex. make login IMAGE=fedora:28
 login :
-	docker run -v "$(CWD):/work" -w /work -it $(TAG) bash
+	docker run -t -v "$(CWD):/work" -w /work -it $(TAG) bash
 .PHONY : login
 
 # Ex. make build-no-volume IMAGE=fedora:28
@@ -56,13 +56,13 @@ test-no-volume :
 
 # Test on no network environment for the downstream build environment.
 no-network-test :
-	docker run --rm -v "$(CWD):/work" -w /work -e TOXENV="${TOXENV}" \
+	docker run -t --rm -v "$(CWD):/work" -w /work -e TOXENV="${TOXENV}" \
 		--network=none \
-		"$(TAG)" pytest -m 'not network'
+		"$(TAG)" pytest -m no_network
 .PHONY : no-network-test
 
 qemu :
-	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+	docker run --rm -t --privileged multiarch/qemu-user-static --reset -p yes
 .PHONY : qemu
 
 clean :
