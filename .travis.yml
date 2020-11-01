@@ -5,6 +5,7 @@ git:
   quiet: true
 env:
   global:
+    - DOCKER="docker"
     - TARGETS=""
 matrix:
   include:
@@ -19,7 +20,7 @@ matrix:
       env: IMAGE="fedora:29"
       if: type = cron
     - name: fedora28
-      env: IMAGE="fedora:28" TOXENV="py36"
+      env: DOCKER="podman" IMAGE="fedora:28" TOXENV="py36"
       script: make no-network-test
     - name: fedora27
       env: IMAGE="fedora:27" TOXENV="py36"
@@ -49,6 +50,11 @@ matrix:
   allow_failures:
     - name: fedora_rawhide
   fast_finish: true
+before_install:
+  - |
+    if [ "${DOCKER}" = "podman" ]; then
+      ci/install_podman_on_ubuntu.sh
+    fi
 install: |
   travis_retry make ${TARGETS}
 script: |

@@ -27,7 +27,7 @@ for FILE in ${FILES}; do
         echo "${FILE}: NG at sh -n"
         continue
     fi
-    if ! BASHATE_RESULT=$(bashate "${FILE}") || \
+    if ! BASHATE_RESULT=$(bashate --ignore E006 "${FILE}") || \
         [ "${BASHATE_RESULT}" != "" ]; then
         STATUS=1
         echo "${FILE}: NG at bashate"
