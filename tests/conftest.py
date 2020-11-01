@@ -70,6 +70,10 @@ def pytest_collection_modifyitems(items):
             pass
         else:
             item.add_marker(pytest.mark.unit)
+        if item.get_marker('network') is not None:
+            pass
+        else:
+            item.add_marker(pytest.mark.no_network)
 
 
 @pytest.fixture

@@ -41,7 +41,7 @@ test-no-volume :
 .PHONY : test-no-volume
 
 no-network-test :
-	pytest -m 'not network'
+	pytest -m no_network
 .PHONY : no-network-test
 
 qemu :
