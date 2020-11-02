@@ -1,5 +1,10 @@
 # Arguments
 DOCKER ?= podman
+# Use the container engine's volume bind mount?
+# true: It synchronizes the source between host and container.
+#       It's good in case of developing, modifying the code on host, testing in container.
+# false: It's good to use on CIs that do not support the volume mount.
+DOCKER_VOLUME ?= true
 DOCKERFILE ?= ci/Dockerfile-fedora
 # Container image
 IMAGE ?= fedora:rawhide
@@ -14,46 +19,52 @@ default : build
 .PHONY : default
 
 # Ex. make build IMAGE=fedora:28
-build :
+build : build-volume-$(DOCKER_VOLUME)
+.PHONY : build
+
+# Ex. make test IMAGE=fedora:28 TOXENV=py3
+test : test-volume-$(DOCKER_VOLUME)
+.PHONY : test
+
+build-volume-true :
 	"$(DOCKER)" build --rm -t "$(TAG)" -f "$(DOCKERFILE)" \
 		--build-arg CONTAINER_IMAGE=$(IMAGE) \
 		--build-arg LINT="$(TEST_LINT)" \
 		.
-.PHONY : build
+.PHONY : build-volume-true
 
-# Ex. make test IMAGE=fedora:28 TOXENV=py3
-test :
+test-volume-true :
 	"$(DOCKER)" run --rm -t -v "$(CWD):/work:Z" -w /work -e TOXENV="${TOXENV}" \
 		"$(TAG)" "$(TEST_CMD)"
-.PHONY : test
+.PHONY : test-volume-true
 
 # Ex. make login IMAGE=fedora:28
 login :
 	"$(DOCKER)" run -t -v "$(CWD):/work:Z" -w /work -it $(TAG) bash
 .PHONY : login
 
-# Ex. make build-no-volume IMAGE=fedora:28
-build-no-volume :
+# Ex. make build-volume-false IMAGE=fedora:28
+build-volume-false :
 	"$(DOCKER)" build --rm \
-		-t $(TAG) \
+		-t $(TAG)_tmp \
 		-f ci/Dockerfile-fedora \
 		--build-arg CONTAINER_IMAGE=$(IMAGE) \
 		.
 	"$(DOCKER)" build --rm \
-		-t $(TAG)_test \
+		-t $(TAG) \
 		-f ci/Dockerfile-test \
-		--build-arg CONTAINER_IMAGE=$(TAG) \
+		--build-arg CONTAINER_IMAGE=$(TAG)_tmp \
 		.
-.PHONY : build-no-volume
+.PHONY : build-volume-false
 
-# Ex. make test-no-volume IMAGE=fedora:28 TOXENV=py3
-test-no-volume :
+# Ex. make test-volume-false IMAGE=fedora:28 TOXENV=py3
+test-volume-false :
 	"$(DOCKER)" run --rm \
 		-t \
 		-e TOXENV=$(TOXENV) \
-		$(TAG)_test \
+		$(TAG) \
 		$(TEST_CMD)
-.PHONY : test-no-volume
+.PHONY : test-volume-false
 
 # Test on no network environment for the downstream build environment.
 no-network-test :
