@@ -1297,6 +1297,13 @@ class Linux(object):
         if not sys.platform.startswith('linux'):
             raise InstallError('Supported platform is Linux only.')
 
+        """RPM 4.16.0 dropped the Python 2 compatibility.
+        https://github.com/rpm-software-management/rpm/commit/aa71073
+        """
+        if self.rpm.version_info >= (4, 16) and sys.version_info < (3, 0):
+            message = 'RPM version >= 4.16 does not support Python 2.'
+            raise InstallError(message)
+
         if self.python.is_system_python():
             if self.python.is_python_binding_installed():
                 message = '''
