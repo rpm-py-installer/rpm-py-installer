@@ -26,7 +26,7 @@ matrix:
       env: IMAGE="fedora:27" TOXENV="py36"
       if: type = cron
     - name: fedora26
-      env: IMAGE="fedora:26" TOXENV="py35,py26"
+      env: DOCKER_VOLUME="false" IMAGE="fedora:26" TOXENV="py35,py26"
     - name: fedora_rawhide
       env: TOXENV="py37"
     - name: intg
