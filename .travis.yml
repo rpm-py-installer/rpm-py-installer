@@ -60,11 +60,7 @@ install: |
 script: |
   make test
 branches:
-  only:
-    - master
-    - /^pull\//
-branches:
   except:
     # Enable branches except the working in progress branch or
-    # current pull-request feature/ci-podman and feature/ci-centos.
-    - /^(wip\/|feature\/(ci-podman|ci-centos5))/
+    # current pull-request feature/ci-centos.
+    - /^(wip\/|feature\/ci-centos5)/
