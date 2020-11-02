@@ -9,26 +9,21 @@ env:
     - TARGETS=""
 matrix:
   include:
+    # https://fedoraproject.org/wiki/Releases
     # https://hub.docker.com/_/fedora/
     # Run multi arch cases on only cron mode at first, as it takes 30+ minutes.
-    - name: fedora30_s390x
-      env: IMAGE="s390x/fedora:30" TOXENV="py37" TARGETS="qemu build"
+    - name: fedora33_s390x
+      env: IMAGE="s390x/fedora:33" TOXENV="py3" TARGETS="qemu build"
       if: type = cron
-    - name: fedora30
-      env: IMAGE="fedora:30" TOXENV="lint-py3,lint-py2,py37-cov,py27-cov" TEST_LINT="true"
-    - name: fedora29
-      env: IMAGE="fedora:29"
-      if: type = cron
-    - name: fedora28
-      env: DOCKER="podman" IMAGE="fedora:28" TOXENV="py36"
+    - name: fedora33
+      env: IMAGE="fedora:33" TOXENV="lint-py3,lint-py2,py38-cov" TEST_LINT="true"
+    - name: fedora32
+      env: DOCKER="podman" IMAGE="fedora:32" TOXENV="py37,py27-cov"
       script: make no-network-test
-    - name: fedora27
-      env: IMAGE="fedora:27" TOXENV="py36"
-      if: type = cron
-    - name: fedora26
-      env: DOCKER_VOLUME="false" IMAGE="fedora:26" TOXENV="py35,py26"
+    - name: fedora31
+      env: DOCKER_VOLUME="false" IMAGE="fedora:31" TOXENV="py36,py35,py26"
     - name: fedora_rawhide
-      env: TOXENV="py37"
+      env: TOXENV="py39"
     - name: intg
       env: TOXENV="intg"
     # https://hub.docker.com/_/centos/
