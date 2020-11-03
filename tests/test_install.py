@@ -866,13 +866,31 @@ def test_app_init_env_work_dir_removed(app, env):
 
 
 @pytest.mark.network
-def test_app_verify_system_status_is_ok(app):
+def test_app_verify_system_status_is_ok(app, monkeypatch):
+    monkeypatch.setattr(type(app.linux.rpm), 'version_info',
+                        mock.PropertyMock(return_value=(4, 15, 1)))
     app.linux.rpm.is_package_installed = mock.MagicMock(return_value=True)
     app.linux.verify_system_status()
     assert True
 
 
-def test_app_verify_system_status_skipped_on_sys_py_and_installed_rpm_py(app):
+@pytest.mark.skipif(sys.version_info >= (3, 0), reason="Needs Python 2.")
+def test_app_verify_system_status_is_error_on_new_rpm_and_py2(
+    app, monkeypatch
+):
+    monkeypatch.setattr(type(app.linux.rpm), 'version_info',
+                        mock.PropertyMock(return_value=(4, 16, 0)))
+    with pytest.raises(InstallError) as ei:
+        app.linux.verify_system_status()
+    expected_message = 'RPM version >= 4.16 does not support Python 2.'
+    assert expected_message in str(ei.value)
+
+
+def test_app_verify_system_status_skipped_on_sys_py_and_installed_rpm_py(
+    app, monkeypatch
+):
+    monkeypatch.setattr(type(app.linux.rpm), 'version_info',
+                        mock.PropertyMock(return_value=(4, 15, 1)))
     app.python.is_system_python = mock.MagicMock(return_value=True)
     app.python.is_python_binding_installed = mock.MagicMock(return_value=True)
 
@@ -880,7 +898,11 @@ def test_app_verify_system_status_skipped_on_sys_py_and_installed_rpm_py(app):
         app.linux.verify_system_status()
 
 
-def test_app_verify_system_status_is_ok_on_sys_py_and_sys_installed_true(app):
+def test_app_verify_system_status_is_ok_on_sys_py_and_sys_installed_true(
+    app, monkeypatch
+):
+    monkeypatch.setattr(type(app.linux.rpm), 'version_info',
+                        mock.PropertyMock(return_value=(4, 15, 1)))
     app.python.is_system_python = mock.MagicMock(return_value=True)
     app.python.is_python_binding_installed = mock.MagicMock(return_value=False)
     app.linux.sys_installed = mock.MagicMock(return_value=True)
@@ -888,7 +910,11 @@ def test_app_verify_system_status_is_ok_on_sys_py_and_sys_installed_true(app):
     assert True
 
 
-def test_app_verify_system_status_is_error_on_sys_py_and_no_rpm_py(app):
+def test_app_verify_system_status_is_error_on_sys_py_and_no_rpm_py(
+    app, monkeypatch
+):
+    monkeypatch.setattr(type(app.linux.rpm), 'version_info',
+                        mock.PropertyMock(return_value=(4, 15, 1)))
     app.python.is_system_python = mock.MagicMock(return_value=True)
     app.python.is_python_binding_installed = mock.MagicMock(return_value=False)
     with pytest.raises(InstallError) as ei:
