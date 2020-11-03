@@ -35,32 +35,40 @@ pytest_plugins = ['helpers_namespace']
 running_user = getpass.getuser()
 
 
-def _get_os_id():
-    os_id = None
+@pytest.helpers.register
+def cmd_stdout(cmd):
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+    out, _ = p.communicate()
+    return out.decode().rstrip()
+
+
+def _get_os_dict():
+    names = ['ID', 'VERSION_ID']
+    os_dict = {}
+    for name in names:
+        os_dict[name] = None
     if not os.path.isfile(OS_RELEASE_FILE):
-        return os_id
+        return os_dict
 
-    with open(OS_RELEASE_FILE) as f_in:
-        for line in f_in:
-            match = re.search(r'^ID=[\'"]?([\w_-]+)?[\'"]?$', line)
-            if match:
-                os_id = match.group(1)
-                break
+    for name in names:
+        cmd = '. /etc/os-release && echo -n "${0}"'.format(name)
+        os_dict[name] = cmd_stdout(cmd)
 
-    return os_id
+    return os_dict
 
 
-_os_id = _get_os_id()
+_os_dict = _get_os_dict()
 _is_dnf = True if os.system('dnf --version') == 0 else False
-_is_debian = True if _os_id in ['debian', 'ubuntu'] else False
-_is_fedora = _os_id == 'fedora'
+_is_debian = True if _os_dict['ID'] in ['debian', 'ubuntu'] else False
+_is_fedora = _os_dict['ID'] == 'fedora'
 # CentOS6 does not have /etc/os-release file. only has /etc/redhat-release.
 # When the /etc/redhat-release exists, identify it as centos
 # to run fedora base specific tests in test_install_fedora.py.
-_is_centos = _os_id == 'centos' or \
-  (not _os_id and os.path.isfile(REDHAT_RELEASE_FILE))
-_is_suse = bool('opensuse' in _os_id) or bool('sles' in _os_id) \
-    if _os_id is not None \
+_is_centos = _os_dict['ID'] == 'centos' or \
+  (not _os_dict['ID'] and os.path.isfile(REDHAT_RELEASE_FILE))
+_is_suse = bool('opensuse' in _os_dict['ID']) or \
+    bool('sles' in _os_dict['ID']) \
+    if _os_dict['ID'] is not None \
     else False
 
 
@@ -112,6 +120,14 @@ def is_debian():
 def is_suse():
     """Return if it is SUSE base Linux."""
     return _is_suse
+
+
+@pytest.fixture
+def os_version():
+    """Return OS version ID."""
+    # Ubuntu version ID is a decimal.
+    return float(_os_dict['VERSION_ID']) \
+        if _os_dict['VERSION_ID'] is not None else -1
 
 
 @pytest.fixture
@@ -308,13 +324,6 @@ def run_cmd(cmd):
     print('CMD: {0}'.format(cmd))
     exit_status = os.system(cmd)
     return (exit_status == 0)
-
-
-@pytest.helpers.register
-def cmd_stdout(cmd):
-    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-    out, _ = p.communicate()
-    return out.decode().rstrip()
 
 
 def get_rpm(is_debian, is_suse, rpm_path, **kwargs):

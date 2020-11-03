@@ -703,7 +703,7 @@ def test_installer_init_is_ok(installer):
                     not pytest.helpers.is_root_user(),
                     reason="Can only run zypper as root.")
 def test_installer_install_from_rpm_py_package(
-    installer, is_debian, is_centos, monkeypatch
+    installer, is_debian, is_centos, os_version, monkeypatch
 ):
     with pytest.helpers.work_dir():
         # The RPM Python binding for python3 is not provided on CentOS.
@@ -711,7 +711,7 @@ def test_installer_install_from_rpm_py_package(
         # http://mirror.centos.org/centos/7/os/x86_64/Packages/
         if is_debian or \
            not installer._predict_rpm_py_package_names() or \
-           (is_centos and sys.version_info >= (3, 0)):
+           (is_centos and os_version < 8 and sys.version_info >= (3, 0)):
             with pytest.raises(RpmPyPackageNotFoundError):
                 installer.install_from_rpm_py_package()
         else:
