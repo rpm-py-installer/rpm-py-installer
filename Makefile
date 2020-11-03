@@ -38,6 +38,12 @@ test-volume-true :
 		"$(TAG)" "$(TEST_CMD)"
 .PHONY : test-volume-true
 
+# Test on no network environment for the downstream build environment.
+test-no-network :
+	"$(DOCKER)" run -t --rm -v "$(CWD):/work:Z" -w /work --network=none \
+		"$(TAG)" pytest -m no_network
+.PHONY : test-no-network
+
 # Ex. make login IMAGE=fedora:28
 login :
 	"$(DOCKER)" run -t -v "$(CWD):/work:Z" -w /work -it $(TAG) bash
@@ -66,17 +72,23 @@ test-volume-false :
 		$(TEST_CMD)
 .PHONY : test-volume-false
 
-# Test on no network environment for the downstream build environment.
-no-network-test :
-	"$(DOCKER)" run -t --rm -v "$(CWD):/work:Z" -w /work -e TOXENV="${TOXENV}" \
-		--network=none \
-		"$(TAG)" pytest -m no_network
-.PHONY : no-network-test
-
+# Install /proc/sys/fs/binfmt_misc/qemu-$arch files on host to run multiple
+# CPU architectures containers on QEMU.
+# https://github.com/multiarch/qemu-user-static
 qemu :
 	"$(DOCKER)" run --rm -t --privileged multiarch/qemu-user-static --reset -p yes
 .PHONY : qemu
 
-clean :
-	"$(DOCKER)" system prune -a -f
+clean : clean-files clean-containers
 .PHONY : clean
+
+clean-files :
+	rm -rf .pytest_cache/
+	rm -rf .tox/
+	find . -type f -a -name "*.pyc" -delete
+	find . -type d -a -name "__pycache__" -delete
+.PHONY : clean-files
+
+clean-containers :
+	"$(DOCKER)" system prune -a -f
+.PHONY : clean-containers
