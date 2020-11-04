@@ -19,7 +19,7 @@ matrix:
       env: IMAGE="fedora:33" TOXENV="lint-py3,lint-py2,py38-cov" TEST_LINT="true"
     - name: fedora32
       env: DOCKER="podman" IMAGE="fedora:32" TOXENV="py37,py27-cov"
-      script: make no-network-test
+      script: make test-no-network
     - name: fedora31
       env: DOCKER_VOLUME="false" IMAGE="fedora:31" TOXENV="py36,py35,py26"
     - name: fedora_rawhide
