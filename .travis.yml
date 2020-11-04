@@ -30,7 +30,7 @@ matrix:
     - name: centos7
       env: DOCKERFILE="ci/Dockerfile-centos.7" TOXENV="py36-cov,py34-cov,py27-cov"
     - name: centos6
-      env: DOCKERFILE="ci/Dockerfile-centos.6" TOXENV="py27,py26"
+      env: DOCKER_VOLUME="false" DOCKERFILE="ci/Dockerfile-centos.6" TOXENV="py27,py26"
     # https://hub.docker.com/_/ubuntu/
     - name: ubuntu_bionic
       env: DOCKERFILE="ci/Dockerfile-ubuntu.bionic" TOXENV="py36-cov,py27-cov"

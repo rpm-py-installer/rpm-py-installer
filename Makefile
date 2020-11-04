@@ -53,7 +53,7 @@ login :
 build-volume-false :
 	"$(DOCKER)" build --rm \
 		-t $(TAG)_tmp \
-		-f ci/Dockerfile-fedora \
+		-f "$(DOCKERFILE)" \
 		--build-arg CONTAINER_IMAGE=$(IMAGE) \
 		.
 	"$(DOCKER)" build --rm \
