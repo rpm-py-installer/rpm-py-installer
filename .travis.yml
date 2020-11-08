@@ -27,8 +27,10 @@ matrix:
     - name: intg
       env: TOXENV="intg"
     # https://hub.docker.com/_/centos/
+    - name: centos8
+      env: DOCKERFILE="ci/Dockerfile-centos" IMAGE="centos:8" TOXENV="py36-cov,py27-cov"
     - name: centos7
-      env: DOCKERFILE="ci/Dockerfile-centos.7" TOXENV="py36-cov,py34-cov,py27-cov"
+      env: DOCKERFILE="ci/Dockerfile-centos" IMAGE="centos:7" TOXENV="py36,py34-cov,py27"
     - name: centos6
       env: DOCKER_VOLUME="false" DOCKERFILE="ci/Dockerfile-centos.6" TOXENV="py27,py26"
     # https://hub.docker.com/_/ubuntu/

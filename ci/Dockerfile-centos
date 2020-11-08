@@ -1,4 +1,5 @@
-FROM centos:7
+ARG CONTAINER_IMAGE=centos:8
+FROM ${CONTAINER_IMAGE}
 
 WORKDIR /build
 COPY tox-requirements.txt .
@@ -13,17 +14,21 @@ RUN yum -y install \
   rpm-libs \
   redhat-rpm-config \
   gcc \
+  python3-devel \
   python36-devel \
-  python34-devel \
-  python-devel \
+  python2-devel \
   /usr/bin/python3.6 \
-  /usr/bin/python3.4 \
   /usr/bin/python2.7 \
   # -- RPM packages required for a specified case --
   /usr/bin/git \
   rpm-build-libs \
   /usr/bin/yumdownloader \
-  /usr/bin/cpio \
-  && yum clean all
+  /usr/bin/cpio
+# Install on CentOS 7, but not CentOS 8.
+RUN yum -y install \
+  python34-devel \
+  /usr/bin/python3.4 \
+  || true
+RUN yum clean all
 RUN python3 -m ensurepip
 RUN python3 -m pip install --upgrade -rtox-requirements.txt
