@@ -2,11 +2,7 @@
 [![PyPI](https://img.shields.io/pypi/v/rpm-py-installer.svg)](https://pypi.python.org/pypi/rpm-py-installer)
 [![Travis Build Status](https://travis-ci.org/junaruga/rpm-py-installer.svg?branch=master)](https://travis-ci.org/junaruga/rpm-py-installer)
 
-`rpm-py-installer` is to enable [the RPM Python binding](https://github.com/rpm-software-management/rpm/tree/master/python) in any Python environment.
-
-The environment can be a non-system Python, a source compiled Python, a Python in a virtualenv, pyenv environment, etc.
-
-It installs the Python binding matching the version of the system RPM in a safe manner.
+`rpm-py-installer` is to enable [the RPM Python binding](https://github.com/rpm-software-management/rpm/tree/master/python) in any Python environment. The environment can be a non-system Python, a source compiled Python, a Python in a virtualenv, pyenv environment, etc. It installs the Python binding matching the version of the system RPM in a safe manner. The reason for the project's existence is that [the RPM project is not positive to upload the Python binding to PyPI](https://github.com/rpm-software-management/rpm/issues/273), and [the "rpm" name is reserved in PyPI](https://pypi.org/project/rpm).
 
 ## Getting started
 
@@ -108,9 +104,7 @@ See [User's guide](docs/users_guide.md).
 
 ## Contributing
 
-We encourage you to contribute to `rpm-py-installer`! Please check out the [Contributing guide](CONTRIBUTING.md) for guidelines how to proceed.
-
-See the [Developer's guide](docs/developers_guide.md) for further details.
+We encourage you to contribute to `rpm-py-installer`! Please check out the [Contributing guide](CONTRIBUTING.md) for guidelines how to proceed. See the [Developer's guide](docs/developers_guide.md) for further details.
 
 ## Supported environments
 
