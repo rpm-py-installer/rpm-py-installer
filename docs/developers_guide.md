@@ -105,6 +105,12 @@ Install `tox` on your machine (either via `pip` or your distribution's package m
 $ tox -l
 lint-py3
 lint-py2
+py3-cov
+py3
+py39-cov
+py39
+py38-cov
+py38
 py37-cov
 py37
 py36-cov
@@ -113,6 +119,8 @@ py35-cov
 py35
 py34-cov
 py34
+py2-cov
+py2
 py27-cov
 py27
 py26-cov
