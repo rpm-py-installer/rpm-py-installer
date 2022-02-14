@@ -65,14 +65,16 @@ class BdistWheelCommand(Command):
     See https://github.com/pypa/pip/issues/4720
     """
 
-    user_options = []
+    user_options = [
+        ("dist-dir=", "d", "For compatibility. Ignored."),
+    ]
 
     def initialize_options(self):
         """Initilize options.
 
         Just extend the super class's abstract method.
         """
-        pass
+        self.dist_dir = None
 
     def finalize_options(self):
         """Finalize options.
