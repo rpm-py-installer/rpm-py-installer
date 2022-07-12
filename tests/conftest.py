@@ -11,6 +11,7 @@ import tempfile
 from contextlib import contextmanager
 
 import pytest
+
 from install import (Application,
                      DebianInstaller,
                      DebianRpm,
@@ -73,12 +74,17 @@ _is_suse = bool('opensuse' in _os_dict['ID']) or \
 
 
 def pytest_collection_modifyitems(items):
+    def get_marker(item, marker):
+        try:
+            return item.get_closest_marker(marker)
+        except AttributeError:
+            return item.get_marker(marker)
     for item in items:
-        if item.get_marker('integration') is not None:
+        if get_marker(item, 'integration') is not None:
             pass
         else:
             item.add_marker(pytest.mark.unit)
-        if item.get_marker('network') is not None:
+        if get_marker(item, 'network') is not None:
             pass
         else:
             item.add_marker(pytest.mark.no_network)
