@@ -1788,7 +1788,13 @@ class SuseRpm(NativeRpm):
     def __init__(self, rpm_path, **kwargs):
         """Initialize this class and set the necessary constants."""
         NativeRpm.__init__(self, rpm_path, **kwargs)
-        self.rpm_lib_pkg_name = 'rpm'
+        try:
+            # Leap has rpm-ndb installed by default
+            Cmd.sh_e('rpm -q rpm-ndb')
+        except CmdError:
+            self.rpm_lib_pkg_name = 'rpm'
+        else:
+            self.rpm_lib_pkg_name = 'rpm-ndb'
 
     @property
     def package_cmd(self):
