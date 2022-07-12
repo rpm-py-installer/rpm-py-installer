@@ -27,12 +27,12 @@ RUN ARCH=$(rpm -q rpm --qf "%{arch}") \
   gcc \
   python3-devel \
   python2-devel \
+  /usr/bin/python3.11 \
+  /usr/bin/python3.10 \
   /usr/bin/python3.9 \
   /usr/bin/python3.8 \
   /usr/bin/python3.7 \
   /usr/bin/python3.6 \
-  /usr/bin/python3.5 \
-  /usr/bin/python2.7 \
   # -- RPM packages required for a specified case --
   # Used to get the rpm-python by git commmand,
   # if a target rpm archive URL is not found on the server.
@@ -46,11 +46,6 @@ RUN ARCH=$(rpm -q rpm --qf "%{arch}") \
   # -- RPM packages for testing --
   apt \
   which
-# Optinally installed in some cases.
-RUN ARCH=$(rpm -q rpm --qf "%{arch}") \
-  && dnf -y --forcearch "${ARCH}" install \
-  /usr/bin/python2.6 \
-  || true
 
 RUN ./dnf_install_lint_pkgs.sh
 RUN dnf clean all

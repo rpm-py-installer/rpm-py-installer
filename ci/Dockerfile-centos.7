@@ -1,8 +1,8 @@
-ARG CONTAINER_IMAGE=centos:stream8
+ARG CONTAINER_IMAGE=centos:7
 FROM ${CONTAINER_IMAGE}
 
 WORKDIR /build
-COPY tox-requirements.txt .
+COPY tox-py34-requirements.txt .
 
 RUN yum -y update
 RUN yum -y install epel-release
@@ -24,6 +24,11 @@ RUN yum -y install \
   rpm-build-libs \
   /usr/bin/yumdownloader \
   /usr/bin/cpio
+# Install on CentOS 7, but not CentOS 8.
+RUN yum -y install \
+  python34-devel \
+  /usr/bin/python3.4 \
+  || true
 RUN yum clean all
 RUN python3 -m ensurepip
-RUN python3 -m pip install --upgrade -rtox-requirements.txt
+RUN python3 -m pip install --upgrade -rtox-py34-requirements.txt
