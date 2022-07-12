@@ -1819,11 +1819,15 @@ class SuseRpm(NativeRpm):
                      .format(package_name=package_name),
                      stderr=subprocess.PIPE)
 
+            # match also specific python prefixes of packages that could have
+            # been downloaded instead, e.g. python310-rpm
+            package_name_re = re.sub(r'^(python\d)-', r'\1\\d*-', package_name)
+
             matches = []
             for dirpath, _, filenames in os.walk("/var/cache/zypp/packages/"):
                 for filename in filenames:
                     match = re.match(
-                        r'^' + package_name +
+                        r'^' + package_name_re +
                         r'-(?P<version>\d+(\.\d+)*)-(?P<release>\S+(\.\d+)*)'
                         r'\.(?P<arch>\S+)\.rpm',
                         filename)
@@ -1857,7 +1861,11 @@ class SuseRpm(NativeRpm):
                         candidate_release, most_recent_release)):
                     most_recent = candidate
 
-            os.rename(most_recent[0], "./" + os.path.basename(most_recent[0]))
+            target = "./" + os.path.basename(most_recent[0])
+            if package_name_re != package_name:
+                # change the prefix back to the original
+                target = re.sub(r'(python\d)\d*-', r'\1-', target)
+            os.rename(most_recent[0], target)
 
         except CmdError as exc:
             for line in exc.stderr.split('\n'):
