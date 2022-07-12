@@ -2051,11 +2051,10 @@ class Cmd(object):
         tar_gz_file_name = file_url.split('/')[-1]
 
         if sys.version_info >= (3, 2):
-            from urllib.request import urlopen
             from urllib.error import HTTPError
+            from urllib.request import urlopen
         else:
-            from urllib2 import urlopen
-            from urllib2 import HTTPError
+            from urllib2 import HTTPError, urlopen
 
         response = None
         try:
