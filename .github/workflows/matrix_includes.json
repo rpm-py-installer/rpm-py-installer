@@ -1,0 +1,68 @@
+[
+    {
+        "name": "fedora_36_s390x",
+        "image": "s390x/fedora:36",
+        "toxenv": "py3",
+        "test_lint": true,
+        "docker": "docker",
+        "targets": "qemu build",
+        "cron": true
+    },
+    {
+        "name": "fedora_36",
+        "image": "fedora:36",
+        "toxenv": "lint-py3,py310-cov",
+        "test_lint": true
+    },
+    {
+        "name": "fedora_35",
+        "image": "fedora:35",
+        "toxenv": "py310"
+    },
+    {
+        "name": "fedora_34",
+        "image": "fedora:34",
+        "toxenv": "py39,py38",
+        "docker_volume": false
+    },
+    {
+        "name": "fedora_rawhide",
+        "toxenv": "py311",
+        "name": "intg",
+        "toxenv": "intg"
+    },
+    {
+        "name": "centos_stream_8",
+        "image": "centos:stream8",
+        "toxenv": "py36-cov,py27-cov",
+        "dockerfile": "ci/Dockerfile-centos"
+    },
+    {
+        "name": "centos_7",
+        "image": "centos:7",
+        "toxenv": "py36,py34-cov,py27",
+        "dockerfile": "ci/Dockerfile-centos.7"
+    },
+    {
+        "name": "ubuntu_bionic",
+        "toxenv": "py36-cov,py27-cov",
+        "dockerfile": "ci/Dockerfile-ubuntu.bionic"
+    },
+    {
+        "name": "ubuntu_trusty",
+        "toxenv": "py34",
+        "dockerfile": "ci/Dockerfile-ubuntu.trusty"
+    },
+    {
+        "name": "opensuse_tumbleweed",
+        "image": "opensuse/tumbleweed",
+        "toxenv": "py3-cov",
+        "dockerfile": "ci/Dockerfile-opensuse"
+    },
+    {
+        "name": "opensuse_leap_15",
+        "image": "opensuse/leap:15",
+        "toxenv": "py36-cov",
+        "dockerfile": "ci/Dockerfile-opensuse"
+    }
+]
