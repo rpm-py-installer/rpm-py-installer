@@ -10,9 +10,8 @@ RUN zypper --non-interactive in \
   python3-tox \
   git \
   gcc \
+  python3 \
   python3-devel \
-  python-devel \
-  python2-setuptools \
   python3-setuptools \
   python-xml
 # librpmbuild%{librpmsover} package needed to build the RPM Python binding.
