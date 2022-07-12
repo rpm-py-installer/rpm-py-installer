@@ -10,6 +10,7 @@ import tempfile
 from unittest import mock
 
 import pytest
+
 from install import (Cmd,
                      Downloader,
                      InstallError,
@@ -159,8 +160,10 @@ def test_cmd_tar_archive_is_failed(archive_file_path_dicts, file_type):
     with pytest.helpers.work_dir():
         with pytest.raises(InstallError) as ei:
             Cmd.tar_extract(archive_file_path)
-    assert re.match(r'^Extract failed: .* could not be opened successfully$',
-                    str(ei.value))
+    assert re.match(
+        r'^Extract failed: .* could not be opened successfully($|:.*)',
+        str(ei.value)
+    )
 
 
 def test_cmd_find_is_ok():
