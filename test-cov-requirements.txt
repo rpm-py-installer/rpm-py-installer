@@ -1,5 +1,3 @@
 # Coverage
 pytest-cov
-# Restrict version for below issue.
-# https://github.com/junaruga/rpm-py-installer/issues/122
-coverage<4.5
+coverage
