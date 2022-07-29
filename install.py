@@ -1544,7 +1544,7 @@ class Python(object):
 
     def _get_pip_list_json_obj(self):
         cmd = '{0} list --format json'.format(self._get_pip_cmd())
-        json_str = Cmd.sh_e_out(cmd)
+        json_str = Cmd.sh_e_out(cmd).split('\n')[0]
         json_obj = json.loads(json_str)
         return json_obj
 
