@@ -1,5 +1,7 @@
 # Code Analysis for Python
-flake8
+# A temporary workaround not to use flake8 version 5.
+# https://github.com/gforcada/flake8-isort/issues/115
+flake8 < 5
 flake8-colors
 flake8-isort
 isort
