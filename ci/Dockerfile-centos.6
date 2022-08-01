@@ -3,7 +3,7 @@ FROM centos:6
 WORKDIR /build
 COPY ci/CentOS-Base.repo.centos6 .
 COPY ci/install_python.sh .
-COPY tox-requirements.txt .
+COPY tox-py26-requirements.txt .
 
 # Use vault.centos.org server as a package repository, as the official CentOS 6
 # repository is not available any more
@@ -24,6 +24,9 @@ RUN yum -y install \
   openssl-devel \
   bzip2-devel \
   python-devel \
+  # Python 2.6
+  python-devel \
+  /usr/bin/python2.6 \
   /usr/bin/yumdownloader \
   /usr/bin/cpio \
   # -- RPM packages required for a specified case --
@@ -34,4 +37,4 @@ RUN ./install_python.sh 2.7.14
 ENV PATH "/usr/local/python-2.7.14/bin:${PATH}"
 
 RUN python2.7 -m ensurepip
-RUN python2.7 -m pip install --upgrade -rtox-requirements.txt
+RUN python2.7 -m pip install --upgrade -rtox-py26-requirements.txt

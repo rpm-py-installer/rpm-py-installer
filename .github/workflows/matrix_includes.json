@@ -46,7 +46,7 @@
     {
         "name": "centos_6",
         "image": "centos:6",
-        "toxenv": "py27",
+        "toxenv": "py27,py26",
         "dockerfile": "ci/Dockerfile-centos.6"
     },
     {
