@@ -44,6 +44,12 @@
         "dockerfile": "ci/Dockerfile-centos.7"
     },
     {
+        "name": "centos_6",
+        "image": "centos:6",
+        "toxenv": "py27",
+        "dockerfile": "ci/Dockerfile-centos.6"
+    },
+    {
         "name": "ubuntu_bionic",
         "toxenv": "py36-cov,py27-cov",
         "dockerfile": "ci/Dockerfile-ubuntu.bionic"

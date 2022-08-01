@@ -1,0 +1,37 @@
+FROM centos:6
+
+WORKDIR /build
+COPY ci/CentOS-Base.repo.centos6 .
+COPY ci/install_python.sh .
+COPY tox-requirements.txt .
+
+# Use vault.centos.org server as a package repository, as the official CentOS 6
+# repository is not available any more
+# https://vault.centos.org/6.10/
+RUN cp -p ./CentOS-Base.repo.centos6 /etc/yum.repos.d/CentOS-Base.repo
+
+RUN yum -y update
+RUN yum -y install epel-release
+RUN yum -y install \
+  --setopt=deltarpm=0 \
+  --setopt=install_weak_deps=false \
+  --setopt=tsflags=nodocs \
+  # -- RPM packages required for installing --
+  rpm-libs \
+  redhat-rpm-config \
+  gcc \
+  zlib-devel \
+  openssl-devel \
+  bzip2-devel \
+  python-devel \
+  /usr/bin/yumdownloader \
+  /usr/bin/cpio \
+  # -- RPM packages required for a specified case --
+  /usr/bin/git \
+  && yum clean all
+
+RUN ./install_python.sh 2.7.14
+ENV PATH "/usr/local/python-2.7.14/bin:${PATH}"
+
+RUN python2.7 -m ensurepip
+RUN python2.7 -m pip install --upgrade -rtox-requirements.txt
