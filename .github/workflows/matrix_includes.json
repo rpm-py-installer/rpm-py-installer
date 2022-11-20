@@ -1,7 +1,7 @@
 [
     {
-        "name": "fedora_36_s390x",
-        "image": "s390x/fedora:36",
+        "name": "fedora_37_s390x",
+        "image": "s390x/fedora:37",
         "toxenv": "py3",
         "test_lint": true,
         "docker": "docker",
@@ -9,19 +9,19 @@
         "cron": true
     },
     {
-        "name": "fedora_36",
-        "image": "fedora:36",
+        "name": "fedora_37",
+        "image": "fedora:37",
         "toxenv": "lint-py3,py310-cov",
         "test_lint": true
     },
     {
-        "name": "fedora_35",
-        "image": "fedora:35",
+        "name": "fedora_36",
+        "image": "fedora:36",
         "toxenv": "py310"
     },
     {
-        "name": "fedora_34",
-        "image": "fedora:34",
+        "name": "fedora_35",
+        "image": "fedora:35",
         "toxenv": "py39,py38",
         "docker_volume": false
     },
