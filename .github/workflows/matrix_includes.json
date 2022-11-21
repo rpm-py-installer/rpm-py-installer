@@ -11,7 +11,7 @@
     {
         "name": "fedora_37",
         "image": "fedora:37",
-        "toxenv": "lint-py3,py310-cov",
+        "toxenv": "lint-py3,py311-cov",
         "test_lint": true
     },
     {
