@@ -122,6 +122,7 @@ See "Homepage" on GitHub for detail.
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'System :: POSIX :: Linux',
         'Topic :: System :: Installation/Setup',
     ],
     scripts=[
