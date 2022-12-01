@@ -116,6 +116,21 @@ def test_install_and_uninstall_are_ok_on_sys_status(
     assert True
 
 
+def test_pip_install():
+    try:
+        _run_cmd('pip -q show rpm && pip uninstall -y rpm')
+        _run_cmd('pip -q show rpm-python && pip uninstall -y rpm-python')
+        _run_cmd(
+            'pip -q show rpm-py-installer '
+            '&& pip uninstall -y rpm-py-installer'
+        )
+        assert _run_cmd('pip install .')
+    finally:
+        _run_cmd('pip uninstall -y rpm-py-installer')
+        _run_cmd('pip -q show rpm && pip uninstall -y rpm')
+        _run_cmd('pip -q show rpm-python && pip uninstall -y rpm-python')
+
+
 def _assert_install_and_uninstall(install_script_path, **env):
     try:
         python_path = sys.executable
