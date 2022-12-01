@@ -51,11 +51,13 @@
     },
     {
         "name": "ubuntu_bionic",
+        "image": "ubuntu:bionic",
         "toxenv": "py36-cov,py27-cov",
         "dockerfile": "ci/Dockerfile-ubuntu.bionic"
     },
     {
         "name": "ubuntu_trusty",
+        "image": "ubuntu:trusty",
         "toxenv": "py34",
         "dockerfile": "ci/Dockerfile-ubuntu.trusty"
     },
