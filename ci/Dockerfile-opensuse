@@ -8,6 +8,7 @@ RUN zypper --non-interactive dup
 RUN zypper --non-interactive in \
   cpio \
   python3-tox \
+  python3-tomli \
   git \
   gcc \
   python3 \
