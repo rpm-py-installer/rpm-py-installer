@@ -11,3 +11,6 @@ setuptools<44.0.0
 pathlib2
 virtualenv<16.0.0
 tox<3.2
+# The zipp 3.11.0 doesn't work in Python 3.4.
+# https://github.com/jaraco/zipp/issues/87
+zipp<3.11
