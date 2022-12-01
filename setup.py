@@ -1,5 +1,5 @@
 """Classes to set up and install rpm-py-installer."""
-import os
+import subprocess
 import sys
 from distutils.cmd import Command
 
@@ -11,13 +11,36 @@ from setuptools.command.install import install
 from rpm_py_installer.version import VERSION
 
 
+def run_cmd(cmd):
+    """Run a command."""
+    exit_status = 0
+    message = ''
+
+    proc = subprocess.Popen(
+        cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    proc.wait()
+    exit_status = proc.returncode
+    stdout = proc.stdout.read().decode()
+    stderr = proc.stderr.read().decode()
+    message = '''
+Command: {0}
+Return Code: [{1}]
+Stdout: [{2}]
+Stderr: [{3}]
+'''.format(cmd, exit_status, stdout, stderr)
+
+    return (exit_status, message)
+
+
 def install_rpm_py():
     """Install RPM Python binding."""
     python_path = sys.executable
     cmd = '{0} install.py'.format(python_path)
-    exit_status = os.system(cmd)
+    exit_status, message = run_cmd(cmd)
+
     if exit_status != 0:
-        raise Exception('Command failed: {0}'.format(cmd))
+        raise Exception(message)
 
 
 class InstallCommand(install):
