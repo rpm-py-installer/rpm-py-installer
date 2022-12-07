@@ -1,7 +1,7 @@
 [
     {
         "name": "fedora_37_s390x",
-        "image": "s390x/fedora:37",
+        "image": "registry.fedoraproject.org/fedora:37-s390x",
         "toxenv": "py3",
         "test_lint": true,
         "docker": "docker",
@@ -10,18 +10,18 @@
     },
     {
         "name": "fedora_37",
-        "image": "fedora:37",
+        "image": "registry.fedoraproject.org/fedora:37",
         "toxenv": "lint-py3,py311-cov",
         "test_lint": true
     },
     {
         "name": "fedora_36",
-        "image": "fedora:36",
+        "image": "registry.fedoraproject.org/fedora:36",
         "toxenv": "py310"
     },
     {
         "name": "fedora_35",
-        "image": "fedora:35",
+        "image": "registry.fedoraproject.org/fedora:35",
         "toxenv": "py39,py38",
         "docker_volume": false
     },
@@ -33,43 +33,43 @@
     },
     {
         "name": "centos_stream_8",
-        "image": "centos:stream8",
+        "image": "quay.io/centos/centos:stream8",
         "toxenv": "py36-cov,py27-cov",
         "dockerfile": "ci/Dockerfile-centos"
     },
     {
         "name": "centos_7",
-        "image": "centos:7",
+        "image": "quay.io/centos/centos:7",
         "toxenv": "py36,py34-cov,py27",
         "dockerfile": "ci/Dockerfile-centos.7"
     },
     {
         "name": "centos_6",
-        "image": "centos:6",
+        "image": "quay.io/centos/centos:6",
         "toxenv": "py27",
         "dockerfile": "ci/Dockerfile-centos.6"
     },
     {
         "name": "ubuntu_bionic",
-        "image": "ubuntu:bionic",
+        "image": "docker.io/ubuntu:bionic",
         "toxenv": "py36-cov,py27-cov",
         "dockerfile": "ci/Dockerfile-ubuntu.bionic"
     },
     {
         "name": "ubuntu_trusty",
-        "image": "ubuntu:trusty",
+        "image": "docker.io/ubuntu:trusty",
         "toxenv": "py34",
         "dockerfile": "ci/Dockerfile-ubuntu.trusty"
     },
     {
         "name": "opensuse_tumbleweed",
-        "image": "opensuse/tumbleweed",
+        "image": "docker.io/opensuse/tumbleweed",
         "toxenv": "py3-cov",
         "dockerfile": "ci/Dockerfile-opensuse"
     },
     {
         "name": "opensuse_leap_15",
-        "image": "opensuse/leap:15",
+        "image": "docker.io/opensuse/leap:15",
         "toxenv": "py36-cov",
         "dockerfile": "ci/Dockerfile-opensuse"
     }
