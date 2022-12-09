@@ -1,4 +1,6 @@
 pip
 setuptools
 virtualenv
-tox
+# "pip list" in tox 4 has an issue in Fedora 36, 35 cases.
+# https://github.com/tox-dev/tox/issues/2737
+tox<4
