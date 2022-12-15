@@ -1543,6 +1543,10 @@ class Python(object):
         return pip_version
 
     def _get_pip_list_json_obj(self):
+        cmd = '{0} list'.format(self._get_pip_cmd())
+        Cmd.sh_e(cmd)
+        cmd = 'pip list'
+        Cmd.sh_e(cmd)
         cmd = '{0} list --format json'.format(self._get_pip_cmd())
         json_str = Cmd.sh_e_out(cmd).split('\n')[0]
         json_obj = json.loads(json_str)
