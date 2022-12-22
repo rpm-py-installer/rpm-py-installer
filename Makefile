@@ -7,10 +7,7 @@ DOCKER ?= podman
 DOCKER_VOLUME ?= true
 DOCKERFILE ?= ci/Dockerfile-fedora
 # Container image
-# Use Docker Hub as a temporary workaround as Fedora official registry has an
-# issue with the rawhide image.
-# https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/thread/RVH77LX7VJNM6AD2M5WCQESUQA4MCA53/
-IMAGE ?= docker.io/fedora:rawhide
+IMAGE ?= registry.fedoraproject.org/fedora:rawhide
 TOXENV ?= py3-cov
 TEST_LINT ?= false
 TEST_CMD ?= tox
