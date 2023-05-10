@@ -125,7 +125,7 @@ See "Homepage" on GitHub for detail.
 ''',
     author='Jun Aruga',
     author_email='jaruga@redhat.com',
-    url='https://github.com/junaruga/rpm-py-installer',
+    url='https://github.com/rpm-py-installer/rpm-py-installer',
     packages=[
         'rpm_py_installer',
     ],

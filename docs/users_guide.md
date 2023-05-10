@@ -8,7 +8,7 @@ $ [VAR=VALUE] pip install rpm-py-installer
 or
 
 ``` ShellSession
-$ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+$ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com/rpm-py-installer/rpm-py-installer/master/install.py)"
 ```
 
 ## Environment variables
@@ -37,7 +37,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   or
 
   ``` ShellSession
-  $ RPM_PY_VERBOSE=true python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+  $ RPM_PY_VERBOSE=true python -c "$(curl -fsSL https://raw.githubusercontent.com/rpm-py-installer/rpm-py-installer/master/install.py)"
   ```
 
 - Q2. What are the RPM dependencies for `rpm-py-installer`?
@@ -67,13 +67,13 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
 
 
 - Q4. How is `rpm-py-installer` version mapped to `python[23]-rpm` version?
-- A4. The version mapping's default behavior is to use same version as the system RPM's version. See [#94](https://github.com/junaruga/rpm-py-installer/issues/94) for details.
+- A4. The version mapping's default behavior is to use same version as the system RPM's version. See [#94](https://github.com/rpm-py-installer/rpm-py-installer/issues/94) for details.
 
 - Q5. Is it possible to install the Python binding of a specific version?
 - A5. Yes, it is possible, but it may fail to install. Set the version number (see the [RPM release page](https://github.com/rpm-software-management/rpm/releases) for valid choices) using the environment variable `RPM_PY_VERSION`.
 
   ``` ShellSession
-  $ RPM_PY_VERSION=4.13.0 python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+  $ RPM_PY_VERSION=4.13.0 python -c "$(curl -fsSL https://raw.githubusercontent.com/rpm-py-installer/rpm-py-installer/master/install.py)"
   ```
 
 - Q6. How to update my Python package's RPM spec file `foo.spec`?
@@ -83,7 +83,7 @@ $ [VAR=VALUE] /path/to/python -c "$(curl -fsSL https://raw.githubusercontent.com
   sed -i '/rpm-py-installer/d' setup.py
   ```
 
-  or set `setup.py`'s `install_requires` conditionally. Refer to the sample [`setup.py`](/tests/sample/setup.py) or [rebase-helper's `setup.py`](https://github.com/rebase-helper/rebase-helper/blob/master/setup.py). If you have a request for this situation, ask us on [the issue page](https://github.com/junaruga/rpm-py-installer/issues/134).
+  or set `setup.py`'s `install_requires` conditionally. Refer to the sample [`setup.py`](/tests/sample/setup.py) or [rebase-helper's `setup.py`](https://github.com/rebase-helper/rebase-helper/blob/master/setup.py). If you have a request for this situation, ask us on [the issue page](https://github.com/rpm-py-installer/rpm-py-installer/issues/134).
 
 - Q7. I got message "Failed building wheel for rpm-py-installer" when installing `pip install rpm-py-installer`. Is that a problem?
 - A7. No, it isn't. `rpm-py-installer`'s own `python setup.py bdist_wheel` raises an error, so always disable `wheel` cache to run your own install process.
