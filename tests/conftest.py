@@ -200,7 +200,7 @@ def pkg_cmd(is_dnf, arch):
 @pytest.fixture
 def file_url():
     url = (
-        'https://raw.githubusercontent.com/junaruga/rpm-py-installer'
+        'https://raw.githubusercontent.com/rpm-py-installer/rpm-py-installer'
         '/master/tests/fixtures/remote_file'
     )
     return url

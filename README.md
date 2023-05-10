@@ -1,6 +1,6 @@
 # RPM Python binding Installer
 [![PyPI](https://img.shields.io/pypi/v/rpm-py-installer.svg)](https://pypi.python.org/pypi/rpm-py-installer)
-[![GitHub Actions Build Status](https://github.com/junaruga/rpm-py-installer/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/junaruga/rpm-py-installer/actions/workflows/build-and-test.yml)
+[![GitHub Actions Build Status](https://github.com/rpm-py-installer/rpm-py-installer/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/rpm-py-installer/rpm-py-installer/actions/workflows/build-and-test.yml)
 
 `rpm-py-installer` is to enable [the RPM Python binding](https://github.com/rpm-software-management/rpm/tree/master/python) in any Python environment. The environment can be a non-system Python, a source compiled Python, a Python in a virtualenv, pyenv environment, etc. It installs the Python binding matching the version of the system RPM in a safe manner. The reason for the project's existence is that [the RPM project is not positive to upload the Python binding to PyPI](https://github.com/rpm-software-management/rpm/issues/273), and [the "rpm" name is reserved in PyPI](https://pypi.org/project/rpm).
 
@@ -88,7 +88,7 @@ Package    Version
 pip        9.0.1
 setuptools 28.8.0
 
-$ python -c "$(curl -fsSL https://raw.githubusercontent.com/junaruga/rpm-py-installer/master/install.py)"
+$ python -c "$(curl -fsSL https://raw.githubusercontent.com/rpm-py-installer/rpm-py-installer/master/install.py)"
 
 $ pip list
 Package          Version
@@ -117,7 +117,7 @@ We encourage you to contribute to `rpm-py-installer`! Please check out the [Cont
 
 The following environments are currently unsupported. To be supported, we need to add tests to the CI.
 
-* Mac OSX (ticket [#155](https://github.com/junaruga/rpm-py-installer/issues/155))
+* Mac OSX (ticket [#155](https://github.com/rpm-py-installer/rpm-py-installer/issues/155))
 
 ## Communities using rpm-py-installer
 
