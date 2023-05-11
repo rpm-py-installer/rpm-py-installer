@@ -4,6 +4,10 @@
 
 `rpm-py-installer` is to enable [the RPM Python binding](https://github.com/rpm-software-management/rpm/tree/master/python) in any Python environment. The environment can be a non-system Python, a source compiled Python, a Python in a virtualenv, pyenv environment, etc. It installs the Python binding matching the version of the system RPM in a safe manner. The reason for the project's existence is that [the RPM project is not positive to upload the Python binding to PyPI](https://github.com/rpm-software-management/rpm/issues/273), and [the "rpm" name is reserved in PyPI](https://pypi.org/project/rpm).
 
+## Announcements
+
+We are happy to see the `rpm-py-installer` used in the RPM Python ecosystem. However, unfortunately we have a challenge to continue to maintain this project, with following new features of the dependent software and adding new features to meet user's expectations. The `rpm-py-installer` has issues with new other components. The project can survive and thrive by people's contributions. Your pull-requests are welcome. Please consider trying the [alternative ways](docs/alternatives.md) to solve your problems instead of the `rpm-py-installer` if you see the issues.
+
 ## Getting started
 
 `rpm-py-installer` provides several ways to install the RPM Python binding.
