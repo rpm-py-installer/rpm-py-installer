@@ -1545,7 +1545,11 @@ class Python(object):
     def _get_pip_list_json_obj(self):
         cmd = '{0} list --format json'.format(self._get_pip_cmd())
         json_str = Cmd.sh_e_out(cmd).split('\n')[0]
-        json_obj = json.loads(json_str)
+        try:
+            json_obj = json.loads(json_str)
+        except json.decoder.JSONDecodeError:
+            Log.error("Failed to parse JSON: '{0}'".format(json_str))
+            raise
         return json_obj
 
     def _get_pip_list_lines(self):
